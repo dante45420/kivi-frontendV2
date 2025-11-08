@@ -14,7 +14,7 @@ export default function Home() {
       <div style={{
         padding: '80px 20px',
         textAlign: 'center',
-        background: 'linear-gradient(135deg, var(--kivi-green-soft) 0%, var(--kivi-blue-soft) 100%)'
+        background: 'var(--kivi-green)'
       }}>
         <div className="container">
           <img 
@@ -34,7 +34,7 @@ export default function Home() {
           <h1 style={{
             fontSize: '48px',
             fontWeight: 800,
-            color: 'var(--kivi-text-dark)',
+            color: '#fff',
             marginBottom: '16px',
             lineHeight: 1.2
           }}>
@@ -42,15 +42,16 @@ export default function Home() {
           </h1>
           <p style={{
             fontSize: '20px',
-            color: 'var(--kivi-text)',
+            color: '#fff',
             marginBottom: '32px',
             maxWidth: '600px',
-            margin: '0 auto 32px'
+            margin: '0 auto 32px',
+            opacity: 0.95
           }}>
             Frutas y verduras frescas directo de Lo Valledor a tu casa.
             Seleccionadas especialmente para ti por Kivi 🐕
           </p>
-          <Link to="/catalogo" className="button button-lg">
+          <Link to="/catalogo" className="button button-lg" style={{ background: '#fff', color: 'var(--kivi-green)' }}>
             <span>🥬</span>
             <span>Ver catálogo</span>
           </Link>
@@ -96,7 +97,67 @@ export default function Home() {
               Entrega rápida
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Pedí hoy y recibí mañana. Delivery coordinado por WhatsApp
+              Pide hoy y recibe mañana. Delivery coordinado por WhatsApp
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Preguntas Frecuentes */}
+      <div className="container" style={{ padding: '80px 20px' }}>
+        <h2 style={{
+          fontSize: '32px',
+          fontWeight: 800,
+          textAlign: 'center',
+          marginBottom: '48px',
+          color: 'var(--kivi-text-dark)'
+        }}>
+          Preguntas Frecuentes
+        </h2>
+        
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div className="card" style={{ marginBottom: '16px', padding: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
+              ¿Cómo hago un pedido?
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              Explora nuestro catálogo, agrega productos a tu carrito y completa tu pedido. Te contactaremos por WhatsApp para coordinar la entrega.
+            </p>
+          </div>
+          
+          <div className="card" style={{ marginBottom: '16px', padding: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
+              ¿Cuánto tarda la entrega?
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              Los pedidos se entregan al día siguiente. Para entregas el mismo día, selecciona la opción "Más Rápido" (+$2.000).
+            </p>
+          </div>
+          
+          <div className="card" style={{ marginBottom: '16px', padding: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
+              ¿Cuál es el costo de envío?
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              El envío estándar es gratuito. Puedes elegir entrega rápida (+$2.000) o envío económico con 10% de descuento en todo.
+            </p>
+          </div>
+          
+          <div className="card" style={{ marginBottom: '16px', padding: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
+              ¿De dónde vienen los productos?
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              Todos nuestros productos vienen directamente de Lo Valledor, seleccionados frescos cada día por nuestro equipo.
+            </p>
+          </div>
+          
+          <div className="card" style={{ padding: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
+              ¿Qué métodos de pago aceptan?
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              Aceptamos transferencia bancaria, efectivo al recibir y otros métodos que coordinamos por WhatsApp.
             </p>
           </div>
         </div>
@@ -104,7 +165,7 @@ export default function Home() {
       
       {/* CTA */}
       <div style={{
-        background: 'var(--kivi-green)',
+        background: 'var(--kivi-green-dark)',
         padding: '60px 20px',
         textAlign: 'center'
       }}>
@@ -123,9 +184,9 @@ export default function Home() {
             marginBottom: '24px',
             opacity: 0.9
           }}>
-            Explorá nuestro catálogo y hacé tu primer pedido
+            Explora nuestro catálogo y haz tu primer pedido
           </p>
-          <Link to="/catalogo" className="button button-lg" style={{ background: '#fff', color: 'var(--kivi-green)' }}>
+          <Link to="/catalogo" className="button button-lg" style={{ background: '#fff', color: 'var(--kivi-green-dark)' }}>
             <span>🛒</span>
             <span>Ver productos</span>
           </Link>

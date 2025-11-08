@@ -231,6 +231,7 @@ select.input {
   padding: 24px 12px;
   z-index: 1000;
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
 }
 
 @keyframes fadeIn {
@@ -382,6 +383,14 @@ select.input {
   .modal {
     max-width: calc(100vw - 32px);
     padding: var(--space-lg);
+    margin: auto;
+    position: relative;
+  }
+  
+  .modal-backdrop {
+    padding: 16px 8px;
+    align-items: flex-start;
+    padding-top: 20px;
   }
   
   .hide-mobile {
