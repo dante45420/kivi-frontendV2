@@ -22,6 +22,18 @@ async function request(endpoint, options = {}) {
   try {
     const response = await fetch(url, config)
     
+    // Verificar si la respuesta es HTML (error común cuando la URL está mal configurada)
+    const contentType = response.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      const text = await response.text()
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        console.error('❌ El servidor devolvió HTML en lugar de JSON')
+        console.error('❌ URL intentada:', url)
+        console.error('❌ Verifica que VITE_API_URL esté configurado en Vercel')
+        throw new Error(`Error de configuración: El servidor devolvió HTML. Verifica que VITE_API_URL esté configurado correctamente. URL: ${url}`)
+      }
+    }
+    
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Error desconocido' }))
       throw new Error(error.error || `HTTP ${response.status}`)

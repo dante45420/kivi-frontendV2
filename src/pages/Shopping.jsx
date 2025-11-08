@@ -40,9 +40,10 @@ export default function Shopping() {
       
       // Cargar detalles de cada pedido
       const allItems = []
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       for (const order of emittedOrders) {
         try {
-          const response = await fetch(`http://localhost:5000/api/orders/${order.id}`)
+          const response = await fetch(`${API_URL}/api/orders/${order.id}`)
           const data = await response.json()
           if (Array.isArray(data.items)) {
             allItems.push(...data.items.map(item => ({ ...item, order_id: order.id })))
@@ -230,8 +231,9 @@ export default function Shopping() {
     
     try {
       // Guardar cada compra
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       for (const purchase of toSave) {
-        await fetch('http://localhost:5000/api/purchases', {
+        await fetch(`${API_URL}/api/purchases`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(purchase)
