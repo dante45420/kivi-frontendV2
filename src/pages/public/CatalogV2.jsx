@@ -8,6 +8,7 @@ import { fetchWeeklyOffers } from '../../api/weeklyOffers'
 import { createOrder } from '../../api/orders'
 import { useCart } from '../../hooks/useCart'
 import { generateCatalogPDF } from '../../utils/catalogPdf'
+import { getImageUrl } from '../../utils/imageUrl'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
 import Loader from '../../components/Loader'
@@ -319,7 +320,7 @@ export default function CatalogV2() {
                       marginBottom: '8px'
                     }}>
                       <img
-                        src={offer.product.photo_url}
+                        src={getImageUrl(offer.product.photo_url)}
                         alt={offer.product.name}
                         style={{
                           position: 'absolute',
@@ -429,7 +430,7 @@ export default function CatalogV2() {
                       background: '#f5f5f5'
                     }}>
                       <img
-                        src={product.photo_url}
+                        src={getImageUrl(product.photo_url)}
                         alt={product.name}
                         style={{
                           position: 'absolute',

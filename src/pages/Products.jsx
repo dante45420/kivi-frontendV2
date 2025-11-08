@@ -13,6 +13,7 @@ import {
   deleteProductPhoto
 } from '../api/products'
 import { fetchCategories } from '../api/categories'
+import { getImageUrl } from '../utils/imageUrl'
 import Modal from '../components/Modal'
 import ImageUploader from '../components/ImageUploader'
 import Loader from '../components/Loader'
@@ -261,7 +262,7 @@ export default function Products() {
                   background: '#f5f5f5'
                 }}>
                   <img
-                    src={product.photo_url}
+                    src={getImageUrl(product.photo_url)}
                     alt={product.name}
                     style={{
                       width: '100%',
@@ -346,7 +347,7 @@ export default function Products() {
             <div className="form-group">
               <label className="label">Foto del producto</label>
               <ImageUploader
-                currentImage={editingProduct.photo_url}
+                currentImage={getImageUrl(editingProduct.photo_url)}
                 onUpload={handlePhotoUpload}
                 onDelete={handlePhotoDelete}
                 loading={uploadingPhoto}

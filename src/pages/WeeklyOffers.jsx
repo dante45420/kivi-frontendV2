@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { fetchWeeklyOffers, createWeeklyOffer, updateWeeklyOffer, deleteWeeklyOffer } from '../api/weeklyOffers'
 import { fetchProducts } from '../api/products'
+import { getImageUrl } from '../utils/imageUrl'
 import Loader from '../components/Loader'
 
 export default function WeeklyOffers() {
@@ -378,7 +379,7 @@ function OfferCard({ offer, onEdit, onToggle, onDelete, status }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             {offer.product?.photo_url && (
               <img
-                src={offer.product.photo_url}
+                src={getImageUrl(offer.product.photo_url)}
                 alt={offer.product.name}
                 style={{
                   width: '48px',

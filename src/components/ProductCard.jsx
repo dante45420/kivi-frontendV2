@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import AddToCartPopover from './AddToCartPopover'
 import { useCart } from '../hooks/useCart'
+import { getImageUrl } from '../utils/imageUrl'
 
 export default function ProductCard({ product, onAdd }) {
   const [open, setOpen] = useState(false)
@@ -9,18 +10,10 @@ export default function ProductCard({ product, onAdd }) {
   const cartItem = cart.find(i => i.product.id === product.id)
   const inCartCount = cartItem ? cartItem.quantity : 0
   const inCart = inCartCount > 0
-  
-  // Completar URL de foto si es relativa
-  const getPhotoUrl = (url) => {
-    if (!url) return null
-    if (url.startsWith('http')) return url
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    return `${API_URL}${url}`
-  }
 
   return (
     <div className="card product-card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div className="product-image" style={{ height: 140, background: product.photo_url ? `url(${getPhotoUrl(product.photo_url)})` : '#f5f5f5', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>
+      <div className="product-image" style={{ height: 140, background: product.photo_url ? `url(${getImageUrl(product.photo_url)})` : '#f5f5f5', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 48 }}>
         {!product.photo_url && (product.category?.emoji || '📦')}
       </div>
 
