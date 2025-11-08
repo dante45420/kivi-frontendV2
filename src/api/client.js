@@ -2,7 +2,16 @@
  * Cliente API base
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+// Obtener URL del backend y asegurar que tenga protocolo
+let API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
+// Si la URL no tiene protocolo, agregar https://
+if (API_URL && !API_URL.match(/^https?:\/\//)) {
+  API_URL = `https://${API_URL}`
+}
+
+// Remover barra final si existe
+API_URL = API_URL.replace(/\/$/, '')
 
 async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`
