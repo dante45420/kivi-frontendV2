@@ -189,6 +189,48 @@ export function generateInvoicePDF(invoiceData) {
   
   y += 10
   
+  // ======== SUBTOTAL Y ENVÍO/DESCUENTO ========
+  doc.setFillColor(250, 250, 250)
+  doc.roundedRect(margin, y, contentWidth, 30, 2, 2, 'F')
+  
+  y += 8
+  
+  // Subtotal
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(80, 80, 80)
+  doc.text('Subtotal:', margin + 5, y)
+  
+  const subtotal = invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
+  const subtotalText = `$${subtotal.toLocaleString('es-CL')}`
+  const subtotalWidth = doc.getTextWidth(subtotalText)
+  doc.text(subtotalText, pageWidth - margin - subtotalWidth - 5, y)
+  
+  y += 8
+  
+  // Envío o descuento
+  if (invoiceData.shipping_amount && invoiceData.shipping_amount !== 0) {
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(invoiceData.shipping_amount > 0 ? 76, 175, 80 : 255, 152, 0)
+    
+    const shippingLabel = invoiceData.shipping_amount > 0 ? 'Envío rápido:' : 'Descuento 5%:'
+    doc.text(shippingLabel, margin + 5, y)
+    
+    const shippingText = `${invoiceData.shipping_amount > 0 ? '+' : ''}$${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}`
+    const shippingWidth = doc.getTextWidth(shippingText)
+    doc.text(shippingText, pageWidth - margin - shippingWidth - 5, y)
+    
+    y += 8
+  }
+  
+  // Línea separadora antes del total
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.5)
+  doc.line(margin, y, pageWidth - margin, y)
+  
+  y += 8
+  
   // ======== TOTAL ========
   doc.setFillColor(240, 240, 240)
   doc.roundedRect(margin, y, contentWidth, 15, 2, 2, 'F')

@@ -88,9 +88,11 @@ export default function Accounting() {
               order_id: order.id,
               date: order.created_at,
               items: [],
+              subtotal: 0,
               total_billed: 0,
               total_paid: 0,
-              needs_conversion: false
+              needs_conversion: false,
+              shipping_type: order.shipping_type || 'fastest'
             }
           }
           
@@ -126,11 +128,37 @@ export default function Accounting() {
             paid_amount: itemPaid
           })
           
-          byCustomer[customerId].orders[order.id].total_billed += itemTotal
+          byCustomer[customerId].orders[order.id].subtotal += itemTotal
           byCustomer[customerId].orders[order.id].total_paid += itemPaid
           
           if (needsConversion && !hasConversion) {
             byCustomer[customerId].orders[order.id].needs_conversion = true
+          }
+        })
+      })
+      
+      // Aplicar envío o descuento según shipping_type
+      Object.values(byCustomer).forEach(customerData => {
+        Object.values(customerData.orders).forEach(order => {
+          const subtotal = order.subtotal || 0
+          const shippingType = order.shipping_type || 'fastest'
+          
+          if (shippingType === 'fastest' || shippingType === 'fast') {
+            // Envío rápido: +$2.500
+            order.total_billed = subtotal + 2500
+            order.shipping_amount = 2500
+            order.shipping_label = 'Envío rápido'
+          } else if (shippingType === 'cheapest' || shippingType === 'cheap') {
+            // Envío económico: -5% descuento
+            const discount = Math.round(subtotal * 0.05)
+            order.total_billed = subtotal - discount
+            order.shipping_amount = -discount
+            order.shipping_label = 'Descuento 5%'
+          } else {
+            // Por defecto: sin envío ni descuento
+            order.total_billed = subtotal
+            order.shipping_amount = 0
+            order.shipping_label = null
           }
         })
       })
@@ -182,6 +210,8 @@ export default function Accounting() {
     // Preparar datos para la nota de cobro
     const unpaidOrders = customerData.orders.filter(o => o.total_billed > o.total_paid)
     const unpaidItems = []
+    let subtotal = 0
+    let shippingTotal = 0
     
     unpaidOrders.forEach(order => {
       order.items.forEach(item => {
@@ -191,14 +221,27 @@ export default function Accounting() {
             order_id: order.order_id,
             order_date: order.date
           })
+          subtotal += item.calculated_total || 0
         }
       })
+      
+      // Agregar envío/descuento del pedido si tiene items sin pagar
+      const hasUnpaidItems = order.items.some(item => !item.paid)
+      if (hasUnpaidItems && order.shipping_amount) {
+        shippingTotal += order.shipping_amount
+      }
     })
+    
+    // Calcular el total correcto: subtotal + shipping
+    const calculatedTotal = subtotal + shippingTotal
     
     setInvoiceData({
       customer,
       items: unpaidItems,
-      total: customerData.total_debt
+      subtotal: subtotal,
+      shipping_amount: shippingTotal,
+      shipping_type: unpaidOrders.length > 0 ? unpaidOrders[0].shipping_type : null,
+      total: calculatedTotal
     })
   }
 
@@ -702,16 +745,52 @@ export default function Accounting() {
                 borderRadius: '8px',
                 marginBottom: '20px'
               }}>
-                <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
-                  Total a Pagar
+                <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+                  Subtotal:
                 </div>
                 <div style={{
-                  fontSize: '32px',
-                  fontWeight: 800,
-                  color: 'var(--kivi-orange)',
-                  fontFamily: 'monospace'
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  color: '#333',
+                  fontFamily: 'monospace',
+                  marginBottom: '8px'
                 }}>
-                  ${invoiceData.total.toLocaleString('es-CL')}
+                  ${(invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)).toLocaleString('es-CL')}
+                </div>
+                
+                {invoiceData.shipping_amount && invoiceData.shipping_amount !== 0 && (
+                  <>
+                    <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
+                      {invoiceData.shipping_amount > 0 ? 'Envío rápido:' : 'Descuento 5%:'}
+                    </div>
+                    <div style={{
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      color: invoiceData.shipping_amount > 0 ? 'var(--kivi-green)' : 'var(--kivi-orange)',
+                      fontFamily: 'monospace',
+                      marginBottom: '8px'
+                    }}>
+                      {invoiceData.shipping_amount > 0 ? '+' : ''}${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}
+                    </div>
+                  </>
+                )}
+                
+                <div style={{
+                  borderTop: '2px solid #ddd',
+                  paddingTop: '8px',
+                  marginTop: '8px'
+                }}>
+                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
+                    Total a Pagar
+                  </div>
+                  <div style={{
+                    fontSize: '32px',
+                    fontWeight: 800,
+                    color: 'var(--kivi-orange)',
+                    fontFamily: 'monospace'
+                  }}>
+                    ${invoiceData.total.toLocaleString('es-CL')}
+                  </div>
                 </div>
               </div>
               
