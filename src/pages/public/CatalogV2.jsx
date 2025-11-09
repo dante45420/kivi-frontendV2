@@ -12,6 +12,7 @@ import { getImageUrl } from '../../utils/imageUrl'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
 import Loader from '../../components/Loader'
+import Modal from '../../components/Modal'
 
 export default function CatalogV2() {
   const [loading, setLoading] = useState(true)
@@ -33,7 +34,7 @@ export default function CatalogV2() {
   const [submitting, setSubmitting] = useState(false)
   
   // Adding state (para cada producto)
-  const [addingProduct, setAddingProduct] = useState(null) // id del producto siendo agregado
+  const [addingProduct, setAddingProduct] = useState(null) // objeto del producto siendo agregado
   
   useEffect(() => {
     loadData()
@@ -87,7 +88,7 @@ export default function CatalogV2() {
   }
   
   const handleAddClick = (product) => {
-    setAddingProduct(product.id)
+    setAddingProduct(product)
   }
   
   const handleSelectUnit = (product, unit) => {
@@ -408,7 +409,7 @@ export default function CatalogV2() {
               const inCart = hasProductInCart(product.id)
               const cartItemKg = getCartItem(product.id, 'kg')
               const cartItemUnit = getCartItem(product.id, 'unit')
-              const isAdding = addingProduct === product.id
+              const isAdding = addingProduct?.id === product.id
               
               return (
                 <div
@@ -477,7 +478,7 @@ export default function CatalogV2() {
                   </div>
                   
                   {/* Actions */}
-                  {!inCart && !isAdding && (
+                  {!inCart && (
                     <button
                       onClick={() => handleAddClick(product)}
                       className="button button-sm"
@@ -490,52 +491,6 @@ export default function CatalogV2() {
                       <span>+</span>
                       <span>Agregar</span>
                     </button>
-                  )}
-                  
-                  {isAdding && (
-                    <div style={{
-                      display: 'flex',
-                      gap: '4px',
-                      flexDirection: 'column'
-                    }}>
-                      <button
-                        onClick={() => handleSelectUnit(product, 'kg')}
-                        className="button button-sm"
-                        style={{
-                          width: '100%',
-                          justifyContent: 'center',
-                          fontSize: '12px',
-                          background: 'var(--kivi-mint)',
-                          color: 'var(--kivi-text-dark)'
-                        }}
-                      >
-                        🏋️ Por Kilo
-                      </button>
-                      <button
-                        onClick={() => handleSelectUnit(product, 'unit')}
-                        className="button button-sm"
-                        style={{
-                          width: '100%',
-                          justifyContent: 'center',
-                          fontSize: '12px',
-                          background: 'var(--kivi-peach)',
-                          color: 'var(--kivi-text-dark)'
-                        }}
-                      >
-                        🔢 Por Unidad
-                      </button>
-                      <button
-                        onClick={() => setAddingProduct(null)}
-                        className="button button-sm ghost"
-                        style={{
-                          width: '100%',
-                          justifyContent: 'center',
-                          fontSize: '11px'
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
                   )}
                   
                   {inCart && (
@@ -644,19 +599,17 @@ export default function CatalogV2() {
                         </div>
                       )}
                       
-                      {!isAdding && (
-                        <button
-                          onClick={() => handleAddClick(product)}
-                          className="button button-sm ghost"
-                          style={{
-                            width: '100%',
-                            justifyContent: 'center',
-                            fontSize: '11px'
-                          }}
-                        >
-                          + Agregar otro formato
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleAddClick(product)}
+                        className="button button-sm ghost"
+                        style={{
+                          width: '100%',
+                          justifyContent: 'center',
+                          fontSize: '11px'
+                        }}
+                      >
+                        + Agregar otro formato
+                      </button>
                     </div>
                   )}
                 </div>
@@ -1082,6 +1035,67 @@ export default function CatalogV2() {
         </>
       )}
       
+      {/* Modal para seleccionar unidad */}
+      {addingProduct && (
+        <Modal
+          isOpen={true}
+          onClose={() => setAddingProduct(null)}
+          title={`Agregar ${addingProduct.name}`}
+          size="sm"
+        >
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <p style={{ 
+              fontSize: '14px', 
+              color: 'var(--kivi-text)', 
+              marginBottom: '20px',
+              lineHeight: 1.5
+            }}>
+              Selecciona cómo quieres comprar este producto:
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                className="button" 
+                style={{ 
+                  width: '100%',
+                  padding: '16px',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  background: 'var(--kivi-mint)',
+                  color: 'var(--kivi-text-dark)'
+                }} 
+                onClick={() => handleSelectUnit(addingProduct, 'kg')}
+              >
+                <div style={{ fontSize: '20px', marginBottom: '4px' }}>⚖️</div>
+                <div>Por kilogramo</div>
+                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px', fontWeight: 400 }}>
+                  Ideal para productos a granel
+                </div>
+              </button>
+              
+              <button 
+                className="button" 
+                style={{ 
+                  width: '100%',
+                  padding: '16px',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  background: 'var(--kivi-peach)',
+                  color: 'var(--kivi-text-dark)'
+                }} 
+                onClick={() => handleSelectUnit(addingProduct, 'unit')}
+              >
+                <div style={{ fontSize: '20px', marginBottom: '4px' }}>📦</div>
+                <div>Por unidad</div>
+                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px', fontWeight: 400 }}>
+                  Ideal para productos individuales
+                </div>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      
       <Footer />
       
       <style>{`
@@ -1091,6 +1105,36 @@ export default function CatalogV2() {
         }
         @media (max-width: 768px) {
           .hide-mobile { display: none !important; }
+          .products-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 8px !important;
+          }
+          .products-grid .card {
+            padding: 6px !important;
+            gap: 4px !important;
+          }
+          .products-grid .card > div:first-child {
+            padding-top: 60% !important;
+          }
+          .products-grid .card > div:first-child img {
+            border-radius: 4px !important;
+          }
+          .products-grid .card > div:nth-child(2) > div:first-child {
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            margin-bottom: 4px !important;
+            line-height: 1.3 !important;
+          }
+          .products-grid .card > div:nth-child(2) > div:last-child {
+            font-size: 18px !important;
+            font-weight: 800 !important;
+          }
+          .products-grid .card button {
+            font-size: 14px !important;
+            padding: 10px 6px !important;
+            font-weight: 700 !important;
+            min-height: 36px !important;
+          }
         }
       `}</style>
     </div>
