@@ -31,18 +31,30 @@ export default function Footer() {
           <div>
             <div style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px',
+              gap: '8px',
               marginBottom: '16px'
             }}>
-              <span style={{ fontSize: '40px' }}>🐕</span>
-              <span style={{
-                fontSize: '24px',
-                fontWeight: 800
-              }}>
-                Kivi
-              </span>
+              {/* Imagen del perro arriba del logo */}
+              <img 
+                src="/Perro_kivi.PNG" 
+                alt="Kivi" 
+                style={{ 
+                  width: '48px', 
+                  height: '48px', 
+                  borderRadius: '50%', 
+                  objectFit: 'cover',
+                  marginBottom: '4px'
+                }} 
+              />
+              {/* Logo del navbar */}
+              <img 
+                src="/Logo_kivi.png" 
+                alt="Kivi" 
+                style={{ height: '44px' }} 
+              />
             </div>
             <p style={{
               fontSize: '14px',
