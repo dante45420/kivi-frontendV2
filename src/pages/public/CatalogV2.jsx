@@ -506,13 +506,20 @@ export default function CatalogV2() {
                   )}
                   
                   {inCart && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '4px',
+                      minHeight: '36px',
+                      justifyContent: 'center'
+                    }}>
                       {cartItemKg && (
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '8px'
+                          gap: '8px',
+                          height: '36px'
                         }}>
                           <button
                             onClick={() => updateQuantity(product.id, cartItemKg.quantity - 0.25, 'kg')}
@@ -564,7 +571,8 @@ export default function CatalogV2() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: '8px'
+                          gap: '8px',
+                          height: '36px'
                         }}>
                           <button
                             onClick={() => updateQuantity(product.id, cartItemUnit.quantity - 1, 'unit')}
