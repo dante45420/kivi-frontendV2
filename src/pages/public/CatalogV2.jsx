@@ -515,7 +515,7 @@ export default function CatalogV2() {
                     {inCart && (
                       <>
                         {cartItemKg && (
-                          <div style={{
+                          <div className="quantity-selector" style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -540,13 +540,19 @@ export default function CatalogV2() {
                               −
                             </button>
                             
-                            <div style={{
+                            <div className="quantity-display" style={{
                               fontWeight: 700,
                               fontSize: '13px',
                               minWidth: '60px',
-                              textAlign: 'center'
+                              textAlign: 'center',
+                              display: 'flex',
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
                             }}>
-                              {cartItemKg.quantity} kg
+                              <span className="quantity-value">{cartItemKg.quantity}</span>
+                              <span className="quantity-unit">kg</span>
                             </div>
                             
                             <button
@@ -569,7 +575,7 @@ export default function CatalogV2() {
                         )}
                         
                         {cartItemUnit && (
-                          <div style={{
+                          <div className="quantity-selector" style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -594,13 +600,19 @@ export default function CatalogV2() {
                               −
                             </button>
                             
-                            <div style={{
+                            <div className="quantity-display" style={{
                               fontWeight: 700,
                               fontSize: '13px',
                               minWidth: '60px',
-                              textAlign: 'center'
+                              textAlign: 'center',
+                              display: 'flex',
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '4px'
                             }}>
-                              {cartItemUnit.quantity} u
+                              <span className="quantity-value">{cartItemUnit.quantity}</span>
+                              <span className="quantity-unit">u</span>
                             </div>
                             
                             <button
@@ -1173,6 +1185,25 @@ export default function CatalogV2() {
             padding: 10px 6px !important;
             font-weight: 700 !important;
             min-height: 36px !important;
+          }
+          .products-grid .quantity-selector {
+            gap: 0 !important;
+          }
+          .products-grid .quantity-display {
+            flex-direction: column !important;
+            gap: 0 !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            justify-content: center !important;
+          }
+          .products-grid .quantity-value {
+            font-size: 12px !important;
+            line-height: 1.2 !important;
+          }
+          .products-grid .quantity-unit {
+            font-size: 10px !important;
+            line-height: 1 !important;
+            opacity: 0.8 !important;
           }
         }
       `}</style>
