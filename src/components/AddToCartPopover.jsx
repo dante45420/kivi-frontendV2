@@ -1,16 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useCart } from '../hooks/useCart'
+import Modal from './Modal'
 
 export default function AddToCartPopover({ product, onClose, onAdd }) {
-  const { addItem, updateQuantity } = useCart()
-  const [unit, setUnit] = useState(product.unit || 'unit')
-  // For the simplified UX: show unit selector only. Default qty for unit selection.
-  const initial = unit === 'kg' ? 0.25 : 1
-  const [qty, setQty] = useState(initial)
+  const { addItem } = useCart()
 
-  const step = unit === 'kg' ? 0.25 : 1
-
-  // When user confirms selection, immediately add a default quantity and close
   const confirm = (chosenUnit) => {
     const chosenQty = chosenUnit === 'kg' ? 0.25 : 1
     addItem(product, chosenQty, chosenUnit)
@@ -19,20 +13,53 @@ export default function AddToCartPopover({ product, onClose, onAdd }) {
   }
 
   return (
-    <div style={{ marginTop: 6 }}>
-      <div className="card" style={{ padding: 8 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 800 }}>{product.name}</div>
-            <div style={{ fontSize: 13, color: '#666' }}>${product.sale_price.toLocaleString('es-CL')} / {product.unit}</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className="button" style={{ flex: 1 }} onClick={() => confirm('unit')}>Por unidad</button>
-          <button className="button" style={{ flex: 1 }} onClick={() => confirm('kg')}>Por kilogramo</button>
+    <Modal isOpen={true} onClose={onClose} title={`Agregar ${product.name}`} size="sm">
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <p style={{ 
+          fontSize: '14px', 
+          color: 'var(--kivi-text)', 
+          marginBottom: '20px',
+          lineHeight: 1.5
+        }}>
+          Selecciona cómo quieres comprar este producto:
+        </p>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <button 
+            className="button" 
+            style={{ 
+              width: '100%',
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: 700
+            }} 
+            onClick={() => confirm('unit')}
+          >
+            <div style={{ fontSize: '20px', marginBottom: '4px' }}>📦</div>
+            <div>Por unidad</div>
+            <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px', fontWeight: 400 }}>
+              Ideal para productos individuales
+            </div>
+          </button>
+          
+          <button 
+            className="button" 
+            style={{ 
+              width: '100%',
+              padding: '16px',
+              fontSize: '16px',
+              fontWeight: 700
+            }} 
+            onClick={() => confirm('kg')}
+          >
+            <div style={{ fontSize: '20px', marginBottom: '4px' }}>⚖️</div>
+            <div>Por kilogramo</div>
+            <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px', fontWeight: 400 }}>
+              Ideal para productos a granel
+            </div>
+          </button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

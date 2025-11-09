@@ -512,7 +512,7 @@ export default function Orders() {
                 const details = orderDetails[order.id]
                 
                 return (
-                  <div key={order.id} className="card" style={{ padding:16 }}>
+                <div key={order.id} className="card" style={{ padding:16 }}>
                     {/* Header del pedido */}
                     <div 
                       style={{ 
@@ -525,23 +525,23 @@ export default function Orders() {
                       }}
                       onClick={() => toggleOrderExpand(order.id)}
                     >
-                      <div>
+                    <div>
                         <strong style={{ fontSize:16 }}>
                           {isExpanded ? '▼' : '▶'} Pedido #{order.id}
                         </strong>
-                        <span className={`badge ${order.status === 'draft' ? 'warn' : 'ok'}`} style={{ marginLeft:8 }}>
-                          {order.status === 'draft' ? '📝 Borrador' : '✓ Emitido'}
-                        </span>
-                      </div>
+                      <span className={`badge ${order.status === 'draft' ? 'warn' : 'ok'}`} style={{ marginLeft:8 }}>
+                        {order.status === 'draft' ? '📝 Borrador' : '✓ Emitido'}
+                      </span>
+                    </div>
                       <div style={{ display:'flex', gap:8 }}>
-                        {order.status === 'draft' && (
-                          <button 
-                            className="button button-sm" 
+                    {order.status === 'draft' && (
+                      <button 
+                        className="button button-sm" 
                             onClick={(e) => { e.stopPropagation(); handleEmitOrder(order.id) }}
-                          >
-                            ⚡ Emitir
-                          </button>
-                        )}
+                      >
+                        ⚡ Emitir
+                      </button>
+                    )}
                         {order.status === 'emitted' && (
                           <button 
                             className="button button-sm" 
@@ -551,13 +551,13 @@ export default function Orders() {
                           </button>
                         )}
                       </div>
-                    </div>
+                  </div>
                     
                     {/* Info básica */}
                     <div style={{ fontSize:14, color:'#666', marginBottom:8 }}>
-                      <div>🚚 {order.shipping_type === 'fastest' ? 'Envío rápido' : 'Envío económico'}</div>
-                      <div>📅 {new Date(order.created_at).toLocaleString('es-CL')}</div>
-                      {order.notes && <div>📝 {order.notes}</div>}
+                    <div>🚚 {order.shipping_type === 'fastest' ? 'Envío rápido' : 'Envío económico'}</div>
+                    <div>📅 {new Date(order.created_at).toLocaleString('es-CL')}</div>
+                    {order.notes && <div>📝 {order.notes}</div>}
                     </div>
                     
                     {/* Detalles expandidos */}
@@ -682,9 +682,9 @@ export default function Orders() {
                                   </div>
                                 </div>
                               ))}
-                            </div>
-                          </div>
-                        ))}
+                  </div>
+                </div>
+              ))}
                         
                         {/* Total general del pedido */}
                         <div style={{ 

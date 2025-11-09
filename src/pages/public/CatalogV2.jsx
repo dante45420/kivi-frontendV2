@@ -168,7 +168,15 @@ export default function CatalogV2() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input"
-            style={{ flex: 1, minWidth: '200px', fontSize: '14px' }}
+            style={{ 
+              flex: 1, 
+              minWidth: '200px', 
+              fontSize: '16px',
+              padding: '14px 16px',
+              border: '2px solid var(--kivi-green)',
+              boxShadow: '0 2px 8px rgba(168, 213, 186, 0.2)',
+              fontWeight: 500
+            }}
           />
           
           <button
@@ -399,7 +407,7 @@ export default function CatalogV2() {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
             gap: '16px'
           }}>
             {filteredProducts.map(product => {
@@ -664,45 +672,39 @@ export default function CatalogV2() {
         )}
       </div>
       
-      {/* Cart Button Flotante */}
-      {itemCount > 0 && (
+      {/* Cart Button Flotante - Centro abajo */}
+      {itemCount > 0 && !showCart && (
         <button
           onClick={() => setShowCart(true)}
+          className="button"
           style={{
             position: 'fixed',
-            bottom: '90px',
-            right: '20px',
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: 'var(--kivi-green)',
-            color: '#fff',
-            border: '4px solid #fff',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
-            fontSize: '28px',
-            cursor: 'pointer',
-            zIndex: 98,
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 24px',
+            borderRadius: 'var(--radius-pill)',
+            fontSize: '16px',
+            fontWeight: 700,
+            zIndex: 998,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            gap: '8px',
+            whiteSpace: 'nowrap'
           }}
         >
-          🛒
+          <span>🛒</span>
+          <span>Carrito</span>
           <div style={{
-            position: 'absolute',
-            top: '-4px',
-            right: '-4px',
             background: '#fff',
             color: 'var(--kivi-green)',
-            borderRadius: '50%',
-            width: '24px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '12px',
+            borderRadius: '12px',
+            padding: '2px 8px',
+            fontSize: '14px',
             fontWeight: 700,
-            border: '2px solid var(--kivi-green)'
+            minWidth: '24px',
+            textAlign: 'center'
           }}>
             {itemCount}
           </div>
@@ -971,7 +973,7 @@ export default function CatalogV2() {
                     ¿Pedido urgente? Recíbelo hoy mismo
                   </div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--kivi-green)' }}>
-                    +$2.000
+                    +$2.500
                   </div>
                 </div>
 
@@ -993,7 +995,7 @@ export default function CatalogV2() {
                     Consolidamos envíos para mejores precios
                   </div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--kivi-orange)' }}>
-                    10% desc. en todo
+                    5% desc. en todo
                   </div>
                 </div>
               </div>

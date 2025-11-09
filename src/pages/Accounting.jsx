@@ -470,7 +470,7 @@ export default function Accounting() {
                               </div>
                             </div>
                             
-                                {/* Items del pedido */}
+                            {/* Items del pedido */}
                             {isOrderExpanded && (
                               <div style={{ padding: '12px 16px', background: '#fff' }}>
                                 {order.items.map((item, iidx) => (
@@ -557,15 +557,15 @@ export default function Accounting() {
                                           ✏️ Editar
                                         </button>
                                       )}
-                                      <div style={{
-                                        fontSize: '16px',
-                                        fontWeight: 700,
-                                        fontFamily: 'monospace',
-                                        color: 'var(--kivi-text-dark)',
-                                        minWidth: '100px',
-                                        textAlign: 'right'
-                                      }}>
-                                        ${item.calculated_total.toLocaleString('es-CL')}
+                                    <div style={{
+                                      fontSize: '16px',
+                                      fontWeight: 700,
+                                      fontFamily: 'monospace',
+                                      color: 'var(--kivi-text-dark)',
+                                      minWidth: '100px',
+                                      textAlign: 'right'
+                                    }}>
+                                      ${item.calculated_total.toLocaleString('es-CL')}
                                       </div>
                                     </div>
                                   </div>

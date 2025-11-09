@@ -64,29 +64,31 @@ export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
               )}
             </Link>
           ) : (
-            // En Catálogo: abrir carrito
+            // En Catálogo: abrir carrito (siempre visible)
             <>
-              {cartCount > 0 && onCartClick && (
+              {onCartClick && (
                 <button
                   onClick={onCartClick}
                   className="button"
                   style={{ fontSize: '14px' }}
                 >
                   <span>🛒</span>
-                  <span className="hide-mobile">Carrito</span>
-                  <div style={{
-                    marginLeft: '4px',
-                    background: '#fff',
-                    color: 'var(--kivi-green)',
-                    borderRadius: '12px',
-                    padding: '2px 8px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    minWidth: '20px',
-                    textAlign: 'center'
-                  }}>
-                    {cartCount}
-                  </div>
+                  <span>Carrito</span>
+                  {cartCount > 0 && (
+                    <div style={{
+                      marginLeft: '4px',
+                      background: '#fff',
+                      color: 'var(--kivi-green)',
+                      borderRadius: '12px',
+                      padding: '2px 8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      minWidth: '20px',
+                      textAlign: 'center'
+                    }}>
+                      {cartCount}
+                    </div>
+                  )}
                 </button>
               )}
             </>
