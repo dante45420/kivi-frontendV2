@@ -1001,6 +1001,50 @@ export default function CatalogV2() {
               </div>
             </div>
             
+            {/* Resumen de totales */}
+            <div style={{
+              padding: '16px',
+              background: '#f8f9fa',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: '16px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+                <span>Subtotal:</span>
+                <span>${total.toLocaleString('es-CL')}</span>
+              </div>
+              {shippingType === 'fastest' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', color: 'var(--kivi-green)' }}>
+                  <span>Envío rápido:</span>
+                  <span>+$2.500</span>
+                </div>
+              )}
+              {shippingType === 'cheapest' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', color: 'var(--kivi-orange)' }}>
+                  <span>Descuento 5%:</span>
+                  <span>-${Math.round(total * 0.05).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                marginTop: '8px',
+                paddingTop: '8px',
+                borderTop: '2px solid #ddd',
+                fontSize: '18px',
+                fontWeight: 800
+              }}>
+                <span>Total:</span>
+                <span style={{ color: 'var(--kivi-green)' }}>
+                  ${shippingType === 'fastest' 
+                    ? (total + 2500).toLocaleString('es-CL')
+                    : shippingType === 'cheapest'
+                    ? (total - Math.round(total * 0.05)).toLocaleString('es-CL')
+                    : total.toLocaleString('es-CL')
+                  }
+                </span>
+              </div>
+            </div>
+            
             <div style={{
               padding: '12px',
               background: '#FFF4E5',
