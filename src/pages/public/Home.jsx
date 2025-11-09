@@ -1,11 +1,36 @@
 /**
  * Página Pública: Home / Landing
  */
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
+import { fetchProducts } from '../../api/products'
+import { fetchCategories } from '../../api/categories'
+import { fetchWeeklyOffers } from '../../api/weeklyOffers'
+import { generateCatalogPDF } from '../../utils/catalogPdf'
 
 export default function Home() {
+  const navigate = useNavigate()
+  const [downloading, setDownloading] = useState(false)
+  
+  const handleDownloadCatalog = async () => {
+    setDownloading(true)
+    try {
+      const [productsData, categoriesData, offersData] = await Promise.all([
+        fetchProducts(),
+        fetchCategories(),
+        fetchWeeklyOffers(true, true)
+      ])
+      const products = productsData.filter(p => p.active)
+      generateCatalogPDF(products, offersData)
+    } catch (error) {
+      console.error('Error generando PDF:', error)
+      alert('Error al generar el catálogo PDF')
+    } finally {
+      setDownloading(false)
+    }
+  }
   return (
     <div style={{ minHeight: '100vh', background: 'var(--kivi-cream)' }}>
       <PublicNavbar />
@@ -100,6 +125,62 @@ export default function Home() {
               Pide hoy y recibe mañana. Delivery coordinado por WhatsApp
             </p>
           </div>
+        </div>
+      </div>
+      
+      {/* Descarga Catálogo WhatsApp */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--kivi-green-soft) 0%, var(--kivi-mint) 100%)',
+        padding: '60px 20px',
+        textAlign: 'center'
+      }}>
+        <div className="container">
+          <h2 style={{
+            fontSize: '28px',
+            fontWeight: 800,
+            color: 'var(--kivi-text-dark)',
+            marginBottom: '16px'
+          }}>
+            ¿Te gusta pedir por WhatsApp?
+          </h2>
+          <p style={{
+            fontSize: '18px',
+            color: 'var(--kivi-text)',
+            marginBottom: '24px',
+            maxWidth: '600px',
+            margin: '0 auto 24px'
+          }}>
+            Descarga nuestro catálogo en PDF y escríbenos directamente
+          </p>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleDownloadCatalog}
+              disabled={downloading}
+              className="button button-lg"
+              style={{ background: 'var(--kivi-green)', color: '#fff' }}
+            >
+              <span>📥</span>
+              <span>{downloading ? 'Generando...' : 'Descargar Catálogo PDF'}</span>
+            </button>
+            <a
+              href="https://wa.me/56969172764?text=Hola%20Kivi!%20Quiero%20hacer%20un%20pedido"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button button-lg"
+              style={{ background: '#25D366', color: '#fff' }}
+            >
+              <span>💬</span>
+              <span>Escríbenos por WhatsApp</span>
+            </a>
+          </div>
+          <p style={{
+            fontSize: '14px',
+            color: 'var(--kivi-text)',
+            marginTop: '16px',
+            opacity: 0.8
+          }}>
+            +56 9 6917 2764
+          </p>
         </div>
       </div>
       

@@ -179,15 +179,6 @@ export default function CatalogV2() {
             }}
           />
           
-          <button
-            onClick={handleDownloadCatalog}
-            className="button"
-            style={{ fontSize: '13px', whiteSpace: 'nowrap' }}
-          >
-            <span>📥</span>
-            <span className="hide-mobile">Descargar PDF</span>
-          </button>
-          
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowCategoryMenu(!showCategoryMenu)}
@@ -405,11 +396,14 @@ export default function CatalogV2() {
             </div>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: '16px'
-          }}>
+          <div 
+            className="products-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: '16px'
+            }}
+          >
             {filteredProducts.map(product => {
               const inCart = hasProductInCart(product.id)
               const cartItemKg = getCartItem(product.id, 'kg')
