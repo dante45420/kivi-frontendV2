@@ -316,7 +316,7 @@ export default function CatalogV2() {
                       position: 'relative',
                       borderRadius: '6px',
                       overflow: 'hidden',
-                      background: '#f5f5f5',
+                      background: '#ffffff',
                       marginBottom: '8px'
                     }}>
                       <img
@@ -324,11 +324,12 @@ export default function CatalogV2() {
                         alt={offer.product.name}
                         style={{
                           position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain'
                         }}
                       />
                     </div>
@@ -430,29 +431,30 @@ export default function CatalogV2() {
                       position: 'relative',
                       borderRadius: 'var(--radius-sm)',
                       overflow: 'hidden',
-                      background: '#f5f5f5'
+                      background: '#ffffff'
                     }}>
                       <img
                         src={getImageUrl(product.photo_url)}
                         alt={product.name}
                         style={{
                           position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain'
                         }}
                       />
                     </div>
                   )}
                   
                   {/* Info */}
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{
                       fontSize: '14px',
                       fontWeight: 700,
-                      marginBottom: '4px',
+                      textAlign: 'center',
                       lineHeight: 1.2
                     }}>
                       {product.name}
@@ -462,7 +464,12 @@ export default function CatalogV2() {
                       <div style={{
                         fontSize: '16px',
                         fontWeight: 800,
-                        color: 'var(--kivi-green)'
+                        color: 'var(--kivi-green)',
+                        textAlign: 'center',
+                        minHeight: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                       }}>
                         ${product.sale_price.toLocaleString('es-CL')}
                         <span style={{
@@ -485,7 +492,8 @@ export default function CatalogV2() {
                       style={{
                         width: '100%',
                         justifyContent: 'center',
-                        fontSize: '13px'
+                        fontSize: '13px',
+                        minHeight: '36px'
                       }}
                     >
                       <span>+</span>
@@ -598,18 +606,6 @@ export default function CatalogV2() {
                           </button>
                         </div>
                       )}
-                      
-                      <button
-                        onClick={() => handleAddClick(product)}
-                        className="button button-sm ghost"
-                        style={{
-                          width: '100%',
-                          justifyContent: 'center',
-                          fontSize: '11px'
-                        }}
-                      >
-                        + Agregar otro formato
-                      </button>
                     </div>
                   )}
                 </div>
@@ -1045,10 +1041,11 @@ export default function CatalogV2() {
         >
           <div style={{ textAlign: 'center', padding: '8px 0' }}>
             <p style={{ 
-              fontSize: '14px', 
+              fontSize: '18px', 
               color: 'var(--kivi-text)', 
-              marginBottom: '20px',
-              lineHeight: 1.5
+              marginBottom: '24px',
+              lineHeight: 1.5,
+              fontWeight: 600
             }}>
               Selecciona cómo quieres comprar este producto:
             </p>
@@ -1061,16 +1058,13 @@ export default function CatalogV2() {
                   padding: '16px',
                   fontSize: '16px',
                   fontWeight: 700,
-                  background: 'var(--kivi-mint)',
-                  color: 'var(--kivi-text-dark)'
+                  background: 'var(--kivi-green)',
+                  color: '#fff'
                 }} 
                 onClick={() => handleSelectUnit(addingProduct, 'kg')}
               >
                 <div style={{ fontSize: '20px', marginBottom: '4px' }}>⚖️</div>
                 <div>Por kilogramo</div>
-                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px', fontWeight: 400 }}>
-                  Ideal para productos a granel
-                </div>
               </button>
               
               <button 
@@ -1080,16 +1074,13 @@ export default function CatalogV2() {
                   padding: '16px',
                   fontSize: '16px',
                   fontWeight: 700,
-                  background: 'var(--kivi-peach)',
-                  color: 'var(--kivi-text-dark)'
+                  background: 'var(--kivi-green)',
+                  color: '#fff'
                 }} 
                 onClick={() => handleSelectUnit(addingProduct, 'unit')}
               >
                 <div style={{ fontSize: '20px', marginBottom: '4px' }}>📦</div>
                 <div>Por unidad</div>
-                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px', fontWeight: 400 }}>
-                  Ideal para productos individuales
-                </div>
               </button>
             </div>
           </div>
@@ -1115,19 +1106,37 @@ export default function CatalogV2() {
           }
           .products-grid .card > div:first-child {
             padding-top: 60% !important;
+            background: #ffffff !important;
           }
           .products-grid .card > div:first-child img {
             border-radius: 4px !important;
+            object-fit: contain !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: auto !important;
+            height: auto !important;
+          }
+          .products-grid .card > div:nth-child(2) {
+            text-align: center !important;
           }
           .products-grid .card > div:nth-child(2) > div:first-child {
             font-size: 15px !important;
             font-weight: 700 !important;
             margin-bottom: 4px !important;
             line-height: 1.3 !important;
+            text-align: center !important;
           }
           .products-grid .card > div:nth-child(2) > div:last-child {
             font-size: 18px !important;
             font-weight: 800 !important;
+            text-align: center !important;
+            min-height: 36px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
           .products-grid .card button {
             font-size: 14px !important;
