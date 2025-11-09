@@ -455,7 +455,11 @@ export default function CatalogV2() {
                       fontSize: '14px',
                       fontWeight: 700,
                       textAlign: 'center',
-                      lineHeight: 1.2
+                      lineHeight: 1.2,
+                      minHeight: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}>
                       {product.name}
                     </div>
@@ -466,7 +470,7 @@ export default function CatalogV2() {
                         fontWeight: 800,
                         color: 'var(--kivi-green)',
                         textAlign: 'center',
-                        minHeight: '36px',
+                        height: '36px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'
@@ -1059,11 +1063,16 @@ export default function CatalogV2() {
                   fontSize: '16px',
                   fontWeight: 700,
                   background: 'var(--kivi-green)',
-                  color: '#fff'
+                  color: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
                 }} 
                 onClick={() => handleSelectUnit(addingProduct, 'kg')}
               >
-                <div style={{ fontSize: '20px', marginBottom: '4px' }}>⚖️</div>
+                <div style={{ fontSize: '20px' }}>⚖️</div>
                 <div>Por kilogramo</div>
               </button>
               
@@ -1075,11 +1084,16 @@ export default function CatalogV2() {
                   fontSize: '16px',
                   fontWeight: 700,
                   background: 'var(--kivi-green)',
-                  color: '#fff'
+                  color: '#fff',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px'
                 }} 
                 onClick={() => handleSelectUnit(addingProduct, 'unit')}
               >
-                <div style={{ fontSize: '20px', marginBottom: '4px' }}>📦</div>
+                <div style={{ fontSize: '20px' }}>📦</div>
                 <div>Por unidad</div>
               </button>
             </div>
@@ -1128,12 +1142,16 @@ export default function CatalogV2() {
             margin-bottom: 4px !important;
             line-height: 1.3 !important;
             text-align: center !important;
+            min-height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
           }
           .products-grid .card > div:nth-child(2) > div:last-child {
             font-size: 18px !important;
             font-weight: 800 !important;
             text-align: center !important;
-            min-height: 36px !important;
+            height: 36px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
