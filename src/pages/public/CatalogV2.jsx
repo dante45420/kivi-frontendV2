@@ -489,137 +489,141 @@ export default function CatalogV2() {
                   </div>
                   
                   {/* Actions */}
-                  {!inCart && (
-                    <button
-                      onClick={() => handleAddClick(product)}
-                      className="button button-sm"
-                      style={{
-                        width: '100%',
-                        justifyContent: 'center',
-                        fontSize: '13px',
-                        minHeight: '36px'
-                      }}
-                    >
-                      <span>+</span>
-                      <span>Agregar</span>
-                    </button>
-                  )}
-                  
-                  {inCart && (
-                    <div style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      gap: '4px',
-                      minHeight: '36px',
-                      justifyContent: 'center'
-                    }}>
-                      {cartItemKg && (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
+                  <div style={{ 
+                    width: '100%',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {!inCart && (
+                      <button
+                        onClick={() => handleAddClick(product)}
+                        className="button button-sm"
+                        style={{
+                          width: '100%',
                           justifyContent: 'center',
-                          gap: '8px',
+                          fontSize: '13px',
                           height: '36px'
-                        }}>
-                          <button
-                            onClick={() => updateQuantity(product.id, cartItemKg.quantity - 0.25, 'kg')}
-                            className="button button-sm ghost"
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              padding: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '18px',
-                              borderRadius: '50%'
-                            }}
-                          >
-                            −
-                          </button>
-                          
+                        }}
+                      >
+                        <span>+</span>
+                        <span>Agregar</span>
+                      </button>
+                    )}
+                    
+                    {inCart && (
+                      <>
+                        {cartItemKg && (
                           <div style={{
-                            fontWeight: 700,
-                            fontSize: '13px',
-                            minWidth: '60px',
-                            textAlign: 'center'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            height: '36px',
+                            width: '100%'
                           }}>
-                            {cartItemKg.quantity} kg
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemKg.quantity - 0.25, 'kg')}
+                              className="button button-sm ghost"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                borderRadius: '50%'
+                              }}
+                            >
+                              −
+                            </button>
+                            
+                            <div style={{
+                              fontWeight: 700,
+                              fontSize: '13px',
+                              minWidth: '60px',
+                              textAlign: 'center'
+                            }}>
+                              {cartItemKg.quantity} kg
+                            </div>
+                            
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemKg.quantity + 0.25, 'kg')}
+                              className="button button-sm"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                borderRadius: '50%'
+                              }}
+                            >
+                              +
+                            </button>
                           </div>
-                          
-                          <button
-                            onClick={() => updateQuantity(product.id, cartItemKg.quantity + 0.25, 'kg')}
-                            className="button button-sm"
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              padding: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '18px',
-                              borderRadius: '50%'
-                            }}
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
-                      
-                      {cartItemUnit && (
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          height: '36px'
-                        }}>
-                          <button
-                            onClick={() => updateQuantity(product.id, cartItemUnit.quantity - 1, 'unit')}
-                            className="button button-sm ghost"
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              padding: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '18px',
-                              borderRadius: '50%'
-                            }}
-                          >
-                            −
-                          </button>
-                          
+                        )}
+                        
+                        {cartItemUnit && (
                           <div style={{
-                            fontWeight: 700,
-                            fontSize: '13px',
-                            minWidth: '60px',
-                            textAlign: 'center'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            height: '36px',
+                            width: '100%'
                           }}>
-                            {cartItemUnit.quantity} u
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemUnit.quantity - 1, 'unit')}
+                              className="button button-sm ghost"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                borderRadius: '50%'
+                              }}
+                            >
+                              −
+                            </button>
+                            
+                            <div style={{
+                              fontWeight: 700,
+                              fontSize: '13px',
+                              minWidth: '60px',
+                              textAlign: 'center'
+                            }}>
+                              {cartItemUnit.quantity} u
+                            </div>
+                            
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemUnit.quantity + 1, 'unit')}
+                              className="button button-sm"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                padding: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                borderRadius: '50%'
+                              }}
+                            >
+                              +
+                            </button>
                           </div>
-                          
-                          <button
-                            onClick={() => updateQuantity(product.id, cartItemUnit.quantity + 1, 'unit')}
-                            className="button button-sm"
-                            style={{
-                              width: '32px',
-                              height: '32px',
-                              padding: 0,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '18px',
-                              borderRadius: '50%'
-                            }}
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )
             })}
