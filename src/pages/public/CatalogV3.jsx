@@ -312,7 +312,7 @@ export default function CatalogV3() {
                             gap: '4px', 
                             marginBottom: '4px',
                             width: '100%',
-                            max-width: '100%',
+                            maxWidth: '100%',
                             flexWrap: 'wrap'
                           }}>
                             <span style={{ 
@@ -344,7 +344,7 @@ export default function CatalogV3() {
                           fontWeight: 800, 
                           color: hasOffer ? '#ff5722' : 'var(--kivi-green)',
                           width: '100%',
-                          max-width: '100%',
+                          maxWidth: '100%',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           whiteSpace: 'nowrap'
