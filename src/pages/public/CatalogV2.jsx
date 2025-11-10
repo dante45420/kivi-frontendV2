@@ -382,7 +382,7 @@ export default function CatalogV2() {
       )}
       
       {/* Products Grid */}
-      <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="products-container" style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
         {filteredProducts.length === 0 ? (
           <div style={{
             textAlign: 'center',
@@ -1134,10 +1134,18 @@ export default function CatalogV2() {
         }
         @media (max-width: 768px) {
           .hide-mobile { display: none !important; }
+          .products-container {
+            padding: 12px !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
           .products-grid {
             grid-template-columns: repeat(3, 1fr) !important;
-            gap: 8px !important;
+            gap: 6px !important;
             justify-items: center !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
           }
           .products-grid .card {
             padding: 6px !important;
