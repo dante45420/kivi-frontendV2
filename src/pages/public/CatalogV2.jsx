@@ -276,9 +276,9 @@ export default function CatalogV2() {
               <span>Ofertas de la Semana</span>
             </h2>
             
-            <div style={{
+            <div className="weekly-offers-grid" style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
               gap: '12px',
               width: '100%',
               boxSizing: 'border-box',
@@ -408,11 +408,12 @@ export default function CatalogV2() {
             className="products-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
               gap: '12px',
               width: '100%',
               boxSizing: 'border-box',
-              maxWidth: '100%'
+              maxWidth: '100%',
+              overflowX: 'hidden'
             }}
           >
             {filteredProducts.map(product => {
@@ -1141,6 +1142,21 @@ export default function CatalogV2() {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
         }
+        
+        /* FORZAR 3 COLUMNAS EN TODOS LOS TAMAÑOS - NUNCA 4 */
+        .products-grid,
+        .weekly-offers-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          display: grid !important;
+        }
+        
+        /* Prevenir que cualquier elemento hijo cause overflow */
+        .products-grid > *,
+        .weekly-offers-grid > * {
+          min-width: 0 !important;
+          max-width: 100% !important;
+        }
+        
         @media (max-width: 768px) {
           html, body {
             overflow-x: hidden !important;
@@ -1148,23 +1164,28 @@ export default function CatalogV2() {
             max-width: 100vw !important;
             position: relative !important;
           }
+          
           .hide-mobile { display: none !important; }
+          
           .catalog-page {
             overflow-x: hidden !important;
             width: 100% !important;
             max-width: 100vw !important;
             position: relative !important;
           }
+          
           .products-container {
             padding: 8px 4px !important;
-            max-width: 100% !important;
+            max-width: 100vw !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
             width: 100% !important;
             margin: 0 !important;
             position: relative !important;
           }
-          .products-grid {
+          
+          .products-grid,
+          .weekly-offers-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             gap: 4px !important;
             justify-items: stretch !important;
@@ -1175,7 +1196,18 @@ export default function CatalogV2() {
             padding: 0 !important;
             margin: 0 !important;
             position: relative !important;
+            display: grid !important;
           }
+          
+          /* Asegurar que los hijos no causen overflow */
+          .products-grid > *,
+          .weekly-offers-grid > * {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+          }
+          
           .products-grid .card {
             max-width: 100% !important;
             width: 100% !important;
@@ -1257,12 +1289,14 @@ export default function CatalogV2() {
           .weekly-offers-container > div {
             padding: 12px !important;
           }
-          .weekly-offers-container > div > div {
+          .weekly-offers-container > div > div,
+          .weekly-offers-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             gap: 4px !important;
             width: 100% !important;
             max-width: 100vw !important;
             box-sizing: border-box !important;
+            overflow-x: hidden !important;
           }
           .search-bar-container {
             padding: 8px 4px !important;
