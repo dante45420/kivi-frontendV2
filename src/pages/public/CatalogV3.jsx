@@ -617,10 +617,10 @@ export default function CatalogV3() {
           max-width: 100vw;
         }
         
-        /* GRID DE 3 COLUMNAS - GARANTIZADO */
+        /* GRID DE 3 COLUMNAS - GARANTIZADO CON PORCENTAJES FIJOS */
         .catalog-grid-3 {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          display: flex;
+          flex-wrap: wrap;
           gap: 12px;
           width: 100%;
           max-width: 100%;
@@ -628,9 +628,12 @@ export default function CatalogV3() {
         }
         
         .catalog-grid-3 > * {
+          width: calc((100% - 24px) / 3);
           min-width: 0;
-          max-width: 100%;
+          max-width: calc((100% - 24px) / 3);
           box-sizing: border-box;
+          flex-shrink: 0;
+          flex-grow: 0;
         }
         
         /* Search Bar */
@@ -967,6 +970,9 @@ export default function CatalogV3() {
           flex-direction: column;
           box-shadow: -4px 0 16px rgba(0,0,0,0.2);
           animation: slideInRight 0.3s ease;
+          height: 100vh;
+          max-height: 100vh;
+          overflow: hidden;
         }
         
         @keyframes slideInRight {
@@ -980,6 +986,7 @@ export default function CatalogV3() {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          flex-shrink: 0;
         }
         
         .catalog-cart-header h2 {
@@ -991,7 +998,10 @@ export default function CatalogV3() {
         .catalog-cart-items {
           flex: 1;
           overflow-y: auto;
+          overflow-x: hidden;
           padding: 16px;
+          min-height: 0;
+          -webkit-overflow-scrolling: touch;
         }
         
         .catalog-cart-item {
@@ -1046,6 +1056,7 @@ export default function CatalogV3() {
           padding: 16px;
           border-top: 2px solid #eee;
           background: #fff;
+          flex-shrink: 0;
         }
         
         .catalog-cart-total {
@@ -1250,9 +1261,10 @@ export default function CatalogV3() {
             padding: 8px 4px !important;
           }
           
-          /* GARANTIZAR 3 COLUMNAS EN MÓVIL */
+          /* GARANTIZAR 3 COLUMNAS EN MÓVIL CON PORCENTAJES FIJOS */
           .catalog-grid-3 {
-            grid-template-columns: repeat(3, 1fr) !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
             gap: 4px !important;
             width: 100% !important;
             max-width: 100vw !important;
@@ -1261,9 +1273,12 @@ export default function CatalogV3() {
           }
           
           .catalog-grid-3 > * {
+            width: calc((100% - 8px) / 3) !important;
             min-width: 0 !important;
-            max-width: 100% !important;
+            max-width: calc((100% - 8px) / 3) !important;
             box-sizing: border-box !important;
+            flex-shrink: 0 !important;
+            flex-grow: 0 !important;
           }
           
           .catalog-product-card,
