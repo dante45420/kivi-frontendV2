@@ -763,7 +763,7 @@ export default function CatalogV3() {
         /* Products Section */
         .catalog-products-section {
           padding: 20px;
-          padding-top: 20px;
+          padding-top: 180px;
           max-width: 1400px;
           margin: 0 auto;
           width: 100%;
@@ -992,15 +992,16 @@ export default function CatalogV3() {
         }
         
         .catalog-cart-header {
-          flex: 0 0 auto;
+          flex-shrink: 0;
         }
         
         .catalog-cart-footer {
-          flex: 0 0 auto;
+          flex-shrink: 0;
+          margin-top: auto;
         }
         
         .catalog-cart-items {
-          flex: 1 1 0;
+          flex: 1;
           min-height: 0;
           overflow-y: auto;
           overflow-x: hidden;
@@ -1310,7 +1311,7 @@ export default function CatalogV3() {
           
           .catalog-products-section {
             padding: 8px 4px !important;
-            padding-top: 20px !important;
+            padding-top: 180px !important;
           }
           
           /* GARANTIZAR 3 COLUMNAS EN MÓVIL CON GRID */
