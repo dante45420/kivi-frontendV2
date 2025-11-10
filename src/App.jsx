@@ -21,7 +21,7 @@ import Login from './pages/Login'
 
 // Páginas públicas
 import Home from './pages/public/Home'
-import CatalogV2 from './pages/public/CatalogV2'
+import CatalogV3 from './pages/public/CatalogV3'
 import About from './pages/public/About'
 
 export default function App() {
@@ -77,7 +77,7 @@ export default function App() {
   const publicRoutes = (
     <>
       <Route path="/" element={<Home />} />
-      <Route path="/catalogo" element={<CatalogV2 />} />
+      <Route path="/catalogo" element={<CatalogV3 />} />
       <Route path="/nosotros" element={<About />} />
     </>
   )

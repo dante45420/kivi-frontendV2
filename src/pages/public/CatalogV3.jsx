@@ -1,0 +1,1305 @@
+/**
+ * Página Pública: Catálogo V3 - Versión limpia con 3 columnas garantizadas
+ */
+import { useState, useEffect } from 'react'
+import { fetchProducts } from '../../api/products'
+import { fetchCategories } from '../../api/categories'
+import { fetchWeeklyOffers } from '../../api/weeklyOffers'
+import { createOrder } from '../../api/orders'
+import { useCart } from '../../hooks/useCart'
+import { generateCatalogPDF } from '../../utils/catalogPdf'
+import { getImageUrl } from '../../utils/imageUrl'
+import PublicNavbar from '../../components/PublicNavbar'
+import Footer from '../../components/Footer'
+import Loader from '../../components/Loader'
+import Modal from '../../components/Modal'
+
+export default function CatalogV3() {
+  const [loading, setLoading] = useState(true)
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [weeklyOffers, setWeeklyOffers] = useState([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState(null)
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false)
+  
+  // Carrito
+  const { cart, addItem, removeItem, updateQuantity, clearCart, total, itemCount } = useCart()
+  const [showCart, setShowCart] = useState(false)
+  
+  // Checkout
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [customerData, setCustomerData] = useState({ name: '', phone: '', address: '' })
+  const [shippingType, setShippingType] = useState('fastest')
+  const [submitting, setSubmitting] = useState(false)
+  
+  // Adding state
+  const [addingProduct, setAddingProduct] = useState(null)
+  
+  useEffect(() => {
+    loadData()
+  }, [])
+  
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const [productsData, categoriesData, offersData] = await Promise.all([
+        fetchProducts(),
+        fetchCategories(),
+        fetchWeeklyOffers(true, true)
+      ])
+      setProducts(productsData.filter(p => p.active))
+      setCategories(categoriesData)
+      setWeeklyOffers(offersData)
+    } catch (error) {
+      console.error('Error cargando datos:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const handleDownloadCatalog = () => {
+    try {
+      generateCatalogPDF(products, weeklyOffers)
+    } catch (error) {
+      console.error('Error generando PDF:', error)
+      alert('Error al generar el catálogo PDF')
+    }
+  }
+  
+  // Filtrado de productos
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = !searchQuery || 
+      product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = !categoryFilter || 
+      product.category_id === categoryFilter
+    return matchesSearch && matchesCategory
+  })
+  
+  const getCartItem = (productId, unit = null) => {
+    if (unit) {
+      return cart.find(item => item.product.id === productId && item.unit === unit)
+    }
+    return cart.find(item => item.product.id === productId)
+  }
+  
+  const hasProductInCart = (productId) => {
+    return cart.some(item => item.product.id === productId)
+  }
+  
+  const handleAddClick = (product) => {
+    setAddingProduct(product)
+  }
+  
+  const handleSelectUnit = (product, unit) => {
+    const qty = unit === 'kg' ? 0.25 : 1
+    addItem(product, qty, unit)
+    setAddingProduct(null)
+  }
+  
+  const handleCheckout = async () => {
+    if (!customerData.name || !customerData.phone || !customerData.address) {
+      alert('Por favor completa tu nombre, teléfono y dirección')
+      return
+    }
+    
+    setSubmitting(true)
+    try {
+      const orderData = {
+        customer: customerData,
+        items: cart.map(item => ({
+          product_id: item.product.id,
+          qty: item.quantity,
+          unit: item.unit,
+          unit_price: item.product.sale_price || 0
+        })),
+        source: 'web',
+        shipping_type: shippingType,
+        notes: `Pedido desde catálogo web - ${shippingType === 'fastest' ? 'Envío rápido' : 'Envío económico'}`
+      }
+      
+      await createOrder(orderData)
+      
+      alert('✅ ¡Pedido enviado! Te contactaremos pronto por WhatsApp.')
+      clearCart()
+      setShowCheckout(false)
+      setShowCart(false)
+      setCustomerData({ name: '', phone: '', address: '' })
+      setShippingType('fastest')
+    } catch (error) {
+      alert('Error enviando pedido: ' + error.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+  
+  if (loading) {
+    return (
+      <div style={{ padding: '100px 20px', textAlign: 'center' }}>
+        <Loader />
+      </div>
+    )
+  }
+  
+  return (
+    <div className="catalog-v3-page">
+      <PublicNavbar cartCount={itemCount} onCartClick={() => setShowCart(true)} />
+      
+      {/* Search Bar */}
+      <div className="catalog-search-bar">
+        <div className="catalog-search-inner">
+          <input
+            type="text"
+            placeholder="🔍 Buscar productos..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input"
+          />
+          
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowCategoryMenu(!showCategoryMenu)}
+              className="button ghost"
+            >
+              <span>☰</span>
+              <span className="hide-mobile">
+                {categoryFilter ? categories.find(c => c.id === categoryFilter)?.name : 'Todas'}
+              </span>
+            </button>
+            
+            {showCategoryMenu && (
+              <div className="category-menu">
+                <button
+                  onClick={() => {
+                    setCategoryFilter(null)
+                    setShowCategoryMenu(false)
+                  }}
+                  className={!categoryFilter ? 'active' : ''}
+                >
+                  Todas las categorías
+                </button>
+                {categories.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      setCategoryFilter(cat.id)
+                      setShowCategoryMenu(false)
+                    }}
+                    className={categoryFilter === cat.id ? 'active' : ''}
+                  >
+                    {cat.emoji} {cat.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Ofertas de la Semana */}
+      {weeklyOffers.length > 0 && (
+        <div className="catalog-offers-section">
+          <div className="catalog-offers-box">
+            <h2 className="catalog-offers-title">
+              <span>🏷️</span>
+              <span>Ofertas de la Semana</span>
+            </h2>
+            
+            <div className="catalog-grid-3">
+              {weeklyOffers.map(offer => (
+                <div key={offer.id} className="catalog-offer-card">
+                  {offer.product?.sale_price && (
+                    <div className="offer-badge">
+                      -{Math.round((1 - offer.special_price / offer.product.sale_price) * 100)}%
+                    </div>
+                  )}
+                  
+                  {offer.product?.photo_url && (
+                    <div className="catalog-image-container">
+                      <img
+                        src={getImageUrl(offer.product.photo_url)}
+                        alt={offer.product.name}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="catalog-product-name">{offer.product?.name}</div>
+                  
+                  <div className="catalog-price-row">
+                    <div className="catalog-price-old">
+                      ${offer.product?.sale_price?.toLocaleString('es-CL')}
+                    </div>
+                    <div className="catalog-price-new">
+                      ${offer.special_price.toLocaleString('es-CL')}
+                    </div>
+                  </div>
+                  
+                  <div className="catalog-price-unit">
+                    / {offer.product?.unit === 'kg' ? 'kg' : 'unidad'}
+                  </div>
+                  
+                  <button
+                    onClick={() => handleAddClick(offer.product)}
+                    className="button button-sm catalog-add-btn"
+                  >
+                    + Agregar
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Products Grid */}
+      <div className="catalog-products-section">
+        {filteredProducts.length === 0 ? (
+          <div className="catalog-empty">
+            <div className="catalog-empty-icon">🔍</div>
+            <div className="catalog-empty-title">No se encontraron productos</div>
+            <div className="catalog-empty-text">Intenta con otra búsqueda o categoría</div>
+          </div>
+        ) : (
+          <div className="catalog-grid-3">
+            {filteredProducts.map(product => {
+              const inCart = hasProductInCart(product.id)
+              const cartItemKg = getCartItem(product.id, 'kg')
+              const cartItemUnit = getCartItem(product.id, 'unit')
+              
+              return (
+                <div key={product.id} className="catalog-product-card">
+                  {product.photo_url && (
+                    <div className="catalog-image-container">
+                      <img
+                        src={getImageUrl(product.photo_url)}
+                        alt={product.name}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="catalog-product-info">
+                    <div className="catalog-product-name">{product.name}</div>
+                    
+                    {product.sale_price && (
+                      <div className="catalog-price">
+                        ${product.sale_price.toLocaleString('es-CL')}
+                        <span className="catalog-price-unit-small">
+                          / {product.unit === 'kg' ? 'kg' : 'unidad'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="catalog-product-actions">
+                    {!inCart && (
+                      <button
+                        onClick={() => handleAddClick(product)}
+                        className="button button-sm catalog-add-btn"
+                      >
+                        <span>+</span>
+                        <span>Agregar</span>
+                      </button>
+                    )}
+                    
+                    {inCart && (
+                      <>
+                        {cartItemKg && (
+                          <div className="catalog-quantity-controls">
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemKg.quantity - 0.25, 'kg')}
+                              className="button button-sm ghost catalog-qty-btn"
+                            >
+                              −
+                            </button>
+                            <div className="catalog-quantity-display">
+                              <span>{cartItemKg.quantity}</span>
+                              <span>kg</span>
+                            </div>
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemKg.quantity + 0.25, 'kg')}
+                              className="button button-sm catalog-qty-btn"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                        
+                        {cartItemUnit && (
+                          <div className="catalog-quantity-controls">
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemUnit.quantity - 1, 'unit')}
+                              className="button button-sm ghost catalog-qty-btn"
+                            >
+                              −
+                            </button>
+                            <div className="catalog-quantity-display">
+                              <span>{cartItemUnit.quantity}</span>
+                              <span>u</span>
+                            </div>
+                            <button
+                              onClick={() => updateQuantity(product.id, cartItemUnit.quantity + 1, 'unit')}
+                              className="button button-sm catalog-qty-btn"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+      
+      {/* Cart Button Flotante */}
+      {itemCount > 0 && !showCart && (
+        <button
+          onClick={() => setShowCart(true)}
+          className="catalog-cart-button"
+        >
+          <span>🛒</span>
+          <span>Carrito</span>
+          <div className="catalog-cart-count">{itemCount}</div>
+        </button>
+      )}
+      
+      {/* Cart Sidebar */}
+      {showCart && (
+        <>
+          <div className="catalog-overlay" onClick={() => setShowCart(false)} />
+          <div className="catalog-cart-sidebar">
+            <div className="catalog-cart-header">
+              <h2>🛒 Tu Carrito</h2>
+              <button
+                onClick={() => setShowCart(false)}
+                className="button button-sm ghost"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="catalog-cart-items">
+              {cart.map(item => (
+                <div key={`${item.product.id}-${item.unit}`} className="catalog-cart-item">
+                  <div className="catalog-cart-item-header">
+                    <div>
+                      <div className="catalog-cart-item-name">{item.product.name}</div>
+                      <div className="catalog-cart-item-details">
+                        {item.quantity} {item.unit === 'kg' ? 'kg' : 'unidades'} × ${item.product.sale_price?.toLocaleString('es-CL')}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeItem(item.product.id, item.unit)}
+                      className="button button-sm ghost"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                  
+                  <div className="catalog-cart-item-controls">
+                    <button
+                      onClick={() => {
+                        const decrement = item.unit === 'kg' ? 0.25 : 1
+                        updateQuantity(item.product.id, item.quantity - decrement, item.unit)
+                      }}
+                      className="button button-sm ghost catalog-cart-qty-btn"
+                    >
+                      −
+                    </button>
+                    <span className="catalog-cart-qty-display">
+                      {item.quantity} {item.unit === 'kg' ? 'kg' : 'u'}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const increment = item.unit === 'kg' ? 0.25 : 1
+                        updateQuantity(item.product.id, item.quantity + increment, item.unit)
+                      }}
+                      className="button button-sm catalog-cart-qty-btn"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="catalog-cart-footer">
+              <div className="catalog-cart-total">
+                <span>Total:</span>
+                <span>${total.toLocaleString('es-CL')}</span>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCart(false)
+                  setShowCheckout(true)
+                }}
+                className="button"
+              >
+                <span>✅</span>
+                <span>Continuar con pedido</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {/* Checkout Modal */}
+      {showCheckout && (
+        <>
+          <div className="catalog-overlay" onClick={() => setShowCheckout(false)} />
+          <div className="catalog-checkout-modal">
+            <h2>Finalizar Pedido</h2>
+            
+            <div className="catalog-checkout-field">
+              <label className="label">Tu nombre</label>
+              <input
+                type="text"
+                className="input"
+                value={customerData.name}
+                onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
+                placeholder="Ej: Juan Pérez"
+              />
+            </div>
+            
+            <div className="catalog-checkout-field">
+              <label className="label">Tu teléfono (WhatsApp)</label>
+              <input
+                type="tel"
+                className="input"
+                value={customerData.phone}
+                onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
+                placeholder="Ej: +56912345678"
+              />
+            </div>
+            
+            <div className="catalog-checkout-field">
+              <label className="label">Tu dirección de entrega</label>
+              <input
+                type="text"
+                className="input"
+                value={customerData.address}
+                onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
+                placeholder="Ej: Av. Principal 123, Depto 45"
+              />
+            </div>
+            
+            <div className="catalog-checkout-field">
+              <label className="label" style={{ marginBottom: '12px', display: 'block' }}>Tipo de envío</label>
+              <div className="catalog-shipping-options">
+                <div
+                  onClick={() => setShippingType('fastest')}
+                  className={`catalog-shipping-option ${shippingType === 'fastest' ? 'active' : ''}`}
+                >
+                  <div className="catalog-shipping-icon">⚡</div>
+                  <div className="catalog-shipping-title">Más Rápido</div>
+                  <div className="catalog-shipping-desc">¿Pedido urgente? Recíbelo hoy mismo</div>
+                  <div className="catalog-shipping-price">+$2.500</div>
+                </div>
+                <div
+                  onClick={() => setShippingType('cheapest')}
+                  className={`catalog-shipping-option ${shippingType === 'cheapest' ? 'active' : ''}`}
+                >
+                  <div className="catalog-shipping-icon">💰</div>
+                  <div className="catalog-shipping-title">Más Económico</div>
+                  <div className="catalog-shipping-desc">Consolidamos envíos para mejores precios</div>
+                  <div className="catalog-shipping-price discount">5% desc. en todo</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="catalog-checkout-summary">
+              <div className="catalog-summary-row">
+                <span>Subtotal:</span>
+                <span>${total.toLocaleString('es-CL')}</span>
+              </div>
+              {shippingType === 'fastest' && (
+                <div className="catalog-summary-row highlight">
+                  <span>Envío rápido:</span>
+                  <span>+$2.500</span>
+                </div>
+              )}
+              {shippingType === 'cheapest' && (
+                <div className="catalog-summary-row highlight discount">
+                  <span>Descuento 5%:</span>
+                  <span>-${Math.round(total * 0.05).toLocaleString('es-CL')}</span>
+                </div>
+              )}
+              <div className="catalog-summary-total">
+                <span>Total:</span>
+                <span>
+                  ${shippingType === 'fastest' 
+                    ? (total + 2500).toLocaleString('es-CL')
+                    : shippingType === 'cheapest'
+                    ? (total - Math.round(total * 0.05)).toLocaleString('es-CL')
+                    : total.toLocaleString('es-CL')
+                  }
+                </span>
+              </div>
+            </div>
+            
+            <div className="catalog-checkout-note">
+              💡 Te contactaremos por WhatsApp para confirmar tu pedido y coordinar la entrega.
+            </div>
+            
+            <div className="catalog-checkout-buttons">
+              <button
+                onClick={() => setShowCheckout(false)}
+                className="button ghost"
+                disabled={submitting}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCheckout}
+                className="button"
+                disabled={submitting}
+              >
+                {submitting ? (
+                  <>
+                    <div className="loading"></div>
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>📱</span>
+                    <span>Enviar</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {/* Modal para seleccionar unidad */}
+      {addingProduct && (
+        <Modal
+          isOpen={true}
+          onClose={() => setAddingProduct(null)}
+          title={`Agregar ${addingProduct.name}`}
+          size="sm"
+        >
+          <div className="catalog-unit-selector">
+            <p>Selecciona cómo quieres comprar este producto:</p>
+            <div className="catalog-unit-buttons">
+              <button 
+                className="button catalog-unit-btn" 
+                onClick={() => handleSelectUnit(addingProduct, 'kg')}
+              >
+                <div>⚖️</div>
+                <div>Por kilogramo</div>
+              </button>
+              <button 
+                className="button catalog-unit-btn" 
+                onClick={() => handleSelectUnit(addingProduct, 'unit')}
+              >
+                <div>📦</div>
+                <div>Por unidad</div>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+      
+      <Footer />
+      
+      <style>{`
+        /* RESET Y BASE */
+        .catalog-v3-page {
+          min-height: 100vh;
+          background: var(--kivi-cream);
+          padding-top: 64px;
+          overflow-x: hidden;
+          width: 100%;
+          max-width: 100vw;
+        }
+        
+        /* GRID DE 3 COLUMNAS - GARANTIZADO */
+        .catalog-grid-3 {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .catalog-grid-3 > * {
+          min-width: 0;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        
+        /* Search Bar */
+        .catalog-search-bar {
+          position: sticky;
+          top: 64px;
+          background: #fff;
+          border-bottom: 2px solid #eee;
+          padding: 12px 20px;
+          z-index: 50;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .catalog-search-inner {
+          max-width: 1400px;
+          margin: 0 auto;
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+        
+        .catalog-search-inner input {
+          flex: 1;
+          min-width: 200px;
+          font-size: 16px;
+          padding: 14px 16px;
+          border: 2px solid var(--kivi-green);
+          box-shadow: 0 2px 8px rgba(168, 213, 186, 0.2);
+          font-weight: 500;
+        }
+        
+        .category-menu {
+          position: absolute;
+          top: 100%;
+          right: 0;
+          margin-top: 4px;
+          background: #fff;
+          border: 2px solid #eee;
+          border-radius: var(--radius);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+          min-width: 200px;
+          z-index: 100;
+        }
+        
+        .category-menu button {
+          width: 100%;
+          padding: 12px 16px;
+          background: transparent;
+          border: none;
+          text-align: left;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 400;
+        }
+        
+        .category-menu button.active {
+          background: #f0f0f0;
+          font-weight: 700;
+        }
+        
+        /* Ofertas */
+        .catalog-offers-section {
+          padding: 20px 20px 0;
+          max-width: 1400px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .catalog-offers-box {
+          background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+          border-radius: 12px;
+          border: 2px solid #ff9800;
+          padding: 20px;
+          margin-bottom: 20px;
+        }
+        
+        .catalog-offers-title {
+          margin: 0 0 16px 0;
+          font-size: 22px;
+          font-weight: 800;
+          color: #e65100;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        
+        .catalog-offer-card {
+          background: #fff;
+          border-radius: 8px;
+          padding: 12px;
+          border: 2px solid #ff5722;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .offer-badge {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          background: #ff5722;
+          color: #fff;
+          padding: 4px 8px;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 700;
+          z-index: 1;
+        }
+        
+        /* Products Section */
+        .catalog-products-section {
+          padding: 20px;
+          max-width: 1400px;
+          margin: 0 auto;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        
+        .catalog-product-card {
+          background: #fff;
+          border: 1px solid #eee;
+          border-radius: var(--radius-sm);
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+        }
+        
+        .catalog-image-container {
+          width: 100%;
+          padding-top: 100%;
+          position: relative;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          background: #ffffff;
+        }
+        
+        .catalog-image-container img {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
+        }
+        
+        .catalog-product-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .catalog-product-name {
+          font-size: 14px;
+          font-weight: 700;
+          text-align: center;
+          line-height: 1.2;
+          min-height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .catalog-price {
+          font-size: 16px;
+          font-weight: 800;
+          color: var(--kivi-green);
+          text-align: center;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .catalog-price-unit-small {
+          font-size: 11px;
+          font-weight: 400;
+          color: #666;
+          margin-left: 4px;
+        }
+        
+        .catalog-price-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 4px;
+        }
+        
+        .catalog-price-old {
+          font-size: 12px;
+          color: #999;
+          text-decoration: line-through;
+        }
+        
+        .catalog-price-new {
+          font-size: 18px;
+          font-weight: 800;
+          color: #ff5722;
+        }
+        
+        .catalog-price-unit {
+          font-size: 11px;
+          color: #666;
+        }
+        
+        .catalog-product-actions {
+          width: 100%;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .catalog-add-btn {
+          width: 100%;
+          justify-content: center;
+          font-size: 13px;
+          height: 36px;
+        }
+        
+        .catalog-quantity-controls {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 36px;
+          width: 100%;
+        }
+        
+        .catalog-qty-btn {
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          border-radius: 50%;
+        }
+        
+        .catalog-quantity-display {
+          font-weight: 700;
+          font-size: 13px;
+          min-width: 60px;
+          text-align: center;
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+        
+        /* Empty State */
+        .catalog-empty {
+          text-align: center;
+          padding: 60px 20px;
+          color: #999;
+        }
+        
+        .catalog-empty-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+        }
+        
+        .catalog-empty-title {
+          font-size: 18px;
+          font-weight: 700;
+          margin-bottom: 8px;
+        }
+        
+        .catalog-empty-text {
+          font-size: 14px;
+        }
+        
+        /* Cart */
+        .catalog-cart-button {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 12px 24px;
+          border-radius: var(--radius-pill);
+          font-size: 16px;
+          font-weight: 700;
+          z-index: 998;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          white-space: nowrap;
+          border: none;
+          background: var(--kivi-green);
+          color: #fff;
+          cursor: pointer;
+        }
+        
+        .catalog-cart-count {
+          background: #fff;
+          color: var(--kivi-green);
+          border-radius: 12px;
+          padding: 2px 8px;
+          font-size: 14px;
+          font-weight: 700;
+          min-width: 24px;
+          text-align: center;
+        }
+        
+        .catalog-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 999;
+        }
+        
+        .catalog-cart-sidebar {
+          position: fixed;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          max-width: 400px;
+          background: #fff;
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+          box-shadow: -4px 0 16px rgba(0,0,0,0.2);
+          animation: slideInRight 0.3s ease;
+        }
+        
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        
+        .catalog-cart-header {
+          padding: 20px;
+          border-bottom: 2px solid #eee;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .catalog-cart-header h2 {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 800;
+        }
+        
+        .catalog-cart-items {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px;
+        }
+        
+        .catalog-cart-item {
+          padding: 12px;
+          background: #f8f9fa;
+          border-radius: var(--radius-sm);
+          margin-bottom: 8px;
+        }
+        
+        .catalog-cart-item-header {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+        }
+        
+        .catalog-cart-item-name {
+          font-weight: 700;
+          margin-bottom: 4px;
+          font-size: 14px;
+        }
+        
+        .catalog-cart-item-details {
+          font-size: 13px;
+          color: #666;
+        }
+        
+        .catalog-cart-item-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          justify-content: center;
+        }
+        
+        .catalog-cart-qty-btn {
+          width: 28px;
+          height: 28px;
+          padding: 0;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .catalog-cart-qty-display {
+          font-weight: 700;
+          min-width: 50px;
+          text-align: center;
+          font-size: 14px;
+        }
+        
+        .catalog-cart-footer {
+          padding: 16px;
+          border-top: 2px solid #eee;
+          background: #fff;
+        }
+        
+        .catalog-cart-total {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          font-size: 18px;
+          font-weight: 800;
+        }
+        
+        .catalog-cart-total span:last-child {
+          color: var(--kivi-green);
+        }
+        
+        /* Checkout */
+        .catalog-checkout-modal {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: #fff;
+          border-radius: var(--radius);
+          padding: 24px;
+          max-width: 400px;
+          width: 90%;
+          z-index: 1000;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        
+        .catalog-checkout-modal h2 {
+          margin: 0 0 16px 0;
+          font-size: 20px;
+          font-weight: 800;
+        }
+        
+        .catalog-checkout-field {
+          margin-bottom: 16px;
+        }
+        
+        .catalog-shipping-options {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        
+        .catalog-shipping-option {
+          padding: 16px;
+          border: 2px solid #ddd;
+          border-radius: 8px;
+          cursor: pointer;
+          background: #fff;
+          transition: all 0.2s;
+        }
+        
+        .catalog-shipping-option.active {
+          border-color: var(--kivi-green);
+          background: #e8f5e9;
+        }
+        
+        .catalog-shipping-icon {
+          font-size: 24px;
+          margin-bottom: 8px;
+        }
+        
+        .catalog-shipping-title {
+          font-weight: 700;
+          margin-bottom: 4px;
+        }
+        
+        .catalog-shipping-desc {
+          font-size: 12px;
+          color: #666;
+          margin-bottom: 8px;
+        }
+        
+        .catalog-shipping-price {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--kivi-green);
+        }
+        
+        .catalog-shipping-price.discount {
+          color: var(--kivi-orange);
+        }
+        
+        .catalog-checkout-summary {
+          padding: 16px;
+          background: #f8f9fa;
+          border-radius: var(--radius-sm);
+          margin-bottom: 16px;
+        }
+        
+        .catalog-summary-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          font-size: 14px;
+        }
+        
+        .catalog-summary-row.highlight {
+          color: var(--kivi-green);
+        }
+        
+        .catalog-summary-row.highlight.discount {
+          color: var(--kivi-orange);
+        }
+        
+        .catalog-summary-total {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 2px solid #ddd;
+          font-size: 18px;
+          font-weight: 800;
+        }
+        
+        .catalog-summary-total span:last-child {
+          color: var(--kivi-green);
+        }
+        
+        .catalog-checkout-note {
+          padding: 12px;
+          background: #FFF4E5;
+          border-radius: var(--radius-sm);
+          margin-bottom: 16px;
+          font-size: 13px;
+          line-height: 1.5;
+        }
+        
+        .catalog-checkout-buttons {
+          display: flex;
+          gap: 8px;
+        }
+        
+        .catalog-checkout-buttons .button {
+          flex: 1;
+        }
+        
+        /* Unit Selector */
+        .catalog-unit-selector {
+          text-align: center;
+          padding: 8px 0;
+        }
+        
+        .catalog-unit-selector p {
+          font-size: 18px;
+          color: var(--kivi-text);
+          margin-bottom: 24px;
+          line-height: 1.5;
+          font-weight: 600;
+        }
+        
+        .catalog-unit-buttons {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        
+        .catalog-unit-btn {
+          width: 100%;
+          padding: 16px;
+          font-size: 16px;
+          font-weight: 700;
+          background: var(--kivi-green);
+          color: #fff;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+        
+        .catalog-unit-btn > div:first-child {
+          font-size: 20px;
+        }
+        
+        /* MOBILE - FORZAR 3 COLUMNAS */
+        @media (max-width: 768px) {
+          html, body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+          }
+          
+          .catalog-v3-page {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+          }
+          
+          .hide-mobile {
+            display: none !important;
+          }
+          
+          .catalog-search-bar {
+            padding: 8px 4px !important;
+          }
+          
+          .catalog-offers-section,
+          .catalog-products-section {
+            padding: 8px 4px !important;
+          }
+          
+          /* GARANTIZAR 3 COLUMNAS EN MÓVIL */
+          .catalog-grid-3 {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 4px !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          
+          .catalog-grid-3 > * {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+          }
+          
+          .catalog-product-card,
+          .catalog-offer-card {
+            padding: 4px !important;
+            gap: 4px !important;
+          }
+          
+          .catalog-image-container {
+            padding-top: 60% !important;
+          }
+          
+          .catalog-product-name {
+            font-size: 12px !important;
+            min-height: 32px !important;
+          }
+          
+          .catalog-price {
+            font-size: 14px !important;
+            height: 28px !important;
+          }
+          
+          .catalog-add-btn,
+          .catalog-qty-btn {
+            font-size: 12px !important;
+            padding: 6px !important;
+            height: 28px !important;
+          }
+          
+          .catalog-quantity-display {
+            font-size: 11px !important;
+            min-width: 40px !important;
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
