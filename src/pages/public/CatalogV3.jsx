@@ -40,6 +40,18 @@ export default function CatalogV3() {
     loadData()
   }, [])
   
+  // Prevenir scroll del body cuando el modal está abierto
+  useEffect(() => {
+    if (showCheckout) {
+      document.body.classList.add('modal-open')
+    } else {
+      document.body.classList.remove('modal-open')
+    }
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [showCheckout])
+  
   const loadData = async () => {
     setLoading(true)
     try {
@@ -451,100 +463,102 @@ export default function CatalogV3() {
         <>
           <div className="catalog-overlay" onClick={() => setShowCheckout(false)} />
           <div className="catalog-checkout-modal">
-            <h2>Finalizar Pedido</h2>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', fontWeight: 800, flexShrink: 0 }}>Finalizar Pedido</h2>
             
-            <div className="catalog-checkout-field">
-              <label className="label">Tu nombre</label>
-              <input
-                type="text"
-                className="input"
-                value={customerData.name}
-                onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
-                placeholder="Ej: Juan Pérez"
-              />
-            </div>
-            
-            <div className="catalog-checkout-field">
-              <label className="label">Tu teléfono (WhatsApp)</label>
-              <input
-                type="tel"
-                className="input"
-                value={customerData.phone}
-                onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
-                placeholder="Ej: +56912345678"
-              />
-            </div>
-            
-            <div className="catalog-checkout-field">
-              <label className="label">Tu dirección de entrega</label>
-              <input
-                type="text"
-                className="input"
-                value={customerData.address}
-                onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
-                placeholder="Ej: Av. Principal 123, Depto 45"
-              />
-            </div>
-            
-            <div className="catalog-checkout-field">
-              <label className="label" style={{ marginBottom: '12px', display: 'block' }}>Tipo de envío</label>
-              <div className="catalog-shipping-options">
-                <div
-                  onClick={() => setShippingType('fastest')}
-                  className={`catalog-shipping-option ${shippingType === 'fastest' ? 'active' : ''}`}
-                >
-                  <div className="catalog-shipping-icon">⚡</div>
-                  <div className="catalog-shipping-title">Más Rápido</div>
-                  <div className="catalog-shipping-desc">¿Pedido urgente? Recíbelo hoy mismo</div>
-                  <div className="catalog-shipping-price">+$2.500</div>
+            <div className="catalog-checkout-modal-content">
+              <div className="catalog-checkout-field">
+                <label className="label">Tu nombre</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={customerData.name}
+                  onChange={(e) => setCustomerData({ ...customerData, name: e.target.value })}
+                  placeholder="Ej: Juan Pérez"
+                />
+              </div>
+              
+              <div className="catalog-checkout-field">
+                <label className="label">Tu teléfono (WhatsApp)</label>
+                <input
+                  type="tel"
+                  className="input"
+                  value={customerData.phone}
+                  onChange={(e) => setCustomerData({ ...customerData, phone: e.target.value })}
+                  placeholder="Ej: +56912345678"
+                />
+              </div>
+              
+              <div className="catalog-checkout-field">
+                <label className="label">Tu dirección de entrega</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={customerData.address}
+                  onChange={(e) => setCustomerData({ ...customerData, address: e.target.value })}
+                  placeholder="Ej: Av. Principal 123, Depto 45"
+                />
+              </div>
+              
+              <div className="catalog-checkout-field">
+                <label className="label" style={{ marginBottom: '12px', display: 'block' }}>Tipo de envío</label>
+                <div className="catalog-shipping-options">
+                  <div
+                    onClick={() => setShippingType('fastest')}
+                    className={`catalog-shipping-option ${shippingType === 'fastest' ? 'active' : ''}`}
+                  >
+                    <div className="catalog-shipping-icon">⚡</div>
+                    <div className="catalog-shipping-title">Más Rápido</div>
+                    <div className="catalog-shipping-desc">¿Pedido urgente? Recíbelo hoy mismo</div>
+                    <div className="catalog-shipping-price">+$2.500</div>
+                  </div>
+                  <div
+                    onClick={() => setShippingType('cheapest')}
+                    className={`catalog-shipping-option ${shippingType === 'cheapest' ? 'active' : ''}`}
+                  >
+                    <div className="catalog-shipping-icon">💰</div>
+                    <div className="catalog-shipping-title">Más Económico</div>
+                    <div className="catalog-shipping-desc">Consolidamos envíos para mejores precios</div>
+                    <div className="catalog-shipping-price discount">5% desc. en todo</div>
+                  </div>
                 </div>
-                <div
-                  onClick={() => setShippingType('cheapest')}
-                  className={`catalog-shipping-option ${shippingType === 'cheapest' ? 'active' : ''}`}
-                >
-                  <div className="catalog-shipping-icon">💰</div>
-                  <div className="catalog-shipping-title">Más Económico</div>
-                  <div className="catalog-shipping-desc">Consolidamos envíos para mejores precios</div>
-                  <div className="catalog-shipping-price discount">5% desc. en todo</div>
+              </div>
+              
+              <div className="catalog-checkout-summary">
+                <div className="catalog-summary-row">
+                  <span>Subtotal:</span>
+                  <span>${total.toLocaleString('es-CL')}</span>
                 </div>
+                {shippingType === 'fastest' && (
+                  <div className="catalog-summary-row highlight">
+                    <span>Envío rápido:</span>
+                    <span>+$2.500</span>
+                  </div>
+                )}
+                {shippingType === 'cheapest' && (
+                  <div className="catalog-summary-row highlight discount">
+                    <span>Descuento 5%:</span>
+                    <span>-${Math.round(total * 0.05).toLocaleString('es-CL')}</span>
+                  </div>
+                )}
+                <div className="catalog-summary-total">
+                  <span>Total:</span>
+                  <span>
+                    ${shippingType === 'fastest' 
+                      ? (total + 2500).toLocaleString('es-CL')
+                      : shippingType === 'cheapest'
+                      ? (total - Math.round(total * 0.05)).toLocaleString('es-CL')
+                      : total.toLocaleString('es-CL')
+                    }
+                  </span>
+                </div>
+              </div>
+              
+              <div className="catalog-checkout-note">
+                💡 Te contactaremos por WhatsApp para confirmar tu pedido y coordinar la entrega.
               </div>
             </div>
             
-            <div className="catalog-checkout-summary">
-              <div className="catalog-summary-row">
-                <span>Subtotal:</span>
-                <span>${total.toLocaleString('es-CL')}</span>
-              </div>
-              {shippingType === 'fastest' && (
-                <div className="catalog-summary-row highlight">
-                  <span>Envío rápido:</span>
-                  <span>+$2.500</span>
-                </div>
-              )}
-              {shippingType === 'cheapest' && (
-                <div className="catalog-summary-row highlight discount">
-                  <span>Descuento 5%:</span>
-                  <span>-${Math.round(total * 0.05).toLocaleString('es-CL')}</span>
-                </div>
-              )}
-              <div className="catalog-summary-total">
-                <span>Total:</span>
-                <span>
-                  ${shippingType === 'fastest' 
-                    ? (total + 2500).toLocaleString('es-CL')
-                    : shippingType === 'cheapest'
-                    ? (total - Math.round(total * 0.05)).toLocaleString('es-CL')
-                    : total.toLocaleString('es-CL')
-                  }
-                </span>
-              </div>
-            </div>
-            
-            <div className="catalog-checkout-note">
-              💡 Te contactaremos por WhatsApp para confirmar tu pedido y coordinar la entrega.
-            </div>
-            
-            <div className="catalog-checkout-buttons">
+            <div className="catalog-checkout-buttons" style={{ flexShrink: 0, marginTop: '16px' }}>
               <button
                 onClick={() => setShowCheckout(false)}
                 className="button ghost"
@@ -619,8 +633,8 @@ export default function CatalogV3() {
         
         /* GRID DE 3 COLUMNAS - GARANTIZADO CON PORCENTAJES FIJOS */
         .catalog-grid-3 {
-          display: flex;
-          flex-wrap: wrap;
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
           gap: 12px;
           width: 100%;
           max-width: 100%;
@@ -628,12 +642,9 @@ export default function CatalogV3() {
         }
         
         .catalog-grid-3 > * {
-          width: calc((100% - 24px) / 3);
           min-width: 0;
-          max-width: calc((100% - 24px) / 3);
+          max-width: 100%;
           box-sizing: border-box;
-          flex-shrink: 0;
-          flex-grow: 0;
         }
         
         /* Search Bar */
@@ -1082,14 +1093,27 @@ export default function CatalogV3() {
           padding: 24px;
           max-width: 400px;
           width: 90%;
+          max-height: 90vh;
           z-index: 1000;
           box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        
+        .catalog-checkout-modal-content {
+          overflow-y: auto;
+          overflow-x: hidden;
+          flex: 1;
+          min-height: 0;
+          -webkit-overflow-scrolling: touch;
         }
         
         .catalog-checkout-modal h2 {
           margin: 0 0 16px 0;
           font-size: 20px;
           font-weight: 800;
+          flex-shrink: 0;
         }
         
         .catalog-checkout-field {
@@ -1190,10 +1214,16 @@ export default function CatalogV3() {
         .catalog-checkout-buttons {
           display: flex;
           gap: 8px;
+          flex-shrink: 0;
         }
         
         .catalog-checkout-buttons .button {
           flex: 1;
+        }
+        
+        /* Prevenir scroll del body cuando el modal está abierto */
+        body.modal-open {
+          overflow: hidden !important;
         }
         
         /* Unit Selector */
@@ -1261,24 +1291,23 @@ export default function CatalogV3() {
             padding: 8px 4px !important;
           }
           
-          /* GARANTIZAR 3 COLUMNAS EN MÓVIL CON PORCENTAJES FIJOS */
+          /* GARANTIZAR 3 COLUMNAS EN MÓVIL CON GRID */
           .catalog-grid-3 {
-            display: flex !important;
-            flex-wrap: wrap !important;
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
             gap: 4px !important;
             width: 100% !important;
             max-width: 100vw !important;
             padding: 0 !important;
             margin: 0 !important;
+            box-sizing: border-box !important;
           }
           
           .catalog-grid-3 > * {
-            width: calc((100% - 8px) / 3) !important;
             min-width: 0 !important;
-            max-width: calc((100% - 8px) / 3) !important;
+            max-width: 100% !important;
             box-sizing: border-box !important;
-            flex-shrink: 0 !important;
-            flex-grow: 0 !important;
+            overflow: hidden !important;
           }
           
           .catalog-product-card,
