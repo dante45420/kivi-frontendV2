@@ -649,8 +649,10 @@ export default function CatalogV3() {
         
         /* Search Bar */
         .catalog-search-bar {
-          position: sticky;
+          position: fixed;
           top: 64px;
+          left: 0;
+          right: 0;
           background: #fff;
           border-bottom: 2px solid #eee;
           padding: 12px 20px;
@@ -711,6 +713,7 @@ export default function CatalogV3() {
         /* Ofertas */
         .catalog-offers-section {
           padding: 20px 20px 0;
+          padding-top: 140px;
           max-width: 1400px;
           margin: 0 auto;
           width: 100%;
@@ -760,6 +763,7 @@ export default function CatalogV3() {
         /* Products Section */
         .catalog-products-section {
           padding: 20px;
+          padding-top: 20px;
           max-width: 1400px;
           margin: 0 auto;
           width: 100%;
@@ -984,6 +988,7 @@ export default function CatalogV3() {
           height: 100vh;
           max-height: 100vh;
           overflow: hidden;
+          touch-action: pan-y;
         }
         
         @keyframes slideInRight {
@@ -1013,6 +1018,8 @@ export default function CatalogV3() {
           padding: 16px;
           min-height: 0;
           -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          scroll-behavior: smooth;
         }
         
         .catalog-cart-item {
@@ -1068,6 +1075,10 @@ export default function CatalogV3() {
           border-top: 2px solid #eee;
           background: #fff;
           flex-shrink: 0;
+          position: sticky;
+          bottom: 0;
+          z-index: 1;
+          box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
         }
         
         .catalog-cart-total {
@@ -1286,9 +1297,14 @@ export default function CatalogV3() {
             padding: 8px 4px !important;
           }
           
-          .catalog-offers-section,
+          .catalog-offers-section {
+            padding: 8px 4px 0 !important;
+            padding-top: 140px !important;
+          }
+          
           .catalog-products-section {
             padding: 8px 4px !important;
+            padding-top: 20px !important;
           }
           
           /* GARANTIZAR 3 COLUMNAS EN MÓVIL CON GRID */
