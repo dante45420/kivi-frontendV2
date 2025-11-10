@@ -1146,15 +1146,41 @@ export default function CatalogV3() {
           touch-action: pan-y;
         }
         
-        .catalog-cart-header {
+        .catalog-cart-sidebar > * {
           flex-shrink: 0;
         }
         
-        .catalog-cart-footer {
+        .catalog-cart-sidebar > .catalog-cart-items {
+          flex: 1 1 auto;
+          min-height: 0;
+        }
+        
+        @media (max-width: 768px) {
+          .catalog-cart-sidebar {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100vh;
+            max-height: 100dvh;
+          }
+          
+          .catalog-cart-footer {
+            padding-bottom: calc(16px + max(env(safe-area-inset-bottom, 0px), 100px));
+            position: sticky;
+            bottom: 0;
+          }
+          
+          .catalog-cart-items {
+            padding-bottom: 300px;
+          }
+          
+          .catalog-cart-sidebar {
+            display: flex;
+            flex-direction: column;
+          }
+        }
+        
+        .catalog-cart-header {
           flex-shrink: 0;
-          margin-top: auto;
-          position: relative;
-          z-index: 1;
         }
         
         .catalog-cart-items {
@@ -1162,6 +1188,9 @@ export default function CatalogV3() {
           min-height: 0;
           overflow-y: auto;
           overflow-x: hidden;
+          padding: 16px;
+          padding-bottom: 200px;
+          -webkit-overflow-scrolling: touch;
         }
         
         @keyframes slideInRight {
@@ -1240,13 +1269,17 @@ export default function CatalogV3() {
         
         .catalog-cart-footer {
           padding: 16px;
+          padding-bottom: calc(16px + max(env(safe-area-inset-bottom, 0px), 20px));
           border-top: 2px solid #eee;
           background: #fff;
           box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
           position: sticky;
           bottom: 0;
+          left: 0;
+          right: 0;
           z-index: 10;
           min-height: fit-content;
+          flex-shrink: 0;
           margin-top: auto;
         }
         
