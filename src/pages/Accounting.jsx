@@ -8,6 +8,7 @@ import { fetchProducts } from '../api/products'
 import { fetchCustomers } from '../api/customers'
 import { createPayment } from '../api/payments'
 import { generateInvoicePDF } from '../utils/invoicePdf'
+import { calculateShipping } from '../utils/shipping'
 import Loader from '../components/Loader'
 
 export default function Accounting() {
@@ -143,25 +144,12 @@ export default function Accounting() {
       Object.values(byCustomer).forEach(customerData => {
         Object.values(customerData.orders).forEach(order => {
           const subtotal = order.subtotal || 0
-          const shippingType = order.shipping_type || 'fastest'
+          const shippingType = order.shipping_type || 'normal'
           
-          if (shippingType === 'fastest' || shippingType === 'fast') {
-            // Envío rápido: +$2.500
-            order.total_billed = subtotal + 2500
-            order.shipping_amount = 2500
-            order.shipping_label = 'Envío rápido'
-          } else if (shippingType === 'cheapest' || shippingType === 'cheap') {
-            // Envío económico: -5% descuento
-            const discount = Math.round(subtotal * 0.05)
-            order.total_billed = subtotal - discount
-            order.shipping_amount = -discount
-            order.shipping_label = 'Descuento 5%'
-          } else {
-            // Por defecto: sin envío ni descuento
-            order.total_billed = subtotal
-            order.shipping_amount = 0
-            order.shipping_label = null
-          }
+          const shipping = calculateShipping(shippingType, subtotal)
+          order.total_billed = subtotal + shipping.amount
+          order.shipping_amount = shipping.amount
+          order.shipping_label = shipping.amount !== 0 ? shipping.label : null
         })
       })
       
@@ -229,7 +217,7 @@ export default function Accounting() {
       
       // Agregar envío/descuento del pedido si tiene items sin pagar
       const hasUnpaidItems = order.items.some(item => !item.paid)
-      if (hasUnpaidItems && order.shipping_amount) {
+      if (hasUnpaidItems && order.shipping_amount !== undefined && order.shipping_amount !== null) {
         shippingTotal += order.shipping_amount
       }
     })
@@ -760,19 +748,29 @@ export default function Accounting() {
                   ${(invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)).toLocaleString('es-CL')}
                 </div>
                 
-                {invoiceData.shipping_amount && invoiceData.shipping_amount !== 0 && (
+                {invoiceData.shipping_amount !== undefined && invoiceData.shipping_amount !== null && (
                   <>
                     <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
-                      {invoiceData.shipping_amount > 0 ? 'Envío rápido:' : 'Descuento 5%:'}
+                      {invoiceData.shipping_amount > 0 
+                        ? 'Envío rápido:' 
+                        : invoiceData.shipping_amount < 0 
+                        ? 'Envío económico:' 
+                        : 'Envío normal:'}
                     </div>
                     <div style={{
                       fontSize: '16px',
                       fontWeight: 700,
-                      color: invoiceData.shipping_amount > 0 ? 'var(--kivi-green)' : 'var(--kivi-orange)',
+                      color: invoiceData.shipping_amount > 0 
+                        ? 'var(--kivi-green)' 
+                        : invoiceData.shipping_amount < 0 
+                        ? 'var(--kivi-orange)' 
+                        : '#666',
                       fontFamily: 'monospace',
                       marginBottom: '8px'
                     }}>
-                      {invoiceData.shipping_amount > 0 ? '+' : ''}${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}
+                      {invoiceData.shipping_amount !== 0 
+                        ? `${invoiceData.shipping_amount > 0 ? '+' : ''}$${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}`
+                        : 'Sin costo'}
                     </div>
                   </>
                 )}

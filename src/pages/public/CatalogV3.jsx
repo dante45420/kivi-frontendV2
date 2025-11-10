@@ -10,6 +10,7 @@ import { useCart } from '../../hooks/useCart'
 import { generateCatalogPDF } from '../../utils/catalogPdf'
 import { getImageUrl } from '../../utils/imageUrl'
 import { getEffectivePrice, hasActiveOffer, getActiveOffer } from '../../utils/productPrice'
+import { calculateShipping, calculateTotalWithShipping } from '../../utils/shipping'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
 import Loader from '../../components/Loader'
@@ -37,7 +38,7 @@ export default function CatalogV3() {
   // Checkout
   const [showCheckout, setShowCheckout] = useState(false)
   const [customerData, setCustomerData] = useState({ name: '', phone: '', address: '' })
-  const [shippingType, setShippingType] = useState('fastest')
+  const [shippingType, setShippingType] = useState('normal')
   const [submitting, setSubmitting] = useState(false)
   
   // Adding state
@@ -134,7 +135,7 @@ export default function CatalogV3() {
         })),
         source: 'web',
         shipping_type: shippingType,
-        notes: `Pedido desde catálogo web - ${shippingType === 'fastest' ? 'Envío rápido' : 'Envío económico'}`
+        notes: `Pedido desde catálogo web - ${calculateShipping(shippingType, cartTotalWithOffers).label}`
       }
       
       await createOrder(orderData)
@@ -144,7 +145,7 @@ export default function CatalogV3() {
       setShowCheckout(false)
       setShowCart(false)
       setCustomerData({ name: '', phone: '', address: '' })
-      setShippingType('fastest')
+      setShippingType('normal')
     } catch (error) {
       alert('Error enviando pedido: ' + error.message)
     } finally {
@@ -586,22 +587,31 @@ export default function CatalogV3() {
                 <label className="label" style={{ marginBottom: '12px', display: 'block' }}>Tipo de envío</label>
                 <div className="catalog-shipping-options">
                   <div
-                    onClick={() => setShippingType('fastest')}
-                    className={`catalog-shipping-option ${shippingType === 'fastest' ? 'active' : ''}`}
+                    onClick={() => setShippingType('fast')}
+                    className={`catalog-shipping-option ${shippingType === 'fast' || shippingType === 'fastest' ? 'active' : ''}`}
                   >
                     <div className="catalog-shipping-icon">⚡</div>
-                    <div className="catalog-shipping-title">Más Rápido</div>
-                    <div className="catalog-shipping-desc">¿Pedido urgente? Recíbelo hoy mismo</div>
-                    <div className="catalog-shipping-price">+$2.500</div>
+                    <div className="catalog-shipping-title">Rápido</div>
+                    <div className="catalog-shipping-desc">Envío el mismo día (solo antes de las 12:00)</div>
+                    <div className="catalog-shipping-price">+10%</div>
                   </div>
                   <div
-                    onClick={() => setShippingType('cheapest')}
-                    className={`catalog-shipping-option ${shippingType === 'cheapest' ? 'active' : ''}`}
+                    onClick={() => setShippingType('normal')}
+                    className={`catalog-shipping-option ${shippingType === 'normal' ? 'active' : ''}`}
+                  >
+                    <div className="catalog-shipping-icon">📦</div>
+                    <div className="catalog-shipping-title">Normal</div>
+                    <div className="catalog-shipping-desc">Envío al día siguiente</div>
+                    <div className="catalog-shipping-price">+0%</div>
+                  </div>
+                  <div
+                    onClick={() => setShippingType('cheap')}
+                    className={`catalog-shipping-option ${shippingType === 'cheap' || shippingType === 'cheapest' ? 'active' : ''}`}
                   >
                     <div className="catalog-shipping-icon">💰</div>
-                    <div className="catalog-shipping-title">Más Económico</div>
-                    <div className="catalog-shipping-desc">Consolidamos envíos para mejores precios</div>
-                    <div className="catalog-shipping-price discount">5% desc. en todo</div>
+                    <div className="catalog-shipping-title">Económico</div>
+                    <div className="catalog-shipping-desc">Entrega en 1-3 días</div>
+                    <div className="catalog-shipping-price discount">-10%</div>
                   </div>
                 </div>
               </div>
@@ -611,27 +621,22 @@ export default function CatalogV3() {
                   <span>Subtotal:</span>
                   <span>${cartTotalWithOffers.toLocaleString('es-CL')}</span>
                 </div>
-                {shippingType === 'fastest' && (
-                  <div className="catalog-summary-row highlight">
-                    <span>Envío rápido:</span>
-                    <span>+$2.500</span>
-                  </div>
-                )}
-                {shippingType === 'cheapest' && (
-                  <div className="catalog-summary-row highlight discount">
-                    <span>Descuento 5%:</span>
-                    <span>-${Math.round(cartTotalWithOffers * 0.05).toLocaleString('es-CL')}</span>
-                  </div>
-                )}
+                {(() => {
+                  const shipping = calculateShipping(shippingType, cartTotalWithOffers)
+                  if (shipping.amount !== 0) {
+                    return (
+                      <div className={`catalog-summary-row highlight ${shipping.amount < 0 ? 'discount' : ''}`}>
+                        <span>{shipping.label}:</span>
+                        <span>{shipping.amount > 0 ? '+' : ''}${Math.abs(shipping.amount).toLocaleString('es-CL')}</span>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
                 <div className="catalog-summary-total">
                   <span>Total:</span>
                   <span>
-                    ${shippingType === 'fastest' 
-                      ? (cartTotalWithOffers + 2500).toLocaleString('es-CL')
-                      : shippingType === 'cheapest'
-                      ? (cartTotalWithOffers - Math.round(cartTotalWithOffers * 0.05)).toLocaleString('es-CL')
-                      : cartTotalWithOffers.toLocaleString('es-CL')
-                    }
+                    ${calculateTotalWithShipping(cartTotalWithOffers, shippingType).toLocaleString('es-CL')}
                   </span>
                 </div>
               </div>
@@ -1249,8 +1254,15 @@ export default function CatalogV3() {
         
         .catalog-shipping-options {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: repeat(3, 1fr);
           gap: 12px;
+        }
+        
+        @media (max-width: 768px) {
+          .catalog-shipping-options {
+            grid-template-columns: 1fr;
+            gap: 8px;
+          }
         }
         
         .catalog-shipping-option {

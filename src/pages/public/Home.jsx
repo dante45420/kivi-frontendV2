@@ -211,7 +211,7 @@ export default function Home() {
               ¿Cuánto tarda la entrega?
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-              Los pedidos se entregan al día siguiente. Para entregas el mismo día, selecciona la opción "Más Rápido" (+$2.000).
+              Ofrecemos 3 opciones: <strong>Rápido</strong> (mismo día antes de las 12:00, +10%), <strong>Normal</strong> (día siguiente, +0%), o <strong>Económico</strong> (1-3 días, -10%).
             </p>
           </div>
           
@@ -220,7 +220,7 @@ export default function Home() {
               ¿Cuál es el costo de envío?
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-              El envío estándar es gratuito. Puedes elegir entrega rápida (+$2.000) o envío económico con 10% de descuento en todo.
+              El envío <strong>Normal</strong> es sin costo adicional. Puedes elegir <strong>Rápido</strong> (+10% al total) para entrega el mismo día, o <strong>Económico</strong> (-10% descuento) para entrega en 1-3 días.
             </p>
           </div>
           

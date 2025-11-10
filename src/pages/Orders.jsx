@@ -398,13 +398,16 @@ export default function Orders() {
                   onChange={e => setShippingType(e.target.value)}
                   style={{ width:'100%' }}
                 >
-                  <option value="fastest">🚀 Más Rápido (entrega hoy)</option>
-                  <option value="cheapest">💸 Más Barato (entrega mañana)</option>
+                  <option value="fast">⚡ Rápido (mismo día antes de las 12:00, +10%)</option>
+                  <option value="normal">📦 Normal (día siguiente, +0%)</option>
+                  <option value="cheap">💰 Económico (1-3 días, -10%)</option>
                 </select>
                 <p style={{ fontSize:12, color:'#666', marginTop:8, marginBottom:0 }}>
-                  {shippingType === 'fastest' 
-                    ? 'Ideal para entregas urgentes el mismo día.' 
-                    : 'Opción económica para entregas al día siguiente.'}
+                  {shippingType === 'fast' || shippingType === 'fastest'
+                    ? 'Envío el mismo día para algunos productos (solo antes de las 12:00). +10% al monto total.' 
+                    : shippingType === 'cheap' || shippingType === 'cheapest'
+                    ? 'Entrega en 1-3 días. -10% descuento al monto total.'
+                    : 'Envío al día siguiente. Sin costo adicional.'}
                 </p>
               </div>
 

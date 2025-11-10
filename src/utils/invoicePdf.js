@@ -209,21 +209,34 @@ export function generateInvoicePDF(invoiceData) {
   y += 8
   
   // Envío o descuento
-  if (invoiceData.shipping_amount && invoiceData.shipping_amount !== 0) {
+  // Mostrar siempre el tipo de envío, incluso si es 0 (normal)
+  if (invoiceData.shipping_amount !== undefined && invoiceData.shipping_amount !== null) {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     if (invoiceData.shipping_amount > 0) {
       doc.setTextColor(76, 175, 80)
-    } else {
+    } else if (invoiceData.shipping_amount < 0) {
       doc.setTextColor(255, 152, 0)
+    } else {
+      doc.setTextColor(100, 100, 100)
     }
     
-    const shippingLabel = invoiceData.shipping_amount > 0 ? 'Envío rápido:' : 'Descuento 5%:'
+    // Determinar la etiqueta según el monto
+    let shippingLabel = 'Envío normal:'
+    if (invoiceData.shipping_amount > 0) {
+      shippingLabel = 'Envío rápido:'
+    } else if (invoiceData.shipping_amount < 0) {
+      shippingLabel = 'Envío económico:'
+    }
     doc.text(shippingLabel, margin + 5, y)
     
-    const shippingText = `${invoiceData.shipping_amount > 0 ? '+' : ''}$${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}`
-    const shippingWidth = doc.getTextWidth(shippingText)
-    doc.text(shippingText, pageWidth - margin - shippingWidth - 5, y)
+    if (invoiceData.shipping_amount !== 0) {
+      const shippingText = `${invoiceData.shipping_amount > 0 ? '+' : ''}$${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}`
+      const shippingWidth = doc.getTextWidth(shippingText)
+      doc.text(shippingText, pageWidth - margin - shippingWidth - 5, y)
+    } else {
+      doc.text('Sin costo', pageWidth - margin - 50, y)
+    }
     
     y += 8
   }
