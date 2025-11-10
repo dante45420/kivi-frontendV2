@@ -44,8 +44,19 @@ export default function CatalogV3() {
   // Adding state
   const [addingProduct, setAddingProduct] = useState(null)
   
+  // Modal de restricción de horario
+  const [showTimeRestrictionModal, setShowTimeRestrictionModal] = useState(false)
+  
   useEffect(() => {
     loadData()
+  }, [])
+  
+  // Verificar y ajustar el tipo de envío si es necesario
+  useEffect(() => {
+    if ((shippingType === 'fast' || shippingType === 'fastest') && !isFastShippingAvailable()) {
+      setShippingType('normal')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   // Prevenir scroll del body cuando el modal está abierto
@@ -115,6 +126,26 @@ export default function CatalogV3() {
     const qty = unit === 'kg' ? 0.25 : 1
     addItem(product, qty, unit)
     setAddingProduct(null)
+  }
+  
+  // Verificar si el envío rápido está disponible (solo hasta las 12:00 PM hora de Chile)
+  const isFastShippingAvailable = () => {
+    // Obtener la hora actual en la zona horaria de Chile (America/Santiago)
+    const now = new Date()
+    const chileTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }))
+    const hour = chileTime.getHours()
+    // Disponible desde las 00:00 hasta las 12:00 (antes del mediodía) hora de Chile
+    return hour < 12
+  }
+  
+  const handleShippingTypeChange = (type) => {
+    if (type === 'fast' || type === 'fastest') {
+      if (!isFastShippingAvailable()) {
+        setShowTimeRestrictionModal(true)
+        return
+      }
+    }
+    setShippingType(type)
   }
   
   const handleCheckout = async () => {
@@ -226,46 +257,102 @@ export default function CatalogV3() {
             </h2>
             
             <div className="catalog-grid-3">
-              {weeklyOffers.map(offer => (
-                <div key={offer.id} className="catalog-offer-card">
-                  {offer.product?.sale_price && (
-                    <div className="offer-badge">
-                      -{Math.round((1 - offer.special_price / offer.product.sale_price) * 100)}%
+              {weeklyOffers.map(offer => {
+                const offerInCart = hasProductInCart(offer.product?.id)
+                const offerCartItemKg = getCartItem(offer.product?.id, 'kg')
+                const offerCartItemUnit = getCartItem(offer.product?.id, 'unit')
+                
+                return (
+                  <div key={offer.id} className="catalog-offer-card">
+                    {offer.product?.sale_price && (
+                      <div className="offer-badge">
+                        -{Math.round((1 - offer.special_price / offer.product.sale_price) * 100)}%
+                      </div>
+                    )}
+                    
+                    {offer.product?.photo_url && (
+                      <div className="catalog-image-container">
+                        <img
+                          src={getImageUrl(offer.product.photo_url)}
+                          alt={offer.product.name}
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="catalog-product-name">{offer.product?.name}</div>
+                    
+                    <div className="catalog-price-row">
+                      <div className="catalog-price-old">
+                        ${offer.product?.sale_price?.toLocaleString('es-CL')}
+                      </div>
+                      <div className="catalog-price-new">
+                        ${offer.special_price.toLocaleString('es-CL')}
+                      </div>
                     </div>
-                  )}
-                  
-                  {offer.product?.photo_url && (
-                    <div className="catalog-image-container">
-                      <img
-                        src={getImageUrl(offer.product.photo_url)}
-                        alt={offer.product.name}
-                      />
+                    
+                    <div className="catalog-price-unit">
+                      / {offer.product?.unit === 'kg' ? 'kg' : 'unidad'}
                     </div>
-                  )}
-                  
-                  <div className="catalog-product-name">{offer.product?.name}</div>
-                  
-                  <div className="catalog-price-row">
-                    <div className="catalog-price-old">
-                      ${offer.product?.sale_price?.toLocaleString('es-CL')}
-                    </div>
-                    <div className="catalog-price-new">
-                      ${offer.special_price.toLocaleString('es-CL')}
+                    
+                    <div className="catalog-product-actions">
+                      {!offerInCart && (
+                        <button
+                          onClick={() => handleAddClick(offer.product)}
+                          className="button button-sm catalog-add-btn"
+                        >
+                          + Agregar
+                        </button>
+                      )}
+                      
+                      {offerInCart && (
+                        <>
+                          {offerCartItemKg && (
+                            <div className="catalog-quantity-controls">
+                              <button
+                                onClick={() => updateQuantity(offer.product.id, offerCartItemKg.quantity - 0.25, 'kg')}
+                                className="button button-sm ghost catalog-qty-btn"
+                              >
+                                −
+                              </button>
+                              <div className="catalog-quantity-display">
+                                <span>{offerCartItemKg.quantity}</span>
+                                <span>kg</span>
+                              </div>
+                              <button
+                                onClick={() => updateQuantity(offer.product.id, offerCartItemKg.quantity + 0.25, 'kg')}
+                                className="button button-sm catalog-qty-btn"
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                          
+                          {offerCartItemUnit && (
+                            <div className="catalog-quantity-controls">
+                              <button
+                                onClick={() => updateQuantity(offer.product.id, offerCartItemUnit.quantity - 1, 'unit')}
+                                className="button button-sm ghost catalog-qty-btn"
+                              >
+                                −
+                              </button>
+                              <div className="catalog-quantity-display">
+                                <span>{offerCartItemUnit.quantity}</span>
+                                <span>u</span>
+                              </div>
+                              <button
+                                onClick={() => updateQuantity(offer.product.id, offerCartItemUnit.quantity + 1, 'unit')}
+                                className="button button-sm catalog-qty-btn"
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
-                  
-                  <div className="catalog-price-unit">
-                    / {offer.product?.unit === 'kg' ? 'kg' : 'unidad'}
-                  </div>
-                  
-                  <button
-                    onClick={() => handleAddClick(offer.product)}
-                    className="button button-sm catalog-add-btn"
-                  >
-                    + Agregar
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
@@ -648,16 +735,25 @@ export default function CatalogV3() {
                 <label className="label" style={{ marginBottom: '12px', display: 'block' }}>Tipo de envío</label>
                 <div className="catalog-shipping-options">
                   <div
-                    onClick={() => setShippingType('fast')}
-                    className={`catalog-shipping-option ${shippingType === 'fast' || shippingType === 'fastest' ? 'active' : ''}`}
+                    onClick={() => {
+                      if (isFastShippingAvailable()) {
+                        handleShippingTypeChange('fast')
+                      }
+                    }}
+                    className={`catalog-shipping-option ${shippingType === 'fast' || shippingType === 'fastest' ? 'active' : ''} ${!isFastShippingAvailable() ? 'disabled' : ''}`}
                   >
                     <div className="catalog-shipping-icon">⚡</div>
                     <div className="catalog-shipping-title">Rápido</div>
-                    <div className="catalog-shipping-desc">Envío el mismo día (solo antes de las 12:00)</div>
+                    <div className="catalog-shipping-desc">
+                      {isFastShippingAvailable() 
+                        ? 'Envío el mismo día (solo antes de las 12:00)'
+                        : 'No disponible después de las 12:00'
+                      }
+                    </div>
                     <div className="catalog-shipping-price">+10%</div>
                   </div>
                   <div
-                    onClick={() => setShippingType('normal')}
+                    onClick={() => handleShippingTypeChange('normal')}
                     className={`catalog-shipping-option ${shippingType === 'normal' ? 'active' : ''}`}
                   >
                     <div className="catalog-shipping-icon">📦</div>
@@ -666,7 +762,7 @@ export default function CatalogV3() {
                     <div className="catalog-shipping-price">+0%</div>
                   </div>
                   <div
-                    onClick={() => setShippingType('cheap')}
+                    onClick={() => handleShippingTypeChange('cheap')}
                     className={`catalog-shipping-option ${shippingType === 'cheap' || shippingType === 'cheapest' ? 'active' : ''}`}
                   >
                     <div className="catalog-shipping-icon">💰</div>
@@ -735,6 +831,33 @@ export default function CatalogV3() {
             </div>
           </div>
         </>
+      )}
+      
+      {/* Modal de restricción de horario */}
+      {showTimeRestrictionModal && (
+        <Modal
+          isOpen={true}
+          onClose={() => setShowTimeRestrictionModal(false)}
+          title="⏰ Envío Rápido No Disponible"
+          size="sm"
+        >
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏰</div>
+            <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#666', marginBottom: '24px' }}>
+              El envío rápido solo está disponible hasta las <strong>12:00 PM</strong> (mediodía).
+            </p>
+            <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#999', marginBottom: '24px' }}>
+              Después de las 12:00 PM, puedes seleccionar envío <strong>Normal</strong> (día siguiente) o <strong>Económico</strong> (1-3 días).
+            </p>
+            <button
+              onClick={() => setShowTimeRestrictionModal(false)}
+              className="button"
+              style={{ width: '100%' }}
+            >
+              Entendido
+            </button>
+          </div>
+        </Modal>
       )}
       
       {/* Modal para seleccionar unidad */}
@@ -1373,6 +1496,17 @@ export default function CatalogV3() {
         .catalog-shipping-option.active {
           border-color: var(--kivi-green);
           background: #e8f5e9;
+        }
+        
+        .catalog-shipping-option.disabled {
+          opacity: 0.6;
+          cursor: not-allowed !important;
+          pointer-events: none;
+        }
+        
+        .catalog-shipping-option.disabled:hover {
+          border-color: #ddd;
+          background: #fff;
         }
         
         .catalog-shipping-icon {
