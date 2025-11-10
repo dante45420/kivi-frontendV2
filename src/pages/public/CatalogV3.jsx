@@ -455,33 +455,71 @@ export default function CatalogV3() {
                 const itemEffectivePrice = getEffectivePrice(item.product, weeklyOffers)
                 const itemHasOffer = hasActiveOffer(item.product, weeklyOffers)
                 const itemOffer = getActiveOffer(item.product, weeklyOffers)
-                const itemTotal = itemEffectivePrice * item.quantity
+                // Detectar si hay unidad cambiada
+                const needsConversion = item.product.unit && item.unit !== item.product.unit
+                const hasConversion = item.product.avg_units_per_kg !== null && item.product.avg_units_per_kg !== undefined
+                let itemTotal = 0
+                let itemTotalText = ''
+                
+                if (needsConversion && hasConversion) {
+                  // Calcular aproximado usando conversión
+                  if (item.unit === 'unit' && item.product.unit === 'kg') {
+                    const kgEquivalent = item.quantity / item.product.avg_units_per_kg
+                    itemTotal = Math.round(kgEquivalent * itemEffectivePrice)
+                    itemTotalText = `≈ ${itemTotal.toLocaleString('es-CL')}`
+                  } else if (item.unit === 'kg' && item.product.unit === 'unit') {
+                    const unitsEquivalent = item.quantity * item.product.avg_units_per_kg
+                    itemTotal = Math.round(unitsEquivalent * itemEffectivePrice)
+                    itemTotalText = `≈ ${itemTotal.toLocaleString('es-CL')}`
+                  }
+                } else if (needsConversion && !hasConversion) {
+                  itemTotalText = 'Por definir (unidad cambiada)'
+                } else {
+                  itemTotal = itemEffectivePrice * item.quantity
+                  itemTotalText = itemTotal.toLocaleString('es-CL')
+                }
                 
                 return (
                 <div key={`${item.product.id}-${item.unit}`} className="catalog-cart-item">
                   <div className="catalog-cart-item-header">
                     <div>
-                      <div className="catalog-cart-item-name">{item.product.name}</div>
-                      <div className="catalog-cart-item-details">
-                        {item.quantity} {item.unit === 'kg' ? 'kg' : 'unidades'} × 
-                        {itemHasOffer && item.product.sale_price ? (
-                          <span>
-                            <span style={{ textDecoration: 'line-through', color: '#999', marginRight: '4px' }}>
-                              ${item.product.sale_price.toLocaleString('es-CL')}
+                        <div className="catalog-cart-item-name">{item.product.name}</div>
+                        <div className="catalog-cart-item-details">
+                          {item.quantity} {item.unit === 'kg' ? 'kg' : 'unidades'} × 
+                          {itemHasOffer && item.product.sale_price ? (
+                            <span>
+                              <span style={{ textDecoration: 'line-through', color: '#999', marginRight: '4px' }}>
+                                ${item.product.sale_price.toLocaleString('es-CL')}
+                              </span>
+                              <span style={{ color: '#ff5722', fontWeight: 700 }}>
+                                ${itemEffectivePrice.toLocaleString('es-CL')}
+                              </span>
                             </span>
-                            <span style={{ color: '#ff5722', fontWeight: 700 }}>
-                              ${itemEffectivePrice.toLocaleString('es-CL')}
-                            </span>
-                          </span>
-                        ) : (
-                          <span> ${itemEffectivePrice.toLocaleString('es-CL')}</span>
-                        )}
-                      </div>
-                      {itemHasOffer && (
-                        <div style={{ fontSize: '11px', color: '#ff5722', fontWeight: 700, marginTop: '2px' }}>
-                          🏷️ Oferta: -{Math.round((1 - itemOffer.special_price / item.product.sale_price) * 100)}%
+                          ) : (
+                            <span> ${itemEffectivePrice.toLocaleString('es-CL')}</span>
+                          )}
                         </div>
-                      )}
+                        {needsConversion && (
+                          <div style={{ 
+                            fontSize: '11px', 
+                            color: !hasConversion ? '#ff6b00' : '#666', 
+                            fontWeight: 700, 
+                            marginTop: '2px',
+                            background: !hasConversion ? '#fff3e0' : 'transparent',
+                            padding: !hasConversion ? '4px 6px' : '4px 6px',
+                            borderRadius: '4px'
+                          }}>
+                            {!hasConversion 
+                              ? '⚠️ Por definir (unidad cambiada)'
+                              : `≈ $${itemTotalText} (conversión aplicada)`
+                            }
+                          </div>
+                        )}
+                        {itemHasOffer && !needsConversion && (
+                          <div style={{ fontSize: '11px', color: '#ff5722', fontWeight: 700, marginTop: '2px' }}>
+                            🏷️ Oferta: -{Math.round((1 - itemOffer.special_price / item.product.sale_price) * 100)}%
+                          </div>
+                        )}
                     </div>
                     <button
                       onClick={() => removeItem(item.product.id, item.unit)}
@@ -522,10 +560,33 @@ export default function CatalogV3() {
             <div className="catalog-cart-footer">
               <div className="catalog-cart-total">
                 <span>Total:</span>
-                <span>${cart.reduce((sum, item) => {
-                  const itemPrice = getEffectivePrice(item.product, weeklyOffers)
-                  return sum + (itemPrice * item.quantity)
-                }, 0).toLocaleString('es-CL')}</span>
+                <span>${(() => {
+                  let total = 0
+                  let hasUndefined = false
+                  cart.forEach(item => {
+                    const needsConversion = item.product.unit && item.unit !== item.product.unit
+                    const hasConversion = item.product.avg_units_per_kg !== null && item.product.avg_units_per_kg !== undefined
+                    const itemPrice = getEffectivePrice(item.product, weeklyOffers)
+                    
+                    if (needsConversion && hasConversion) {
+                      if (item.unit === 'unit' && item.product.unit === 'kg') {
+                        const kgEquivalent = item.quantity / item.product.avg_units_per_kg
+                        total += Math.round(kgEquivalent * itemPrice)
+                      } else if (item.unit === 'kg' && item.product.unit === 'unit') {
+                        const unitsEquivalent = item.quantity * item.product.avg_units_per_kg
+                        total += Math.round(unitsEquivalent * itemPrice)
+                      }
+                    } else if (needsConversion && !hasConversion) {
+                      hasUndefined = true
+                    } else {
+                      total += itemPrice * item.quantity
+                    }
+                  })
+                  if (hasUndefined) {
+                    return 'Por definir'
+                  }
+                  return total.toLocaleString('es-CL')
+                })()}</span>
               </div>
               <button
                 onClick={() => {
@@ -801,7 +862,7 @@ export default function CatalogV3() {
         /* Ofertas */
         .catalog-offers-section {
           padding: 8px 20px 0;
-          padding-top: 180px;
+          padding-top: 120px;
           max-width: 1400px;
           margin: 0 auto;
           width: 100%;
@@ -850,8 +911,8 @@ export default function CatalogV3() {
         
         /* Products Section */
         .catalog-products-section {
-          padding: 20px;
-          padding-top: 180px;
+          padding: 8px 20px 20px;
+          padding-top: 8px;
           max-width: 1400px;
           margin: 0 auto;
           width: 100%;
@@ -1178,35 +1239,37 @@ export default function CatalogV3() {
         }
         
         .catalog-cart-footer {
-          padding: 24px;
+          padding: 16px;
           border-top: 2px solid #eee;
           background: #fff;
           box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
-          position: relative;
-          z-index: 1;
+          position: sticky;
+          bottom: 0;
+          z-index: 10;
           min-height: fit-content;
+          margin-top: auto;
         }
         
         .catalog-cart-total {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 24px;
-          font-size: 24px;
+          margin-bottom: 12px;
+          font-size: 18px;
           font-weight: 800;
-          padding: 16px 0;
+          padding: 8px 0;
           align-items: center;
         }
         
         .catalog-cart-total span:last-child {
           color: var(--kivi-green);
-          font-size: 28px;
+          font-size: 20px;
         }
         
         .catalog-cart-footer .button {
-          height: 56px;
-          font-size: 18px;
+          height: 48px;
+          font-size: 16px;
           font-weight: 700;
-          padding: 16px 24px;
+          padding: 12px 20px;
           width: 100%;
           display: flex;
           align-items: center;
@@ -1427,7 +1490,7 @@ export default function CatalogV3() {
           
           .catalog-offers-section {
             padding: 4px 4px 0 !important;
-            padding-top: 180px !important;
+            padding-top: 120px !important;
           }
           
           .catalog-offers-box {
@@ -1436,8 +1499,8 @@ export default function CatalogV3() {
           }
           
           .catalog-products-section {
-            padding: 8px 4px !important;
-            padding-top: 180px !important;
+            padding: 4px 4px 20px !important;
+            padding-top: 4px !important;
           }
           
           /* GARANTIZAR 3 COLUMNAS EN MÓVIL CON GRID */
