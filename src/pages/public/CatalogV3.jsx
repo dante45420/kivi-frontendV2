@@ -1171,7 +1171,7 @@ export default function CatalogV3() {
         }
         
         .catalog-cart-footer {
-          padding: 16px;
+          padding: 24px;
           border-top: 2px solid #eee;
           background: #fff;
           box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
@@ -1180,13 +1180,23 @@ export default function CatalogV3() {
         .catalog-cart-total {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 16px;
-          font-size: 18px;
+          margin-bottom: 24px;
+          font-size: 24px;
           font-weight: 800;
+          padding: 16px 0;
+          align-items: center;
         }
         
         .catalog-cart-total span:last-child {
           color: var(--kivi-green);
+          font-size: 28px;
+        }
+        
+        .catalog-cart-footer .button {
+          height: 56px;
+          font-size: 18px;
+          font-weight: 700;
+          padding: 16px 24px;
         }
         
         /* Checkout */
