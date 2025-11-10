@@ -252,7 +252,7 @@ export default function CatalogV2() {
       
       {/* Ofertas de la Semana */}
       {weeklyOffers.length > 0 && (
-        <div style={{ padding: '20px 20px 0', maxWidth: '1400px', margin: '0 auto' }}>
+        <div style={{ padding: '20px 20px 0', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
           <div style={{
             background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
             borderRadius: '12px',
@@ -275,8 +275,10 @@ export default function CatalogV2() {
             
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '12px'
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '12px',
+              width: '100%',
+              boxSizing: 'border-box'
             }}>
               {weeklyOffers.map(offer => (
                 <div
@@ -382,7 +384,7 @@ export default function CatalogV2() {
       )}
       
       {/* Products Grid */}
-      <div className="products-container" style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="products-container" style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
         {filteredProducts.length === 0 ? (
           <div style={{
             textAlign: 'center',
@@ -402,8 +404,10 @@ export default function CatalogV2() {
             className="products-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '16px'
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '16px',
+              width: '100%',
+              boxSizing: 'border-box'
             }}
           >
             {filteredProducts.map(product => {
@@ -1145,6 +1149,7 @@ export default function CatalogV2() {
             box-sizing: border-box !important;
             overflow-x: hidden !important;
             width: 100% !important;
+            margin: 0 auto !important;
           }
           .products-grid {
             grid-template-columns: repeat(3, 1fr) !important;
@@ -1154,6 +1159,8 @@ export default function CatalogV2() {
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
           }
           .products-grid .card {
             max-width: 100% !important;
@@ -1162,6 +1169,8 @@ export default function CatalogV2() {
             min-width: 0 !important;
             padding: 6px !important;
             gap: 4px !important;
+            margin: 0 !important;
+            overflow: hidden !important;
           }
           .products-grid .card > div:first-child {
             padding-top: 60% !important;
