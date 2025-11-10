@@ -146,14 +146,17 @@ export default function CatalogV2() {
       <PublicNavbar cartCount={itemCount} onCartClick={() => setShowCart(true)} />
       
       {/* Search Bar Fija */}
-      <div style={{
+      <div className="search-bar-container" style={{
         position: 'sticky',
         top: '64px',
         background: '#fff',
         borderBottom: '2px solid #eee',
         padding: '12px 20px',
         zIndex: 50,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        width: '100%',
+        boxSizing: 'border-box',
+        overflowX: 'hidden'
       }}>
         <div style={{
           maxWidth: '1400px',
@@ -252,7 +255,7 @@ export default function CatalogV2() {
       
       {/* Ofertas de la Semana */}
       {weeklyOffers.length > 0 && (
-        <div style={{ padding: '20px 20px 0', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
+        <div className="weekly-offers-container" style={{ padding: '20px 20px 0', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
           <div style={{
             background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
             borderRadius: '12px',
@@ -278,7 +281,8 @@ export default function CatalogV2() {
               gridTemplateColumns: 'repeat(3, 1fr)',
               gap: '12px',
               width: '100%',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              maxWidth: '100%'
             }}>
               {weeklyOffers.map(offer => (
                 <div
@@ -405,9 +409,10 @@ export default function CatalogV2() {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
+              gap: '12px',
               width: '100%',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
+              maxWidth: '100%'
             }}
           >
             {filteredProducts.map(product => {
@@ -1137,40 +1142,50 @@ export default function CatalogV2() {
           to { transform: translateX(0); }
         }
         @media (max-width: 768px) {
+          html, body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            position: relative !important;
+          }
           .hide-mobile { display: none !important; }
           .catalog-page {
             overflow-x: hidden !important;
             width: 100% !important;
             max-width: 100vw !important;
+            position: relative !important;
           }
           .products-container {
-            padding: 12px !important;
+            padding: 8px 4px !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
             width: 100% !important;
-            margin: 0 auto !important;
+            margin: 0 !important;
+            position: relative !important;
           }
           .products-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-            gap: 6px !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 4px !important;
             justify-items: stretch !important;
             width: 100% !important;
-            max-width: 100% !important;
+            max-width: 100vw !important;
             box-sizing: border-box !important;
             overflow-x: hidden !important;
             padding: 0 !important;
             margin: 0 !important;
+            position: relative !important;
           }
           .products-grid .card {
             max-width: 100% !important;
             width: 100% !important;
             box-sizing: border-box !important;
             min-width: 0 !important;
-            padding: 6px !important;
+            padding: 4px !important;
             gap: 4px !important;
             margin: 0 !important;
             overflow: hidden !important;
+            position: relative !important;
           }
           .products-grid .card > div:first-child {
             padding-top: 60% !important;
@@ -1234,6 +1249,38 @@ export default function CatalogV2() {
             font-size: 10px !important;
             line-height: 1 !important;
             opacity: 0.8 !important;
+          }
+          .weekly-offers-container {
+            padding: 8px 4px 0 !important;
+            overflow-x: hidden !important;
+          }
+          .weekly-offers-container > div {
+            padding: 12px !important;
+          }
+          .weekly-offers-container > div > div {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 4px !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            box-sizing: border-box !important;
+          }
+          .search-bar-container {
+            padding: 8px 4px !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
+          }
+          .search-bar-container > div {
+            max-width: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 0 4px !important;
+          }
+          .search-bar-container input {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            flex: 1 1 auto !important;
           }
         }
       `}</style>
