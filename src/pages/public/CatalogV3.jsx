@@ -1087,10 +1087,12 @@ export default function CatalogV3() {
         .catalog-cart-footer {
           flex-shrink: 0;
           margin-top: auto;
+          position: relative;
+          z-index: 1;
         }
         
         .catalog-cart-items {
-          flex: 1;
+          flex: 1 1 auto;
           min-height: 0;
           overflow-y: auto;
           overflow-x: hidden;
@@ -1175,6 +1177,9 @@ export default function CatalogV3() {
           border-top: 2px solid #eee;
           background: #fff;
           box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+          position: relative;
+          z-index: 1;
+          min-height: fit-content;
         }
         
         .catalog-cart-total {
@@ -1197,6 +1202,11 @@ export default function CatalogV3() {
           font-size: 18px;
           font-weight: 700;
           padding: 16px 24px;
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
         }
         
         /* Checkout */
