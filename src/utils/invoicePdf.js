@@ -212,7 +212,11 @@ export function generateInvoicePDF(invoiceData) {
   if (invoiceData.shipping_amount && invoiceData.shipping_amount !== 0) {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    doc.setTextColor(invoiceData.shipping_amount > 0 ? 76, 175, 80 : 255, 152, 0)
+    if (invoiceData.shipping_amount > 0) {
+      doc.setTextColor(76, 175, 80)
+    } else {
+      doc.setTextColor(255, 152, 0)
+    }
     
     const shippingLabel = invoiceData.shipping_amount > 0 ? 'Envío rápido:' : 'Descuento 5%:'
     doc.text(shippingLabel, margin + 5, y)
