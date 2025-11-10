@@ -102,18 +102,20 @@ export default function Accounting() {
           const hasConversion = product && product.avg_units_per_kg !== null && product.avg_units_per_kg !== undefined
           
           // Calcular total del item (SIN decimales)
+          // Usar unit_price del item (puede incluir precio de oferta) o sale_price del producto
+          const effectivePrice = item.unit_price || product?.sale_price || 0
           let itemTotal = 0
           if (needsConversion && hasConversion) {
             // Convertir usando avg_units_per_kg
             if (item.unit === 'unit' && product.unit === 'kg') {
               const kgEquivalent = item.qty / product.avg_units_per_kg
-              itemTotal = Math.round(kgEquivalent * (product.sale_price || 0))
+              itemTotal = Math.round(kgEquivalent * effectivePrice)
             } else if (item.unit === 'kg' && product.unit === 'unit') {
               const unitsEquivalent = item.qty * product.avg_units_per_kg
-              itemTotal = Math.round(unitsEquivalent * (product.sale_price || 0))
+              itemTotal = Math.round(unitsEquivalent * effectivePrice)
             }
           } else {
-            itemTotal = Math.round(item.qty * (item.unit_price || product?.sale_price || 0))
+            itemTotal = Math.round(item.qty * effectivePrice)
           }
           
           // Total pagado del item

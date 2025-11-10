@@ -9,6 +9,7 @@ import { createOrder } from '../../api/orders'
 import { useCart } from '../../hooks/useCart'
 import { generateCatalogPDF } from '../../utils/catalogPdf'
 import { getImageUrl } from '../../utils/imageUrl'
+import { getEffectivePrice, hasActiveOffer, getActiveOffer } from '../../utils/productPrice'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
 import Loader from '../../components/Loader'
@@ -26,6 +27,12 @@ export default function CatalogV3() {
   // Carrito
   const { cart, addItem, removeItem, updateQuantity, clearCart, total, itemCount } = useCart()
   const [showCart, setShowCart] = useState(false)
+  
+  // Calcular total con ofertas
+  const cartTotalWithOffers = cart.reduce((sum, item) => {
+    const itemPrice = getEffectivePrice(item.product, weeklyOffers)
+    return sum + (itemPrice * item.quantity)
+  }, 0)
   
   // Checkout
   const [showCheckout, setShowCheckout] = useState(false)
@@ -123,7 +130,7 @@ export default function CatalogV3() {
           product_id: item.product.id,
           qty: item.quantity,
           unit: item.unit,
-          unit_price: item.product.sale_price || 0
+          unit_price: getEffectivePrice(item.product, weeklyOffers)
         })),
         source: 'web',
         shipping_type: shippingType,
@@ -277,6 +284,9 @@ export default function CatalogV3() {
               const inCart = hasProductInCart(product.id)
               const cartItemKg = getCartItem(product.id, 'kg')
               const cartItemUnit = getCartItem(product.id, 'unit')
+              const effectivePrice = getEffectivePrice(product, weeklyOffers)
+              const hasOffer = hasActiveOffer(product, weeklyOffers)
+              const offer = getActiveOffer(product, weeklyOffers)
               
               return (
                 <div key={product.id} className="catalog-product-card">
@@ -292,12 +302,58 @@ export default function CatalogV3() {
                   <div className="catalog-product-info">
                     <div className="catalog-product-name">{product.name}</div>
                     
-                    {product.sale_price && (
+                    {effectivePrice > 0 && (
                       <div className="catalog-price">
-                        ${product.sale_price.toLocaleString('es-CL')}
-                        <span className="catalog-price-unit-small">
-                          / {product.unit === 'kg' ? 'kg' : 'unidad'}
-                        </span>
+                        {hasOffer && product.sale_price && (
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '4px', 
+                            marginBottom: '4px',
+                            width: '100%',
+                            max-width: '100%',
+                            flexWrap: 'wrap'
+                          }}>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              color: '#999', 
+                              textDecoration: 'line-through',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              ${product.sale_price.toLocaleString('es-CL')}
+                            </span>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              background: '#ff5722', 
+                              color: '#fff', 
+                              padding: '2px 4px', 
+                              borderRadius: '4px', 
+                              fontWeight: 700,
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}>
+                              -{Math.round((1 - offer.special_price / product.sale_price) * 100)}%
+                            </span>
+                          </div>
+                        )}
+                        <div style={{ 
+                          fontSize: hasOffer ? '16px' : '16px', 
+                          fontWeight: 800, 
+                          color: hasOffer ? '#ff5722' : 'var(--kivi-green)',
+                          width: '100%',
+                          max-width: '100%',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          ${effectivePrice.toLocaleString('es-CL')}
+                          <span className="catalog-price-unit-small">
+                            / {product.unit === 'kg' ? 'kg' : 'unidad'}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -394,14 +450,37 @@ export default function CatalogV3() {
             </div>
             
             <div className="catalog-cart-items">
-              {cart.map(item => (
+              {cart.map(item => {
+                const itemEffectivePrice = getEffectivePrice(item.product, weeklyOffers)
+                const itemHasOffer = hasActiveOffer(item.product, weeklyOffers)
+                const itemOffer = getActiveOffer(item.product, weeklyOffers)
+                const itemTotal = itemEffectivePrice * item.quantity
+                
+                return (
                 <div key={`${item.product.id}-${item.unit}`} className="catalog-cart-item">
                   <div className="catalog-cart-item-header">
                     <div>
                       <div className="catalog-cart-item-name">{item.product.name}</div>
                       <div className="catalog-cart-item-details">
-                        {item.quantity} {item.unit === 'kg' ? 'kg' : 'unidades'} × ${item.product.sale_price?.toLocaleString('es-CL')}
+                        {item.quantity} {item.unit === 'kg' ? 'kg' : 'unidades'} × 
+                        {itemHasOffer && item.product.sale_price ? (
+                          <span>
+                            <span style={{ textDecoration: 'line-through', color: '#999', marginRight: '4px' }}>
+                              ${item.product.sale_price.toLocaleString('es-CL')}
+                            </span>
+                            <span style={{ color: '#ff5722', fontWeight: 700 }}>
+                              ${itemEffectivePrice.toLocaleString('es-CL')}
+                            </span>
+                          </span>
+                        ) : (
+                          <span> ${itemEffectivePrice.toLocaleString('es-CL')}</span>
+                        )}
                       </div>
+                      {itemHasOffer && (
+                        <div style={{ fontSize: '11px', color: '#ff5722', fontWeight: 700, marginTop: '2px' }}>
+                          🏷️ Oferta: -{Math.round((1 - itemOffer.special_price / item.product.sale_price) * 100)}%
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => removeItem(item.product.id, item.unit)}
@@ -435,13 +514,17 @@ export default function CatalogV3() {
                     </button>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
             
             <div className="catalog-cart-footer">
               <div className="catalog-cart-total">
                 <span>Total:</span>
-                <span>${total.toLocaleString('es-CL')}</span>
+                <span>${cart.reduce((sum, item) => {
+                  const itemPrice = getEffectivePrice(item.product, weeklyOffers)
+                  return sum + (itemPrice * item.quantity)
+                }, 0).toLocaleString('es-CL')}</span>
               </div>
               <button
                 onClick={() => {
@@ -526,7 +609,7 @@ export default function CatalogV3() {
               <div className="catalog-checkout-summary">
                 <div className="catalog-summary-row">
                   <span>Subtotal:</span>
-                  <span>${total.toLocaleString('es-CL')}</span>
+                  <span>${cartTotalWithOffers.toLocaleString('es-CL')}</span>
                 </div>
                 {shippingType === 'fastest' && (
                   <div className="catalog-summary-row highlight">
@@ -537,17 +620,17 @@ export default function CatalogV3() {
                 {shippingType === 'cheapest' && (
                   <div className="catalog-summary-row highlight discount">
                     <span>Descuento 5%:</span>
-                    <span>-${Math.round(total * 0.05).toLocaleString('es-CL')}</span>
+                    <span>-${Math.round(cartTotalWithOffers * 0.05).toLocaleString('es-CL')}</span>
                   </div>
                 )}
                 <div className="catalog-summary-total">
                   <span>Total:</span>
                   <span>
                     ${shippingType === 'fastest' 
-                      ? (total + 2500).toLocaleString('es-CL')
+                      ? (cartTotalWithOffers + 2500).toLocaleString('es-CL')
                       : shippingType === 'cheapest'
-                      ? (total - Math.round(total * 0.05)).toLocaleString('es-CL')
-                      : total.toLocaleString('es-CL')
+                      ? (cartTotalWithOffers - Math.round(cartTotalWithOffers * 0.05)).toLocaleString('es-CL')
+                      : cartTotalWithOffers.toLocaleString('es-CL')
                     }
                   </span>
                 </div>
@@ -712,7 +795,7 @@ export default function CatalogV3() {
         
         /* Ofertas */
         .catalog-offers-section {
-          padding: 20px 20px 0;
+          padding: 8px 20px 0;
           padding-top: 180px;
           max-width: 1400px;
           margin: 0 auto;
@@ -724,12 +807,12 @@ export default function CatalogV3() {
           background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
           border-radius: 12px;
           border: 2px solid #ff9800;
-          padding: 20px;
-          margin-bottom: 20px;
+          padding: 12px;
+          margin-bottom: 8px;
         }
         
         .catalog-offers-title {
-          margin: 0 0 16px 0;
+          margin: 0 0 8px 0;
           font-size: 22px;
           font-weight: 800;
           color: #e65100;
@@ -823,10 +906,16 @@ export default function CatalogV3() {
           font-weight: 800;
           color: var(--kivi-green);
           text-align: center;
-          height: 36px;
+          height: auto;
+          min-height: 36px;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          overflow: hidden;
         }
         
         .catalog-price-unit-small {
@@ -1305,8 +1394,13 @@ export default function CatalogV3() {
           }
           
           .catalog-offers-section {
-            padding: 8px 4px 0 !important;
+            padding: 4px 4px 0 !important;
             padding-top: 180px !important;
+          }
+          
+          .catalog-offers-box {
+            padding: 8px !important;
+            margin-bottom: 4px !important;
           }
           
           .catalog-products-section {
