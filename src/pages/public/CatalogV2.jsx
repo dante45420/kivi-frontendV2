@@ -142,7 +142,7 @@ export default function CatalogV2() {
   }
   
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--kivi-cream)', paddingTop: '64px' }}>
+    <div className="catalog-page" style={{ minHeight: '100vh', background: 'var(--kivi-cream)', paddingTop: '64px', overflowX: 'hidden', width: '100%' }}>
       <PublicNavbar cartCount={itemCount} onCartClick={() => setShowCart(true)} />
       
       {/* Search Bar Fija */}
@@ -1134,20 +1134,32 @@ export default function CatalogV2() {
         }
         @media (max-width: 768px) {
           .hide-mobile { display: none !important; }
+          .catalog-page {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+          }
           .products-container {
             padding: 12px !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
+            overflow-x: hidden !important;
+            width: 100% !important;
           }
           .products-grid {
             grid-template-columns: repeat(3, 1fr) !important;
             gap: 6px !important;
-            justify-items: center !important;
+            justify-items: stretch !important;
             width: 100% !important;
             max-width: 100% !important;
             box-sizing: border-box !important;
+            overflow-x: hidden !important;
           }
           .products-grid .card {
+            max-width: 100% !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            min-width: 0 !important;
             padding: 6px !important;
             gap: 4px !important;
           }
