@@ -713,7 +713,7 @@ export default function CatalogV3() {
         /* Ofertas */
         .catalog-offers-section {
           padding: 20px 20px 0;
-          padding-top: 140px;
+          padding-top: 160px;
           max-width: 1400px;
           margin: 0 auto;
           width: 100%;
@@ -991,6 +991,17 @@ export default function CatalogV3() {
           touch-action: pan-y;
         }
         
+        .catalog-cart-sidebar > .catalog-cart-header,
+        .catalog-cart-sidebar > .catalog-cart-footer {
+          flex-shrink: 0;
+        }
+        
+        .catalog-cart-sidebar > .catalog-cart-items {
+          flex: 1 1 auto;
+          min-height: 0;
+          overflow-y: auto;
+        }
+        
         @keyframes slideInRight {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
@@ -1012,11 +1023,12 @@ export default function CatalogV3() {
         }
         
         .catalog-cart-items {
-          flex: 1;
+          flex: 1 1 auto;
           overflow-y: auto;
           overflow-x: hidden;
           padding: 16px;
           min-height: 0;
+          max-height: 100%;
           -webkit-overflow-scrolling: touch;
           overscroll-behavior: contain;
           scroll-behavior: smooth;
@@ -1075,9 +1087,6 @@ export default function CatalogV3() {
           border-top: 2px solid #eee;
           background: #fff;
           flex-shrink: 0;
-          position: sticky;
-          bottom: 0;
-          z-index: 1;
           box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
         }
         
@@ -1299,7 +1308,7 @@ export default function CatalogV3() {
           
           .catalog-offers-section {
             padding: 8px 4px 0 !important;
-            padding-top: 140px !important;
+            padding-top: 160px !important;
           }
           
           .catalog-products-section {
