@@ -1,5 +1,5 @@
 /**
- * Página Pública: Sobre nosotros
+ * Página Pública: Sobre nosotros hecha hoy
  */
 import { Link } from 'react-router-dom'
 import PublicNavbar from '../../components/PublicNavbar'

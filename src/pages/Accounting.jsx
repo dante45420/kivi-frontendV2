@@ -779,17 +779,17 @@ export default function Accounting() {
                   borderTop: '2px solid #ddd',
                   paddingTop: '8px',
                   marginTop: '8px'
+              }}>
+                <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
+                  Total a Pagar
+                </div>
+                <div style={{
+                  fontSize: '32px',
+                  fontWeight: 800,
+                  color: 'var(--kivi-orange)',
+                  fontFamily: 'monospace'
                 }}>
-                  <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
-                    Total a Pagar
-                  </div>
-                  <div style={{
-                    fontSize: '32px',
-                    fontWeight: 800,
-                    color: 'var(--kivi-orange)',
-                    fontFamily: 'monospace'
-                  }}>
-                    ${invoiceData.total.toLocaleString('es-CL')}
+                  ${invoiceData.total.toLocaleString('es-CL')}
                   </div>
                 </div>
               </div>
