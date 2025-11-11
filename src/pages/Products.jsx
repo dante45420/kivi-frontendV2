@@ -253,88 +253,137 @@ export default function Products() {
         </div>
       ) : (
         <div className="grid grid-4">
-          {filteredProducts.map(product => (
-            <div key={product.id} className="card" style={{ padding: '12px' }}>
-              {/* Foto */}
-              {product.photo_url ? (
-                <div style={{
-                  width: '100%',
-                  height: '140px',
-                  borderRadius: 'var(--radius-sm)',
-                  overflow: 'hidden',
-                  marginBottom: '12px',
-                  background: '#f5f5f5'
-                }}>
-                  <img
-                    src={getImageUrl(product.photo_url)}
-                    alt={product.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                </div>
-              ) : (
-                <div style={{
-                  width: '100%',
-                  height: '140px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: '#f5f5f5',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '48px',
-                  marginBottom: '12px'
-                }}>
-                  {product.category?.emoji || '📦'}
-                </div>
-              )}
-              
-              {/* Info */}
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  marginBottom: '4px',
-                  color: 'var(--kivi-text-dark)'
-                }}>
-                  {product.name}
-                </div>
-                
-                <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                  {product.category?.name}
-                </div>
-                
-                {product.sale_price && (
+          {filteredProducts.map(product => {
+            // Calcular porcentaje de utilidad
+            const profitPercent = product.purchase_price && product.sale_price && product.purchase_price > 0
+              ? ((product.sale_price - product.purchase_price) / product.purchase_price) * 100
+              : null
+            
+            return (
+              <div key={product.id} className="card" style={{ padding: '12px', position: 'relative' }}>
+                {/* Etiquetas en esquinas superiores */}
+                {profitPercent !== null && (
                   <div style={{
-                    fontSize: '18px',
-                    fontWeight: 800,
-                    color: 'var(--kivi-green)'
+                    position: 'absolute',
+                    top: '8px',
+                    left: '8px',
+                    background: 'var(--kivi-green)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    zIndex: 10,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    whiteSpace: 'nowrap'
                   }}>
-                    ${product.sale_price.toLocaleString('es-CL')} / {product.unit}
+                    💰 {profitPercent >= 0 ? '+' : ''}{profitPercent.toFixed(1)}%
                   </div>
                 )}
+                
+                {product.avg_units_per_kg && product.avg_units_per_kg > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    background: 'var(--kivi-orange)',
+                    color: '#fff',
+                    padding: '4px 10px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    zIndex: 10,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {product.unit === 'kg' 
+                      ? `⚖️ 1kg=${product.avg_units_per_kg.toFixed(1)}u`
+                      : `⚖️ ${product.avg_units_per_kg.toFixed(1)}u=1kg`
+                    }
+                  </div>
+                )}
+                
+                {/* Foto */}
+                {product.photo_url ? (
+                  <div style={{
+                    width: '100%',
+                    height: '140px',
+                    borderRadius: 'var(--radius-sm)',
+                    overflow: 'hidden',
+                    marginBottom: '12px',
+                    background: '#f5f5f5'
+                  }}>
+                    <img
+                      src={getImageUrl(product.photo_url)}
+                      alt={product.name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '140px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '48px',
+                    marginBottom: '12px'
+                  }}>
+                    {product.category?.emoji || '📦'}
+                  </div>
+                )}
+                
+                {/* Info */}
+                <div style={{ marginBottom: '12px' }}>
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    marginBottom: '4px',
+                    color: 'var(--kivi-text-dark)'
+                  }}>
+                    {product.name}
+                  </div>
+                  
+                  <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
+                    {product.category?.name}
+                  </div>
+                  
+                  {product.sale_price && (
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: 800,
+                      color: 'var(--kivi-green)'
+                    }}>
+                      ${product.sale_price.toLocaleString('es-CL')} / {product.unit}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Acciones */}
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="button button-sm ghost"
+                    style={{ flex: 1 }}
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product)}
+                    className="button button-sm danger"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
-              
-              {/* Acciones */}
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button
-                  onClick={() => handleEdit(product)}
-                  className="button button-sm ghost"
-                  style={{ flex: 1 }}
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => handleDelete(product)}
-                  className="button button-sm danger"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
       
@@ -345,66 +394,7 @@ export default function Products() {
         title={editingProduct ? `Editar ${editingProduct.name}` : 'Nuevo producto'}
         size="md"
       >
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '8px' }}>
-          {/* Etiquetas en esquinas superiores */}
-          {editingProduct && (
-            <>
-              {/* Porcentaje de utilidad (esquina superior izquierda) */}
-              {formData.purchase_price && formData.sale_price && parseFloat(formData.purchase_price) > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-16px',
-                  left: '0',
-                  background: 'var(--kivi-green)',
-                  color: '#fff',
-                  padding: '6px 14px',
-                  borderRadius: '16px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  zIndex: 10,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {(() => {
-                    const purchasePrice = parseFloat(formData.purchase_price)
-                    const salePrice = parseFloat(formData.sale_price)
-                    if (purchasePrice > 0 && salePrice) {
-                      const profitPercent = ((salePrice - purchasePrice) / purchasePrice) * 100
-                      return `💰 ${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(1)}% utilidad`
-                    }
-                    return null
-                  })()}
-                </div>
-              )}
-              
-              {/* Conversión de unidades (esquina superior derecha) */}
-              {formData.avg_units_per_kg && parseFloat(formData.avg_units_per_kg) > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '-16px',
-                  right: '0',
-                  background: 'var(--kivi-orange)',
-                  color: '#fff',
-                  padding: '6px 14px',
-                  borderRadius: '16px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  zIndex: 10,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {(() => {
-                    const conversion = parseFloat(formData.avg_units_per_kg)
-                    if (formData.unit === 'kg') {
-                      return `⚖️ 1 kg = ${conversion.toFixed(2)} unidades`
-                    } else {
-                      return `⚖️ ${conversion.toFixed(2)} unidades = 1 kg`
-                    }
-                  })()}
-                </div>
-              )}
-            </>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Foto (solo en edición) */}
           {editingProduct && (
             <div className="form-group">

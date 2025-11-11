@@ -11,6 +11,7 @@ export default function Shopping() {
   const [consolidatedList, setConsolidatedList] = useState([])
   const [products, setProducts] = useState({}) // { product_id: product }
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false) // Protección contra doble submit
   const [showModal, setShowModal] = useState(false)
   const [purchaseData, setPurchaseData] = useState({}) // { product_id_unit: { price_total, conversion_qty, ... } }
   const [expandedProducts, setExpandedProducts] = useState(new Set())
@@ -38,20 +39,25 @@ export default function Shopping() {
         return
       }
       
-      // Cargar detalles de cada pedido
-      const allItems = []
+      // Cargar detalles de cada pedido EN PARALELO (mucho más rápido)
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      for (const order of emittedOrders) {
-        try {
-          const response = await fetch(`${API_URL}/api/orders/${order.id}`)
-          const data = await response.json()
-          if (Array.isArray(data.items)) {
-            allItems.push(...data.items.map(item => ({ ...item, order_id: order.id })))
+      const ordersData = await Promise.all(
+        emittedOrders.map(async (order) => {
+          try {
+            const response = await fetch(`${API_URL}/api/orders/${order.id}`)
+            const data = await response.json()
+            if (Array.isArray(data.items)) {
+              return data.items.map(item => ({ ...item, order_id: order.id }))
+            }
+            return []
+          } catch (err) {
+            console.error(`Error cargando orden ${order.id}:`, err)
+            return []
           }
-        } catch (err) {
-          console.error(`Error cargando orden ${order.id}:`, err)
-        }
-      }
+        })
+      )
+      // Aplanar el array de arrays
+      const allItems = ordersData.flat()
       
       // Consolidar por producto + unidad
       const byProduct = {}
@@ -229,16 +235,25 @@ export default function Shopping() {
       return
     }
     
+    // Protección contra doble submit
+    if (saving) {
+      console.log('⚠️ Ya se está guardando, ignorando click duplicado')
+      return
+    }
+    
+    setSaving(true)
     try {
-      // Guardar cada compra
+      // Guardar todas las compras EN PARALELO (mucho más rápido)
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      for (const purchase of toSave) {
-        await fetch(`${API_URL}/api/purchases`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(purchase)
-        })
-      }
+      await Promise.all(
+        toSave.map(purchase => 
+          fetch(`${API_URL}/api/purchases`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(purchase)
+          })
+        )
+      )
       
       alert(`✅ ${toSave.length} compras registradas`)
       setShowModal(false)
@@ -249,8 +264,13 @@ export default function Shopping() {
         const key = `${item.product_id}_${item.unit}`
         return purchaseData[key]?.price_total ? { ...item, purchased: true } : item
       }))
+      
+      // Recargar datos
+      await loadAllData()
     } catch (err) {
       alert('Error: ' + err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -592,8 +612,19 @@ export default function Shopping() {
                 onClick={saveAllPurchases}
                 className="button"
                 style={{ minWidth: '100px', padding: '10px 16px' }}
+                disabled={saving}
               >
-                💾 Guardar
+                {saving ? (
+                  <>
+                    <div className="loading" style={{ width: '16px', height: '16px', marginRight: '8px' }}></div>
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💾</span>
+                    <span>Guardar</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

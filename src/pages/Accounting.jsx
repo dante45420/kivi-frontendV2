@@ -3,7 +3,7 @@
  * Gestión de pagos agrupada por cliente con conversiones y sin decimales
  */
 import { useState, useEffect } from 'react'
-import { fetchOrders, fetchOrder, updateOrderItem } from '../api/orders'
+import { fetchOrders, fetchOrder, updateOrderItem, addOrderItem } from '../api/orders'
 import { fetchProducts } from '../api/products'
 import { fetchCustomers } from '../api/customers'
 import { createPayment } from '../api/payments'
@@ -33,6 +33,18 @@ export default function Accounting() {
   // Modal Edit Item
   const [editingItem, setEditingItem] = useState(null)
   const [editForm, setEditForm] = useState({ qty: 0, unit_price: 0 })
+  
+  // Modal Add Item
+  const [addingItemTo, setAddingItemTo] = useState(null)
+  const [newItem, setNewItem] = useState({ 
+    product_id: '', 
+    qty: 1, 
+    unit: 'kg', 
+    customer_id: '',
+    use_purchase_price: true // Usar precio de compra para remates
+  })
+  const [allProducts, setAllProducts] = useState([])
+  const [allCustomers, setAllCustomers] = useState([])
 
   useEffect(() => {
     loadAccountingData()
@@ -42,37 +54,44 @@ export default function Accounting() {
     setLoading(true)
     try {
       // Cargar productos
-      const allProducts = await fetchProducts()
+      const allProductsData = await fetchProducts()
       const productsMap = {}
-      allProducts.forEach(p => { productsMap[p.id] = p })
+      allProductsData.forEach(p => { productsMap[p.id] = p })
       setProducts(productsMap)
+      setAllProducts(allProductsData)
       
       // Cargar clientes
-      const allCustomers = await fetchCustomers()
+      const allCustomersData = await fetchCustomers()
       const customersMap = {}
-      allCustomers.forEach(c => { customersMap[c.id] = c })
+      allCustomersData.forEach(c => { customersMap[c.id] = c })
+      setAllCustomers(allCustomersData)
       
       // Cargar pedidos finalizados
       const allOrders = await fetchOrders()
       const finalizedOrders = allOrders.filter(o => o.status === 'finalized')
       
-      // Cargar items de cada pedido
-      const ordersWithItems = []
-      for (const order of finalizedOrders) {
-        try {
-          const data = await fetchOrder(order.id)
-          if (Array.isArray(data.items) && data.items.length > 0) {
-            ordersWithItems.push({ ...order, items: data.items })
+      // Cargar items de cada pedido EN PARALELO (mucho más rápido)
+      const ordersWithItems = await Promise.all(
+        finalizedOrders.map(async (order) => {
+          try {
+            const data = await fetchOrder(order.id)
+            if (Array.isArray(data.items) && data.items.length > 0) {
+              return { ...order, items: data.items }
+            }
+            return null
+          } catch (err) {
+            console.error(`Error cargando orden ${order.id}:`, err)
+            return null
           }
-        } catch (err) {
-          console.error(`Error cargando orden ${order.id}:`, err)
-        }
-      }
+        })
+      )
+      // Filtrar los nulls
+      const validOrders = ordersWithItems.filter(o => o !== null)
       
       // Agrupar por cliente
       const byCustomer = {}
       
-      ordersWithItems.forEach(order => {
+      validOrders.forEach(order => {
         order.items.forEach(item => {
           const customerId = item.customer_id
           if (!customerId) return
@@ -287,6 +306,52 @@ export default function Accounting() {
     } catch (err) {
       console.error('Error completo:', err)
       alert('Error: ' + err.message)
+    }
+  }
+  
+  async function handleAddItem() {
+    if (!newItem.product_id || !newItem.customer_id) {
+      alert('Selecciona un producto y cliente')
+      return
+    }
+    
+    try {
+      const product = allProducts.find(p => p.id === parseInt(newItem.product_id))
+      if (!product) {
+        alert('Producto no encontrado')
+        return
+      }
+      
+      // Para remates: usar precio de compra si está disponible, sino precio de venta
+      const unitPrice = newItem.use_purchase_price && product.purchase_price 
+        ? product.purchase_price 
+        : (product.sale_price || 0)
+      
+      // Si hay conversión, calcular charged_qty y charged_unit
+      let notes = 'Item agregado para remate'
+      if (product.avg_units_per_kg && product.avg_units_per_kg > 0) {
+        if (newItem.unit === 'unit' && product.unit === 'kg') {
+          notes += ` (conversión: ${newItem.qty} unidades = ${(newItem.qty / product.avg_units_per_kg).toFixed(2)} kg)`
+        } else if (newItem.unit === 'kg' && product.unit === 'unit') {
+          notes += ` (conversión: ${newItem.qty} kg = ${(newItem.qty * product.avg_units_per_kg).toFixed(1)} unidades)`
+        }
+      }
+      
+      await addOrderItem(addingItemTo, {
+        customer_id: parseInt(newItem.customer_id),
+        product_id: parseInt(newItem.product_id),
+        qty: parseFloat(newItem.qty),
+        unit: newItem.unit,
+        unit_price: unitPrice,
+        notes: notes
+      })
+      
+      alert('✅ Item agregado al pedido')
+      setAddingItemTo(null)
+      setNewItem({ product_id: '', qty: 1, unit: 'kg', customer_id: '', use_purchase_price: true })
+      loadAccountingData()
+    } catch (err) {
+      alert('Error al agregar item: ' + (err.message || 'Error desconocido'))
     }
   }
   
@@ -506,6 +571,26 @@ export default function Accounting() {
                             {/* Items del pedido */}
                             {isOrderExpanded && (
                               <div style={{ padding: '12px 16px', background: '#fff' }}>
+                                {/* Botón para agregar item */}
+                                <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #e0e0e0' }}>
+                                  <button
+                                    className="button button-sm"
+                                    onClick={() => {
+                                      setAddingItemTo(order.order_id)
+                                      setNewItem({
+                                        product_id: '',
+                                        qty: 1,
+                                        unit: 'kg',
+                                        customer_id: data.customer.id,
+                                        use_purchase_price: true
+                                      })
+                                    }}
+                                    style={{ width: '100%' }}
+                                  >
+                                    ➕ Agregar Item (Remate)
+                                  </button>
+                                </div>
+                                
                                 {order.items.map((item, iidx) => (
                                   <div key={iidx} style={{
                                     display: 'flex',
@@ -1078,6 +1163,190 @@ export default function Accounting() {
                 style={{ minWidth: '120px' }}
               >
                 💾 Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {/* Modal: Agregar Item */}
+      {addingItemTo && (
+        <>
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onClick={() => {
+              setAddingItemTo(null)
+              setNewItem({ product_id: '', qty: 1, unit: 'kg', customer_id: '', use_purchase_price: true })
+            }}
+          >
+          </div>
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: '#fff',
+              padding: '24px',
+              borderRadius: '12px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+              zIndex: 1001,
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: 700 }}>
+              ➕ Agregar Item al Pedido #{addingItemTo}
+            </h3>
+            
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Cliente
+                </label>
+                <select
+                  className="input"
+                  value={newItem.customer_id}
+                  onChange={(e) => setNewItem({ ...newItem, customer_id: e.target.value })}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="">Seleccionar cliente...</option>
+                  {allCustomers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Producto
+                </label>
+                <select
+                  className="input"
+                  value={newItem.product_id}
+                  onChange={(e) => {
+                    const product = allProducts.find(p => p.id === parseInt(e.target.value))
+                    setNewItem({ 
+                      ...newItem, 
+                      product_id: e.target.value,
+                      unit: product?.unit || 'kg'
+                    })
+                  }}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="">Seleccionar producto...</option>
+                  {allProducts.filter(p => p.active).map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} - ${p.purchase_price || p.sale_price || 0}/{p.unit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                    Cantidad
+                  </label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={newItem.qty}
+                    onChange={(e) => setNewItem({ ...newItem, qty: parseFloat(e.target.value) || 1 })}
+                    min="0.01"
+                    step="0.01"
+                    style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                  />
+                </div>
+                
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                    Unidad
+                  </label>
+                  <select
+                    className="input"
+                    value={newItem.unit}
+                    onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+                    style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                  >
+                    <option value="kg">kg</option>
+                    <option value="unit">unidad</option>
+                  </select>
+                </div>
+              </div>
+              
+              {newItem.product_id && (() => {
+                const product = allProducts.find(p => p.id === parseInt(newItem.product_id))
+                if (!product) return null
+                
+                const unitPrice = newItem.use_purchase_price && product.purchase_price 
+                  ? product.purchase_price 
+                  : (product.sale_price || 0)
+                
+                return (
+                  <div style={{ 
+                    padding: '12px', 
+                    background: '#f5f5f5', 
+                    borderRadius: '8px',
+                    fontSize: '13px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span>Precio unitario:</span>
+                      <span style={{ fontWeight: 600 }}>
+                        ${unitPrice.toLocaleString('es-CL')} / {newItem.unit}
+                      </span>
+                    </div>
+                    {product.avg_units_per_kg && product.avg_units_per_kg > 0 && (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                        Conversión: {newItem.unit === 'unit' && product.unit === 'kg' 
+                          ? `${newItem.qty} unidades = ${(newItem.qty / product.avg_units_per_kg).toFixed(2)} kg`
+                          : newItem.unit === 'kg' && product.unit === 'unit'
+                          ? `${newItem.qty} kg = ${(newItem.qty * product.avg_units_per_kg).toFixed(1)} unidades`
+                          : 'Sin conversión necesaria'
+                        }
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontWeight: 700, color: 'var(--kivi-green)' }}>
+                      <span>Total:</span>
+                      <span>${Math.round(newItem.qty * unitPrice).toLocaleString('es-CL')}</span>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginTop: '24px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setAddingItemTo(null)
+                  setNewItem({ product_id: '', qty: 1, unit: 'kg', customer_id: '', use_purchase_price: true })
+                }}
+                className="button ghost"
+                style={{ minWidth: '100px' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddItem}
+                className="button"
+                style={{ minWidth: '120px' }}
+                disabled={!newItem.product_id || !newItem.customer_id}
+              >
+                ➕ Agregar
               </button>
             </div>
           </div>
