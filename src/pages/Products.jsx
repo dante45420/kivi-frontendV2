@@ -37,6 +37,7 @@ export default function Products() {
     sale_price: '',
     purchase_price: '',
     unit: 'kg',
+    avg_units_per_kg: '',
     notes: ''
   })
   const [saving, setSaving] = useState(false)
@@ -70,6 +71,7 @@ export default function Products() {
       sale_price: '',
       purchase_price: '',
       unit: 'kg',
+      avg_units_per_kg: '',
       notes: ''
     })
     setShowModal(true)
@@ -83,6 +85,7 @@ export default function Products() {
       sale_price: product.sale_price || '',
       purchase_price: product.purchase_price || '',
       unit: product.unit,
+      avg_units_per_kg: product.avg_units_per_kg || '',
       notes: product.notes || ''
     })
     setShowModal(true)
@@ -102,6 +105,7 @@ export default function Products() {
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : null,
         purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : null,
         unit: formData.unit,
+        avg_units_per_kg: formData.avg_units_per_kg ? parseFloat(formData.avg_units_per_kg) : null,
         notes: formData.notes
       }
       
@@ -341,7 +345,66 @@ export default function Products() {
         title={editingProduct ? `Editar ${editingProduct.name}` : 'Nuevo producto'}
         size="md"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '8px' }}>
+          {/* Etiquetas en esquinas superiores */}
+          {editingProduct && (
+            <>
+              {/* Porcentaje de utilidad (esquina superior izquierda) */}
+              {formData.purchase_price && formData.sale_price && parseFloat(formData.purchase_price) > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-16px',
+                  left: '0',
+                  background: 'var(--kivi-green)',
+                  color: '#fff',
+                  padding: '6px 14px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  zIndex: 10,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {(() => {
+                    const purchasePrice = parseFloat(formData.purchase_price)
+                    const salePrice = parseFloat(formData.sale_price)
+                    if (purchasePrice > 0 && salePrice) {
+                      const profitPercent = ((salePrice - purchasePrice) / purchasePrice) * 100
+                      return `💰 ${profitPercent >= 0 ? '+' : ''}${profitPercent.toFixed(1)}% utilidad`
+                    }
+                    return null
+                  })()}
+                </div>
+              )}
+              
+              {/* Conversión de unidades (esquina superior derecha) */}
+              {formData.avg_units_per_kg && parseFloat(formData.avg_units_per_kg) > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-16px',
+                  right: '0',
+                  background: 'var(--kivi-orange)',
+                  color: '#fff',
+                  padding: '6px 14px',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  zIndex: 10,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {(() => {
+                    const conversion = parseFloat(formData.avg_units_per_kg)
+                    if (formData.unit === 'kg') {
+                      return `⚖️ 1 kg = ${conversion.toFixed(2)} unidades`
+                    } else {
+                      return `⚖️ ${conversion.toFixed(2)} unidades = 1 kg`
+                    }
+                  })()}
+                </div>
+              )}
+            </>
+          )}
           {/* Foto (solo en edición) */}
           {editingProduct && (
             <div className="form-group">
@@ -405,16 +468,31 @@ export default function Products() {
             </div>
           </div>
           
-          <div className="form-group">
-            <label className="label">Unidad</label>
-            <select
-              className="input"
-              value={formData.unit}
-              onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-            >
-              <option value="kg">Kilogramo (kg)</option>
-              <option value="unit">Unidad</option>
-            </select>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="label">Unidad</label>
+              <select
+                className="input"
+                value={formData.unit}
+                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+              >
+                <option value="kg">Kilogramo (kg)</option>
+                <option value="unit">Unidad</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Conversión (unidades/kg)</label>
+              <input
+                type="number"
+                step="0.01"
+                className="input"
+                value={formData.avg_units_per_kg}
+                onChange={(e) => setFormData({ ...formData, avg_units_per_kg: e.target.value })}
+                placeholder="Ej: 5.5"
+                title="Promedio de unidades por kilogramo (se actualiza automáticamente al registrar compras)"
+              />
+            </div>
           </div>
           
           <div className="form-group">
