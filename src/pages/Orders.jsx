@@ -103,15 +103,26 @@ export default function Orders() {
     }
     
     try {
+      // Buscar el cliente por nombre para obtener su ID
+      const customer = customers.find(c => c.name === newItem.customer_name)
+      if (!customer) {
+        alert('Cliente no encontrado. Por favor selecciona un cliente válido.')
+        return
+      }
+      
       const product = products.find(p => p.id === parseInt(newItem.product_id))
+      if (!product) {
+        alert('Producto no encontrado')
+        return
+      }
+      
+      // Enviar en el formato que espera el backend
       await addOrderItem(addingItemTo, {
-        items: [{
-          product_id: parseInt(newItem.product_id),
-          customer_name: newItem.customer_name,
-          qty: parseFloat(newItem.qty),
-          unit: newItem.unit,
-          sale_unit_price: product?.sale_price || 0
-        }]
+        customer_id: customer.id,
+        product_id: parseInt(newItem.product_id),
+        qty: parseFloat(newItem.qty),
+        unit: newItem.unit,
+        unit_price: product?.sale_price || 0
       })
       
       // Recargar detalles del pedido
