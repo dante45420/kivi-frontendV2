@@ -4,32 +4,65 @@
  */
 import { jsPDF } from 'jspdf'
 
-export function generateCatalogPDF(products, weeklyOffers = []) {
+// Función para cargar imagen como base64
+function loadImageAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
+      try {
+        const base64 = canvas.toDataURL('image/png')
+        resolve(base64)
+      } catch (e) {
+        reject(e)
+      }
+    }
+    img.onerror = reject
+    img.src = url
+  })
+}
+
+export async function generateCatalogPDF(products, weeklyOffers = []) {
   const doc = new jsPDF()
   
   const pageWidth = doc.internal.pageSize.width
   const pageHeight = doc.internal.pageSize.height
-  const margin = 15
+  const margin = 20
   const contentWidth = pageWidth - (2 * margin)
   
-  let y = 15
+  let y = 20
   
   // ======== ENCABEZADO ========
-  // Color crema: #FFF8DC o RGB(255, 248, 220)
-  doc.setFillColor(255, 248, 220)
-  doc.rect(0, 0, pageWidth, 40, 'F')
+  // Color crema: #FFF9F0 (RGB: 255, 249, 240) - igual al de la página
+  doc.setFillColor(255, 249, 240)
+  doc.rect(0, 0, pageWidth, 50, 'F')
   
-  doc.setFontSize(32)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(76, 175, 80) // Verde Kivi
-  doc.text('KIVI', margin, 22)
+  // Intentar cargar logo
+  try {
+    const logoUrl = '/Logo_kivi.png'
+    const logoBase64 = await loadImageAsBase64(logoUrl)
+    // Logo a la izquierda, altura 30mm
+    doc.addImage(logoBase64, 'PNG', margin, 10, 40, 12)
+  } catch (e) {
+    // Si falla, usar texto como fallback
+    console.warn('No se pudo cargar el logo, usando texto:', e)
+    doc.setFontSize(28)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(76, 175, 80) // Verde Kivi
+    doc.text('KIVI', margin, 22)
+  }
   
-  doc.setFontSize(11)
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(60, 60, 60)
-  doc.text('Catalogo de Productos Frescos', margin, 32)
+  doc.text('Catálogo de Productos Frescos', margin, 35)
   
-  doc.setFontSize(9)
+  doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
   const dateText = new Date().toLocaleDateString('es-CL', { 
     weekday: 'long', 
@@ -38,104 +71,116 @@ export function generateCatalogPDF(products, weeklyOffers = []) {
     day: 'numeric' 
   })
   const dateWidth = doc.getTextWidth(dateText)
-  doc.text(dateText, pageWidth - margin - dateWidth, 22)
+  doc.text(dateText, pageWidth - margin - dateWidth, 25)
   
-  y = 48
+  y = 58
   
   // ======== OFERTAS DE LA SEMANA ========
   if (weeklyOffers.length > 0) {
-    doc.setFillColor(255, 244, 229)
-    doc.roundedRect(margin, y, contentWidth, 8, 2, 2, 'F')
+    if (y > pageHeight - 50) {
+      doc.addPage()
+      y = 20
+    }
     
-    doc.setFontSize(14)
+    doc.setFillColor(255, 244, 229)
+    doc.roundedRect(margin, y, contentWidth, 10, 2, 2, 'F')
+    
+    doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(255, 87, 34)
-    doc.text('OFERTAS DE LA SEMANA', margin + 3, y + 5.5)
+    doc.text('OFERTAS DE LA SEMANA', margin + 4, y + 6.5)
     
-    y += 12
+    y += 14
     
     weeklyOffers.forEach(offer => {
-      if (y > pageHeight - 40) {
+      if (y > pageHeight - 50) {
         doc.addPage()
         y = 20
       }
       
-      // Caja de oferta
+      // Caja de oferta - más espaciosa
       doc.setFillColor(255, 245, 238)
-      doc.roundedRect(margin, y, contentWidth, 24, 2, 2, 'F')
+      doc.roundedRect(margin, y, contentWidth, 28, 2, 2, 'F')
       
       // Borde destacado
       doc.setDrawColor(255, 87, 34)
-      doc.setLineWidth(1)
-      doc.roundedRect(margin, y, contentWidth, 24, 2, 2, 'S')
+      doc.setLineWidth(0.5)
+      doc.roundedRect(margin, y, contentWidth, 28, 2, 2, 'S')
       
-      y += 7
+      y += 8
       
-      // Nombre del producto
-      doc.setFontSize(12)
+      // Nombre del producto - más grande
+      doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(40, 40, 40)
-      doc.text(offer.product?.name || 'Producto', margin + 4, y)
+      const productName = (offer.product?.name || 'Producto').substring(0, 35)
+      doc.text(productName, margin + 4, y)
       
       // Precio tachado
-      doc.setFontSize(10)
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(120, 120, 120)
       const oldPrice = `$${offer.product?.sale_price?.toLocaleString('es-CL')}`
-      doc.text(oldPrice, pageWidth - margin - 60, y)
+      const oldPriceX = pageWidth - margin - 80
+      doc.text(oldPrice, oldPriceX, y)
       const oldPriceWidth = doc.getTextWidth(oldPrice)
-      doc.line(pageWidth - margin - 60, y - 1, pageWidth - margin - 60 + oldPriceWidth, y - 1)
+      doc.line(oldPriceX, y - 1, oldPriceX + oldPriceWidth, y - 1)
       
-      y += 6
+      y += 8
       
-      // Precio de oferta
-      doc.setFontSize(16)
+      // Precio de oferta - más grande
+      doc.setFontSize(20)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(255, 87, 34)
       const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
-      doc.text(newPrice, pageWidth - margin - 50, y)
+      doc.text(newPrice, pageWidth - margin - 70, y)
       
       // Descuento
       if (offer.product?.sale_price) {
         const discount = Math.round((1 - offer.special_price / offer.product.sale_price) * 100)
         doc.setFillColor(255, 87, 34)
-        doc.roundedRect(pageWidth - margin - 25, y - 8, 22, 10, 2, 2, 'F')
-        doc.setFontSize(10)
+        doc.roundedRect(pageWidth - margin - 30, y - 10, 26, 12, 2, 2, 'F')
+        doc.setFontSize(11)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(255, 255, 255)
         const discountText = `-${discount}%`
         const discountWidth = doc.getTextWidth(discountText)
-        doc.text(discountText, pageWidth - margin - 14 - discountWidth / 2, y - 1)
+        doc.text(discountText, pageWidth - margin - 17 - discountWidth / 2, y - 2)
       }
       
-      // Unidad
-      doc.setFontSize(9)
+      // Unidad - más grande
+      doc.setFontSize(11)
       doc.setTextColor(100, 100, 100)
-      doc.setFont('helvetica', 'italic')
+      doc.setFont('helvetica', 'normal')
       doc.text(`/ ${offer.product?.unit === 'kg' ? 'kg' : 'unidad'}`, margin + 4, y)
       
       y += 10
       
-      // Vigencia
-      doc.setFontSize(7)
+      // Vigencia - más grande
+      doc.setFontSize(9)
       doc.setTextColor(150, 150, 150)
       const startDate = new Date(offer.start_date).toLocaleDateString('es-CL')
       const endDate = new Date(offer.end_date).toLocaleDateString('es-CL')
       doc.text(`Válido del ${startDate} al ${endDate}`, margin + 4, y)
       
-      y += 8
+      y += 10
     })
     
-    y += 8
+    y += 10
   }
   
   // ======== PRODUCTOS ========
-  doc.setFontSize(14)
+  if (y > pageHeight - 40) {
+    doc.addPage()
+    y = 20
+  }
+  
+  doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(50, 50, 50)
   doc.text('PRODUCTOS DISPONIBLES', margin, y)
   
-  y += 8
+  y += 10
   
   // Agrupar productos por categoría
   const productsByCategory = {}
@@ -147,37 +192,38 @@ export function generateCatalogPDF(products, weeklyOffers = []) {
     productsByCategory[categoryName].push(product)
   })
   
-  // Ancho de columna
-  const columnWidth = (contentWidth - 8) / 2
+  // Ancho de columna - más espacio entre columnas
+  const columnWidth = (contentWidth - 12) / 2
   
   // Renderizar por categoría
   Object.keys(productsByCategory).sort().forEach(categoryName => {
     const categoryProducts = productsByCategory[categoryName]
     
-    if (y > pageHeight - 30) {
+    if (y > pageHeight - 40) {
       doc.addPage()
       y = 20
     }
     
-    // Encabezado de categoría
+    // Encabezado de categoría - más grande
     doc.setFillColor(240, 240, 240)
-    doc.roundedRect(margin, y, contentWidth, 7, 1, 1, 'F')
+    doc.roundedRect(margin, y, contentWidth, 9, 1, 1, 'F')
     
-    doc.setFontSize(11)
+    doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(70, 70, 70)
     
-    // Sin emoji
-    doc.text(categoryName.toUpperCase(), margin + 3, y + 5)
+    doc.text(categoryName.toUpperCase(), margin + 4, y + 6)
     
-    y += 10
+    y += 12
     
     // Productos de la categoría en DOS COLUMNAS
     let column = 0
     let columnY = y
+    const lineHeight = 12 // Altura de línea más grande
     
     categoryProducts.forEach((product, idx) => {
-      if (columnY > pageHeight - 20) {
+      // Verificar si necesitamos nueva página o cambiar de columna
+      if (columnY + lineHeight > pageHeight - 25) {
         if (column === 0) {
           // Cambiar a columna 2
           column = 1
@@ -191,25 +237,30 @@ export function generateCatalogPDF(products, weeklyOffers = []) {
         }
       }
       
-      const xPos = column === 0 ? margin + 2 : margin + columnWidth + 8
+      const xPos = column === 0 ? margin + 2 : margin + columnWidth + 10
       
-      // Nombre del producto
-      doc.setFontSize(9)
+      // Nombre del producto - más grande
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(50, 50, 50)
-      const productName = product.name.substring(0, 22)
+      // Ajustar longitud del nombre según ancho de columna
+      const maxNameLength = Math.floor(columnWidth / 2.5)
+      let productName = product.name
+      if (productName.length > maxNameLength) {
+        productName = productName.substring(0, maxNameLength - 3) + '...'
+      }
       doc.text(productName, xPos, columnY)
       
-      // Precio y unidad EN EL MISMO COLOR GRIS
+      // Precio y unidad - más grande
       if (product.sale_price) {
-        doc.setFontSize(9)
+        doc.setFontSize(11)
         doc.setFont('helvetica', 'normal')
-        doc.setTextColor(120, 120, 120)  // Mismo gris para todo
+        doc.setTextColor(120, 120, 120)
         const priceText = `$${product.sale_price.toLocaleString('es-CL')} / ${product.unit === 'kg' ? 'kg' : 'unid'}`
-        doc.text(priceText, xPos, columnY + 4)
+        doc.text(priceText, xPos, columnY + 5)
       }
       
-      columnY += 10
+      columnY += lineHeight
       
       // Alternar columnas
       if (column === 0 && idx < categoryProducts.length - 1) {
@@ -225,7 +276,7 @@ export function generateCatalogPDF(products, weeklyOffers = []) {
     if (column === 1) {
       y = columnY
     }
-    y += 6
+    y += 8
   })
   
   // ======== PIE DE PÁGINA EN TODAS LAS PÁGINAS ========
@@ -240,7 +291,7 @@ export function generateCatalogPDF(products, weeklyOffers = []) {
     doc.setLineWidth(0.3)
     doc.line(margin, footerY - 5, pageWidth - margin, footerY - 5)
     
-    doc.setFontSize(8)
+    doc.setFontSize(9)
     doc.setTextColor(150, 150, 150)
     doc.setFont('helvetica', 'normal')
     
@@ -248,8 +299,8 @@ export function generateCatalogPDF(products, weeklyOffers = []) {
     const footerWidth = doc.getTextWidth(footerText)
     doc.text(footerText, (pageWidth - footerWidth) / 2, footerY)
     
-    // Número de página
-    doc.setFontSize(7)
+    // Número de página - más grande
+    doc.setFontSize(8)
     const pageText = `Página ${i} de ${totalPages}`
     const pageWidth2 = doc.getTextWidth(pageText)
     doc.text(pageText, pageWidth - margin - pageWidth2, footerY)

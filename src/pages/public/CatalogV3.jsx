@@ -89,9 +89,9 @@ export default function CatalogV3() {
     }
   }
   
-  const handleDownloadCatalog = () => {
+  const handleDownloadCatalog = async () => {
     try {
-      generateCatalogPDF(products, weeklyOffers)
+      await generateCatalogPDF(products, weeklyOffers)
     } catch (error) {
       console.error('Error generando PDF:', error)
       alert('Error al generar el catálogo PDF')

@@ -9,6 +9,8 @@ import { fetchCustomers } from '../api/customers'
 import { createPayment } from '../api/payments'
 import { generateInvoicePDF } from '../utils/invoicePdf'
 import { calculateShipping } from '../utils/shipping'
+import { fetchWeeklyOffers } from '../api/weeklyOffers'
+import { getEffectivePrice } from '../utils/productPrice'
 import Loader from '../components/Loader'
 
 export default function Accounting() {
@@ -45,6 +47,7 @@ export default function Accounting() {
   })
   const [allProducts, setAllProducts] = useState([])
   const [allCustomers, setAllCustomers] = useState([])
+  const [weeklyOffers, setWeeklyOffers] = useState([])
 
   useEffect(() => {
     loadAccountingData()
@@ -65,6 +68,10 @@ export default function Accounting() {
       const customersMap = {}
       allCustomersData.forEach(c => { customersMap[c.id] = c })
       setAllCustomers(allCustomersData)
+      
+      // Cargar ofertas semanales vigentes (una vez para todas las órdenes)
+      const offersData = await fetchWeeklyOffers(true, true)
+      setWeeklyOffers(offersData)
       
       // Cargar pedidos finalizados
       const allOrders = await fetchOrders()
@@ -112,7 +119,7 @@ export default function Accounting() {
               total_billed: 0,
               total_paid: 0,
               needs_conversion: false,
-              shipping_type: order.shipping_type || 'fastest'
+              shipping_type: order.shipping_type || 'normal'
             }
           }
           
@@ -122,8 +129,20 @@ export default function Accounting() {
           const hasConversion = product && product.avg_units_per_kg !== null && product.avg_units_per_kg !== undefined
           
           // Calcular total del item (SIN decimales)
-          // Usar unit_price del item (puede incluir precio de oferta) o sale_price del producto
-          const effectivePrice = item.unit_price || product?.sale_price || 0
+          // Si el item tiene unit_price, usarlo (puede ser precio editado o de oferta)
+          // Si no, usar precio efectivo considerando ofertas semanales vigentes
+          let effectivePrice = item.unit_price
+          if (!effectivePrice && product) {
+            // Obtener ofertas vigentes para la fecha del pedido
+            const orderDate = new Date(order.created_at)
+            const activeOffers = offersData.filter(offer => {
+              const startDate = new Date(offer.start_date)
+              const endDate = new Date(offer.end_date)
+              return orderDate >= startDate && orderDate <= endDate && offer.active
+            })
+            effectivePrice = getEffectivePrice(product, activeOffers)
+          }
+          if (!effectivePrice) effectivePrice = 0
           let itemTotal = 0
           if (needsConversion && hasConversion) {
             // Convertir usando avg_units_per_kg
@@ -147,7 +166,8 @@ export default function Accounting() {
             needs_conversion: needsConversion,
             has_conversion: hasConversion,
             calculated_total: itemTotal,
-            paid_amount: itemPaid
+            paid_amount: itemPaid,
+            order_date: order.created_at // Guardar fecha del pedido para usar en edición
           })
           
           byCustomer[customerId].orders[order.id].subtotal += itemTotal
@@ -374,6 +394,22 @@ export default function Accounting() {
       console.error('Error actualizando item:', error)
       alert(`❌ Error al actualizar: ${error.message || 'Error desconocido'}`)
     }
+  }
+  
+  // Obtener precio base para edición (precio normal o precio con oferta vigente)
+  function getBasePriceForEdit(item) {
+    if (!item.product) return 0
+    
+    // Obtener ofertas vigentes para la fecha del pedido
+    const orderDate = item.order_date ? new Date(item.order_date) : new Date()
+    const activeOffers = weeklyOffers.filter(offer => {
+      if (!offer.active) return false
+      const startDate = new Date(offer.start_date)
+      const endDate = new Date(offer.end_date)
+      return orderDate >= startDate && orderDate <= endDate
+    })
+    
+    return getEffectivePrice(item.product, activeOffers)
   }
 
   if (loading) return (
@@ -665,9 +701,11 @@ export default function Accounting() {
                                           className="button button-sm" 
                                           onClick={() => {
                                             setEditingItem(item)
+                                            // Usar precio base (normal o con oferta) si no hay unit_price editado
+                                            const basePrice = getBasePriceForEdit(item)
                                             setEditForm({
                                               qty: item.charged_qty || item.qty,
-                                              unit_price: item.unit_price || item.product?.sale_price || 0
+                                              unit_price: item.unit_price || basePrice
                                             })
                                           }}
                                           style={{ padding:'4px 8px', fontSize:12 }}
@@ -1097,6 +1135,43 @@ export default function Accounting() {
             <h3 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px', fontWeight: 700 }}>
               ✏️ Editar: {editingItem.product_name || editingItem.product?.name}
             </h3>
+            
+            {(() => {
+              const basePrice = getBasePriceForEdit(editingItem)
+              const hasOffer = weeklyOffers.some(offer => 
+                offer.product_id === editingItem.product_id && 
+                offer.active &&
+                new Date(offer.start_date) <= new Date() &&
+                new Date(offer.end_date) >= new Date()
+              )
+              
+              return (
+                <div style={{ 
+                  padding: '12px', 
+                  background: '#f0f7ff', 
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  fontSize: '13px'
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: '4px' }}>Precio base de referencia:</div>
+                  <div style={{ color: '#666' }}>
+                    {hasOffer ? (
+                      <>
+                        Precio con oferta: <strong>${basePrice.toLocaleString('es-CL')}</strong>
+                        {' '}(Precio normal: ${editingItem.product?.sale_price?.toLocaleString('es-CL') || 0})
+                      </>
+                    ) : (
+                      <>
+                        Precio normal: <strong>${basePrice.toLocaleString('es-CL')}</strong>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+                    Puedes editar el precio para compensaciones, pero debe estar basado en el precio base.
+                  </div>
+                </div>
+              )
+            })()}
             
             <div style={{ display: 'grid', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

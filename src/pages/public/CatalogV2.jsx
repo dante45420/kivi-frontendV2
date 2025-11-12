@@ -9,6 +9,8 @@ import { createOrder } from '../../api/orders'
 import { useCart } from '../../hooks/useCart'
 import { generateCatalogPDF } from '../../utils/catalogPdf'
 import { getImageUrl } from '../../utils/imageUrl'
+import { calculateShipping, calculateTotalWithShipping } from '../../utils/shipping'
+import { getEffectivePrice } from '../../utils/productPrice'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
 import Loader from '../../components/Loader'
@@ -26,6 +28,12 @@ export default function CatalogV2() {
   // Carrito
   const { cart, addItem, removeItem, updateQuantity, clearCart, total, itemCount } = useCart()
   const [showCart, setShowCart] = useState(false)
+  
+  // Calcular total con ofertas
+  const cartTotalWithOffers = cart.reduce((sum, item) => {
+    const itemPrice = getEffectivePrice(item.product, weeklyOffers)
+    return sum + (itemPrice * item.quantity)
+  }, 0)
   
   // Checkout
   const [showCheckout, setShowCheckout] = useState(false)
@@ -58,9 +66,9 @@ export default function CatalogV2() {
     }
   }
   
-  const handleDownloadCatalog = () => {
+  const handleDownloadCatalog = async () => {
     try {
-      generateCatalogPDF(products, weeklyOffers)
+      await generateCatalogPDF(products, weeklyOffers)
     } catch (error) {
       console.error('Error generando PDF:', error)
       alert('Error al generar el catálogo PDF')
@@ -111,11 +119,11 @@ export default function CatalogV2() {
           product_id: item.product.id,
           qty: item.quantity,
           unit: item.unit,
-          unit_price: item.product.sale_price || 0
+          unit_price: getEffectivePrice(item.product, weeklyOffers)
         })),
         source: 'web',
         shipping_type: shippingType,
-        notes: `Pedido desde catálogo web - ${shippingType === 'fastest' ? 'Envío rápido' : 'Envío económico'}`
+        notes: `Pedido desde catálogo web - ${calculateShipping(shippingType, cartTotalWithOffers).label}`
       }
       
       await createOrder(orderData)
@@ -991,20 +999,26 @@ export default function CatalogV2() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
                 <span>Subtotal:</span>
-                <span>${total.toLocaleString('es-CL')}</span>
+                <span>${cartTotalWithOffers.toLocaleString('es-CL')}</span>
               </div>
-              {shippingType === 'fastest' && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', color: 'var(--kivi-green)' }}>
-                  <span>Envío rápido:</span>
-                  <span>+$2.500</span>
-                </div>
-              )}
-              {shippingType === 'cheapest' && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px', color: 'var(--kivi-orange)' }}>
-                  <span>Descuento 5%:</span>
-                  <span>-${Math.round(total * 0.05).toLocaleString('es-CL')}</span>
-                </div>
-              )}
+              {(() => {
+                const shipping = calculateShipping(shippingType, cartTotalWithOffers)
+                if (shipping.amount !== 0) {
+                  return (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      marginBottom: '8px', 
+                      fontSize: '14px', 
+                      color: shipping.amount > 0 ? 'var(--kivi-green)' : 'var(--kivi-orange)' 
+                    }}>
+                      <span>{shipping.label}:</span>
+                      <span>{shipping.amount > 0 ? '+' : ''}${Math.abs(shipping.amount).toLocaleString('es-CL')}</span>
+                    </div>
+                  )
+                }
+                return null
+              })()}
               <div style={{ 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -1016,12 +1030,7 @@ export default function CatalogV2() {
               }}>
                 <span>Total:</span>
                 <span style={{ color: 'var(--kivi-green)' }}>
-                  ${shippingType === 'fastest' 
-                    ? (total + 2500).toLocaleString('es-CL')
-                    : shippingType === 'cheapest'
-                    ? (total - Math.round(total * 0.05)).toLocaleString('es-CL')
-                    : total.toLocaleString('es-CL')
-                  }
+                  ${calculateTotalWithShipping(cartTotalWithOffers, shippingType).toLocaleString('es-CL')}
                 </span>
               </div>
             </div>

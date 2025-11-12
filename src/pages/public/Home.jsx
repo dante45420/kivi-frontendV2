@@ -23,7 +23,7 @@ export default function Home() {
         fetchWeeklyOffers(true, true)
       ])
       const products = productsData.filter(p => p.active)
-      generateCatalogPDF(products, offersData)
+      await generateCatalogPDF(products, offersData)
     } catch (error) {
       console.error('Error generando PDF:', error)
       alert('Error al generar el catálogo PDF')
