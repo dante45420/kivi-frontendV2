@@ -179,7 +179,7 @@ export default function Accounting() {
         })
       })
       
-      // Aplicar envío o descuento según shipping_type
+      // Aplicar envío o descuento según shipping_type y calcular total_paid correctamente
       Object.values(byCustomer).forEach(customerData => {
         Object.values(customerData.orders).forEach(order => {
           const subtotal = order.subtotal || 0
@@ -189,6 +189,48 @@ export default function Accounting() {
           order.total_billed = subtotal + shipping.amount
           order.shipping_amount = shipping.amount
           order.shipping_label = shipping.amount !== 0 ? shipping.label : null
+          
+          // Calcular total_paid incluyendo envío proporcionalmente
+          // Si todos los items están pagados, el envío también está pagado
+          // Si algunos items están pagados, el envío se paga proporcionalmente
+          const itemsTotal = order.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
+          const itemsPaid = order.items.reduce((sum, item) => sum + (item.paid_amount || 0), 0)
+          
+          if (itemsTotal > 0) {
+            // Calcular porcentaje de items pagados
+            const itemsPaidPercentage = itemsPaid / itemsTotal
+            // El envío se paga proporcionalmente
+            // Si todos los items están pagados (100%), el envío está completamente pagado
+            // Si algunos items están pagados, el envío se paga proporcionalmente
+            const shippingPaid = Math.round(shipping.amount * itemsPaidPercentage)
+            // Total pagado = items pagados + envío pagado proporcionalmente
+            order.total_paid = itemsPaid + shippingPaid
+            
+            // Debug: mostrar información si hay inconsistencias
+            if (Math.abs(itemsPaidPercentage - 1) < 0.01 && order.total_paid < order.total_billed) {
+              console.warn(`⚠️ Pedido #${order.order_id}: Todos los items pagados pero total_paid < total_billed`, {
+                itemsPaid,
+                itemsTotal,
+                shippingAmount: shipping.amount,
+                shippingPaid,
+                totalPaid: order.total_paid,
+                totalBilled: order.total_billed
+              })
+            }
+          } else {
+            // Si no hay items, el total pagado es solo el envío si está pagado
+            // (esto no debería pasar normalmente)
+            order.total_paid = order.total_paid || 0
+          }
+          
+          // Guardar información de cálculo para debugging
+          order._calculation_debug = {
+            itemsTotal,
+            itemsPaid,
+            itemsPaidPercentage: itemsTotal > 0 ? itemsPaid / itemsTotal : 0,
+            shippingAmount: shipping.amount,
+            shippingPaid: itemsTotal > 0 ? Math.round(shipping.amount * (itemsPaid / itemsTotal)) : 0
+          }
         })
       })
       
@@ -586,10 +628,15 @@ export default function Accounting() {
                                 </span>
                               </div>
                               
-                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <div style={{ fontSize: '12px', color: '#999' }}>
                                   Pagado: ${order.total_paid.toLocaleString('es-CL')}
                                 </div>
+                                {order.shipping_amount !== 0 && (
+                                  <div style={{ fontSize: '11px', color: '#666' }}>
+                                    {order.shipping_label}: {order.shipping_amount > 0 ? '+' : ''}${order.shipping_amount.toLocaleString('es-CL')}
+                                  </div>
+                                )}
                                 <div style={{
                                   fontSize: '18px',
                                   fontWeight: 800,
@@ -601,12 +648,85 @@ export default function Accounting() {
                                     <span style={{ color: '#ff6b00', marginLeft: '6px' }}>*</span>
                                   )}
                                 </div>
+                                {orderDebt !== 0 && (
+                                  <div style={{
+                                    fontSize: '14px',
+                                    fontWeight: 700,
+                                    color: orderDebt > 0 ? '#f44336' : '#4caf50',
+                                    fontFamily: 'monospace'
+                                  }}>
+                                    {orderDebt > 0 ? 'Debe: ' : 'A favor: '}${Math.abs(orderDebt).toLocaleString('es-CL')}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             
                             {/* Items del pedido */}
                             {isOrderExpanded && (
                               <div style={{ padding: '12px 16px', background: '#fff' }}>
+                                {/* Resumen del pedido */}
+                                <div style={{ 
+                                  marginBottom: '16px', 
+                                  padding: '12px', 
+                                  background: '#f8f9fa', 
+                                  borderRadius: '8px',
+                                  border: '1px solid #e0e0e0'
+                                }}>
+                                  <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px', color: '#666' }}>
+                                    Resumen del Pedido
+                                  </div>
+                                  <div style={{ display: 'grid', gap: '4px', fontSize: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                      <span style={{ color: '#666' }}>Subtotal items:</span>
+                                      <span style={{ fontFamily: 'monospace' }}>${order.subtotal.toLocaleString('es-CL')}</span>
+                                    </div>
+                                    {order.shipping_amount !== 0 && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: '#666' }}>{order.shipping_label}:</span>
+                                        <span style={{ 
+                                          fontFamily: 'monospace',
+                                          color: order.shipping_amount > 0 ? '#4caf50' : '#ff9800'
+                                        }}>
+                                          {order.shipping_amount > 0 ? '+' : ''}${order.shipping_amount.toLocaleString('es-CL')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #ddd' }}>
+                                      <span style={{ fontWeight: 600 }}>Total facturado:</span>
+                                      <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>${order.total_billed.toLocaleString('es-CL')}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                      <span style={{ color: '#666' }}>Total pagado:</span>
+                                      <span style={{ 
+                                        fontFamily: 'monospace',
+                                        color: order.total_paid > 0 ? '#4caf50' : '#999'
+                                      }}>
+                                        ${order.total_paid.toLocaleString('es-CL')}
+                                      </span>
+                                    </div>
+                                    {orderDebt !== 0 && (
+                                      <div style={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'space-between',
+                                        marginTop: '4px',
+                                        paddingTop: '4px',
+                                        borderTop: '1px solid #ddd',
+                                        fontWeight: 700
+                                      }}>
+                                        <span style={{ color: orderDebt > 0 ? '#f44336' : '#4caf50' }}>
+                                          {orderDebt > 0 ? 'Deuda pendiente:' : 'A favor:'}
+                                        </span>
+                                        <span style={{ 
+                                          fontFamily: 'monospace',
+                                          color: orderDebt > 0 ? '#f44336' : '#4caf50'
+                                        }}>
+                                          ${Math.abs(orderDebt).toLocaleString('es-CL')}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                
                                 {/* Botón para agregar item */}
                                 <div style={{ marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid #e0e0e0' }}>
                                   <button

@@ -4,7 +4,7 @@
  */
 import { jsPDF } from 'jspdf'
 
-// Función para cargar imagen como base64
+// Función para cargar imagen como base64 con dimensiones
 function loadImageAsBase64(url) {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -17,7 +17,7 @@ function loadImageAsBase64(url) {
       ctx.drawImage(img, 0, 0)
       try {
         const base64 = canvas.toDataURL('image/png')
-        resolve(base64)
+        resolve({ base64, width: img.width, height: img.height })
       } catch (e) {
         reject(e)
       }
@@ -45,9 +45,17 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
   // Intentar cargar logo
   try {
     const logoUrl = '/Logo_kivi.png'
-    const logoBase64 = await loadImageAsBase64(logoUrl)
-    // Logo a la izquierda, altura 30mm
-    doc.addImage(logoBase64, 'PNG', margin, 10, 40, 12)
+    const logoData = await loadImageAsBase64(logoUrl)
+    
+    // Calcular dimensiones manteniendo proporción
+    // Ancho máximo: 50mm, mantener aspect ratio
+    const maxWidth = 50
+    const aspectRatio = logoData.width / logoData.height
+    const logoWidth = maxWidth
+    const logoHeight = maxWidth / aspectRatio
+    
+    // Logo a la izquierda, manteniendo proporción (no se achata)
+    doc.addImage(logoData.base64, 'PNG', margin, 10, logoWidth, logoHeight)
   } catch (e) {
     // Si falla, usar texto como fallback
     console.warn('No se pudo cargar el logo, usando texto:', e)
@@ -56,11 +64,6 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
     doc.setTextColor(76, 175, 80) // Verde Kivi
     doc.text('KIVI', margin, 22)
   }
-  
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(60, 60, 60)
-  doc.text('Catálogo de Productos Frescos', margin, 35)
   
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
@@ -175,12 +178,12 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
     y = 20
   }
   
-  doc.setFontSize(16)
+  doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(50, 50, 50)
   doc.text('PRODUCTOS DISPONIBLES', margin, y)
   
-  y += 10
+  y += 12
   
   // Agrupar productos por categoría
   const productsByCategory = {}
@@ -194,89 +197,124 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
   
   // Ancho de columna - más espacio entre columnas
   const columnWidth = (contentWidth - 12) / 2
+  const lineHeight = 14 // Altura de línea más grande para letras más grandes
+  const minSpaceAtBottom = 30 // Espacio mínimo al final de página
   
   // Renderizar por categoría
   Object.keys(productsByCategory).sort().forEach(categoryName => {
     const categoryProducts = productsByCategory[categoryName]
+    let categoryStarted = false
+    let productIndex = 0
     
-    if (y > pageHeight - 40) {
-      doc.addPage()
-      y = 20
-    }
-    
-    // Encabezado de categoría - más grande
-    doc.setFillColor(240, 240, 240)
-    doc.roundedRect(margin, y, contentWidth, 9, 1, 1, 'F')
-    
-    doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(70, 70, 70)
-    
-    doc.text(categoryName.toUpperCase(), margin + 4, y + 6)
-    
-    y += 12
-    
-    // Productos de la categoría en DOS COLUMNAS
-    let column = 0
-    let columnY = y
-    const lineHeight = 12 // Altura de línea más grande
-    
-    categoryProducts.forEach((product, idx) => {
-      // Verificar si necesitamos nueva página o cambiar de columna
-      if (columnY + lineHeight > pageHeight - 25) {
-        if (column === 0) {
-          // Cambiar a columna 2
-          column = 1
-          columnY = y
-        } else {
-          // Nueva página
-          doc.addPage()
-          y = 20
-          columnY = y
-          column = 0
+    // Continuar renderizando la categoría hasta que todos los productos estén en el PDF
+    while (productIndex < categoryProducts.length) {
+      // Verificar si necesitamos nueva página
+      if (y > pageHeight - minSpaceAtBottom) {
+        doc.addPage()
+        y = 20
+        categoryStarted = false
+      }
+      
+      // Si la categoría no ha empezado en esta página, agregar encabezado
+      if (!categoryStarted) {
+        // Encabezado de categoría - más grande
+        doc.setFillColor(240, 240, 240)
+        doc.roundedRect(margin, y, contentWidth, 11, 1, 1, 'F')
+        
+        doc.setFontSize(15)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(70, 70, 70)
+        
+        doc.text(categoryName.toUpperCase(), margin + 4, y + 7.5)
+        
+        y += 14
+        categoryStarted = true
+      }
+      
+      // Verificar espacio antes de empezar productos
+      if (y > pageHeight - minSpaceAtBottom) {
+        doc.addPage()
+        y = 20
+        categoryStarted = false
+        continue // Volver a agregar encabezado
+      }
+      
+      // Renderizar productos en dos columnas
+      let column0Y = y // Posición Y de la columna 0
+      let column1Y = y // Posición Y de la columna 1
+      const startY = y
+      
+      // Renderizar productos hasta llenar ambas columnas o terminar la categoría
+      while (productIndex < categoryProducts.length) {
+        const product = categoryProducts[productIndex]
+        
+        // Decidir en qué columna colocar el producto (la que esté más arriba)
+        const useColumn0 = column0Y <= column1Y
+        const currentColumnY = useColumn0 ? column0Y : column1Y
+        
+        // Verificar si necesitamos nueva página
+        if (currentColumnY + lineHeight > pageHeight - minSpaceAtBottom) {
+          // Verificar si la otra columna tiene espacio
+          const otherColumnY = useColumn0 ? column1Y : column0Y
+          if (otherColumnY + lineHeight <= pageHeight - minSpaceAtBottom) {
+            // Usar la otra columna
+            if (useColumn0) {
+              column0Y = column1Y
+            } else {
+              column1Y = column0Y
+            }
+          } else {
+            // Ambas columnas están llenas, nueva página
+            doc.addPage()
+            y = 20
+            categoryStarted = false
+            break // Salir del while interno para volver a empezar con encabezado
+          }
         }
+        
+        // Usar la columna correspondiente
+        const finalColumnY = useColumn0 ? column0Y : column1Y
+        const xPos = useColumn0 ? margin + 2 : margin + columnWidth + 10
+        
+        // Nombre del producto - más grande
+        doc.setFontSize(13)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(50, 50, 50)
+        // Ajustar longitud del nombre según ancho de columna
+        const maxNameLength = Math.floor(columnWidth / 2.2)
+        let productName = product.name
+        if (productName.length > maxNameLength) {
+          productName = productName.substring(0, maxNameLength - 3) + '...'
+        }
+        doc.text(productName, xPos, finalColumnY)
+        
+        // Precio y unidad - más grande
+        if (product.sale_price) {
+          doc.setFontSize(13)
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(120, 120, 120)
+          const priceText = `$${product.sale_price.toLocaleString('es-CL')} / ${product.unit === 'kg' ? 'kg' : 'unid'}`
+          doc.text(priceText, xPos, finalColumnY + 6)
+        }
+        
+        // Actualizar posición Y de la columna usada
+        if (useColumn0) {
+          column0Y += lineHeight
+        } else {
+          column1Y += lineHeight
+        }
+        
+        productIndex++
       }
       
-      const xPos = column === 0 ? margin + 2 : margin + columnWidth + 10
-      
-      // Nombre del producto - más grande
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(50, 50, 50)
-      // Ajustar longitud del nombre según ancho de columna
-      const maxNameLength = Math.floor(columnWidth / 2.5)
-      let productName = product.name
-      if (productName.length > maxNameLength) {
-        productName = productName.substring(0, maxNameLength - 3) + '...'
+      // Si terminamos todos los productos de la categoría, salir
+      if (productIndex >= categoryProducts.length) {
+        // Ajustar y para la siguiente categoría (usar la columna más baja)
+        y = Math.max(column0Y, column1Y)
+        y += 10
+        break
       }
-      doc.text(productName, xPos, columnY)
-      
-      // Precio y unidad - más grande
-      if (product.sale_price) {
-        doc.setFontSize(11)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(120, 120, 120)
-        const priceText = `$${product.sale_price.toLocaleString('es-CL')} / ${product.unit === 'kg' ? 'kg' : 'unid'}`
-        doc.text(priceText, xPos, columnY + 5)
-      }
-      
-      columnY += lineHeight
-      
-      // Alternar columnas
-      if (column === 0 && idx < categoryProducts.length - 1) {
-        column = 1
-        columnY = y
-      } else if (column === 1) {
-        column = 0
-        y = columnY
-      }
-    })
-    
-    // Ajustar y para la siguiente categoría
-    if (column === 1) {
-      y = columnY
     }
-    y += 8
   })
   
   // ======== PIE DE PÁGINA EN TODAS LAS PÁGINAS ========
