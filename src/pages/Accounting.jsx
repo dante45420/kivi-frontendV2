@@ -157,8 +157,8 @@ export default function Accounting() {
             itemTotal = Math.round(item.qty * effectivePrice)
           }
           
-          // Total pagado del item
-          const itemPaid = item.paid ? itemTotal : 0
+          // Total pagado del item (usar paid_amount del backend, o 0 si no existe)
+          const itemPaid = item.paid_amount || 0
           
           byCustomer[customerId].orders[order.id].items.push({
             ...item,
@@ -167,7 +167,7 @@ export default function Accounting() {
             has_conversion: hasConversion,
             calculated_total: itemTotal,
             paid_amount: itemPaid,
-            order_date: order.created_at // Guardar fecha del pedido para usar en edición
+            order_date: order.created_at
           })
           
           byCustomer[customerId].orders[order.id].subtotal += itemTotal
@@ -190,47 +190,12 @@ export default function Accounting() {
           order.shipping_amount = shipping.amount
           order.shipping_label = shipping.amount !== 0 ? shipping.label : null
           
-          // Calcular total_paid incluyendo envío proporcionalmente
-          // Si todos los items están pagados, el envío también está pagado
-          // Si algunos items están pagados, el envío se paga proporcionalmente
+          // Calcular total_paid: items pagados + envío proporcional
           const itemsTotal = order.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
           const itemsPaid = order.items.reduce((sum, item) => sum + (item.paid_amount || 0), 0)
-          
-          if (itemsTotal > 0) {
-            // Calcular porcentaje de items pagados
-            const itemsPaidPercentage = itemsPaid / itemsTotal
-            // El envío se paga proporcionalmente
-            // Si todos los items están pagados (100%), el envío está completamente pagado
-            // Si algunos items están pagados, el envío se paga proporcionalmente
-            const shippingPaid = Math.round(shipping.amount * itemsPaidPercentage)
-            // Total pagado = items pagados + envío pagado proporcionalmente
-            order.total_paid = itemsPaid + shippingPaid
-            
-            // Debug: mostrar información si hay inconsistencias
-            if (Math.abs(itemsPaidPercentage - 1) < 0.01 && order.total_paid < order.total_billed) {
-              console.warn(`⚠️ Pedido #${order.order_id}: Todos los items pagados pero total_paid < total_billed`, {
-                itemsPaid,
-                itemsTotal,
-                shippingAmount: shipping.amount,
-                shippingPaid,
-                totalPaid: order.total_paid,
-                totalBilled: order.total_billed
-              })
-            }
-          } else {
-            // Si no hay items, el total pagado es solo el envío si está pagado
-            // (esto no debería pasar normalmente)
-            order.total_paid = order.total_paid || 0
-          }
-          
-          // Guardar información de cálculo para debugging
-          order._calculation_debug = {
-            itemsTotal,
-            itemsPaid,
-            itemsPaidPercentage: itemsTotal > 0 ? itemsPaid / itemsTotal : 0,
-            shippingAmount: shipping.amount,
-            shippingPaid: itemsTotal > 0 ? Math.round(shipping.amount * (itemsPaid / itemsTotal)) : 0
-          }
+          const itemsPaidPercentage = itemsTotal > 0 ? itemsPaid / itemsTotal : 0
+          const shippingPaid = Math.round(shipping.amount * itemsPaidPercentage)
+          order.total_paid = itemsPaid + shippingPaid
         })
       })
       
@@ -286,20 +251,25 @@ export default function Accounting() {
     
     unpaidOrders.forEach(order => {
       order.items.forEach(item => {
-        if (!item.paid) {
+        const itemTotal = item.calculated_total || 0
+        const itemPaid = item.paid_amount || 0
+        if (itemPaid < itemTotal) {
           unpaidItems.push({
             ...item,
             order_id: order.order_id,
             order_date: order.date
           })
-          subtotal += item.calculated_total || 0
+          subtotal += itemTotal - itemPaid
         }
       })
       
-      // Agregar envío/descuento del pedido si tiene items sin pagar
-      const hasUnpaidItems = order.items.some(item => !item.paid)
-      if (hasUnpaidItems && order.shipping_amount !== undefined && order.shipping_amount !== null) {
-        shippingTotal += order.shipping_amount
+      // Agregar envío proporcional a items no pagados
+      const itemsTotal = order.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
+      const itemsPaid = order.items.reduce((sum, item) => sum + (item.paid_amount || 0), 0)
+      const unpaidItemsTotal = itemsTotal - itemsPaid
+      if (unpaidItemsTotal > 0 && order.shipping_amount) {
+        const unpaidPercentage = itemsTotal > 0 ? unpaidItemsTotal / itemsTotal : 0
+        shippingTotal += Math.round(order.shipping_amount * unpaidPercentage)
       }
     })
     
@@ -761,18 +731,38 @@ export default function Accounting() {
                                         <span style={{ fontSize: '14px', fontWeight: 600 }}>
                                           {item.product_name || item.product?.name}
                                         </span>
-                                        {item.paid && (
-                                          <span style={{
-                                            background: '#4caf50',
-                                            color: '#fff',
-                                            padding: '2px 8px',
-                                            borderRadius: '10px',
-                                            fontSize: '10px',
-                                            fontWeight: 700
-                                          }}>
-                                            PAGADO
-                                          </span>
-                                        )}
+                                        {(() => {
+                                          const itemTotal = item.calculated_total || 0
+                                          const itemPaid = item.paid_amount || 0
+                                          if (itemPaid >= itemTotal && itemTotal > 0) {
+                                            return (
+                                              <span style={{
+                                                background: '#4caf50',
+                                                color: '#fff',
+                                                padding: '2px 8px',
+                                                borderRadius: '10px',
+                                                fontSize: '10px',
+                                                fontWeight: 700
+                                              }}>
+                                                PAGADO
+                                              </span>
+                                            )
+                                          } else if (itemPaid > 0) {
+                                            return (
+                                              <span style={{
+                                                background: '#ff9800',
+                                                color: '#fff',
+                                                padding: '2px 8px',
+                                                borderRadius: '10px',
+                                                fontSize: '10px',
+                                                fontWeight: 700
+                                              }}>
+                                                PARCIAL
+                                              </span>
+                                            )
+                                          }
+                                          return null
+                                        })()}
                                         {item.needs_conversion && !item.has_conversion && (
                                           <span style={{ color: '#ff6b00', marginLeft: '6px' }}>*</span>
                                         )}
@@ -816,23 +806,29 @@ export default function Accounting() {
                                     </div>
                                     
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      {!item.paid && (
-                                        <button 
-                                          className="button button-sm" 
-                                          onClick={() => {
-                                            setEditingItem(item)
-                                            // Usar precio base (normal o con oferta) si no hay unit_price editado
-                                            const basePrice = getBasePriceForEdit(item)
-                                            setEditForm({
-                                              qty: item.charged_qty || item.qty,
-                                              unit_price: item.unit_price || basePrice
-                                            })
-                                          }}
-                                          style={{ padding:'4px 8px', fontSize:12 }}
-                                        >
-                                          ✏️ Editar
-                                        </button>
-                                      )}
+                                      {(() => {
+                                        const itemTotal = item.calculated_total || 0
+                                        const itemPaid = item.paid_amount || 0
+                                        if (itemPaid < itemTotal) {
+                                          return (
+                                            <button 
+                                              className="button button-sm" 
+                                              onClick={() => {
+                                                setEditingItem(item)
+                                                const basePrice = getBasePriceForEdit(item)
+                                                setEditForm({
+                                                  qty: item.charged_qty || item.qty,
+                                                  unit_price: item.unit_price || basePrice
+                                                })
+                                              }}
+                                              style={{ padding:'4px 8px', fontSize:12 }}
+                                            >
+                                              ✏️ Editar
+                                            </button>
+                                          )
+                                        }
+                                        return null
+                                      })()}
                                     <div style={{
                                       fontSize: '16px',
                                       fontWeight: 700,
