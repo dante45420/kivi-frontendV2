@@ -5,8 +5,8 @@
 import { useState, useEffect } from 'react'
 import { fetchOrders, fetchOrder, updateOrderItem, addOrderItem } from '../api/orders'
 import { fetchProducts } from '../api/products'
-import { fetchCustomers } from '../api/customers'
-import { createPayment } from '../api/payments'
+import { fetchCustomers, fetchCustomerDebt } from '../api/customers'
+import { createPayment, fetchPayments, updatePayment, deletePayment } from '../api/payments'
 import { generateInvoicePDF } from '../utils/invoicePdf'
 import { calculateShipping } from '../utils/shipping'
 import { fetchWeeklyOffers } from '../api/weeklyOffers'
@@ -56,7 +56,7 @@ export default function Accounting() {
   async function loadAccountingData() {
     setLoading(true)
     try {
-      // Cargar productos
+      // Cargar productos (para mostrar en modales de edición)
       const allProductsData = await fetchProducts()
       const productsMap = {}
       allProductsData.forEach(p => { productsMap[p.id] = p })
@@ -69,147 +69,50 @@ export default function Accounting() {
       allCustomersData.forEach(c => { customersMap[c.id] = c })
       setAllCustomers(allCustomersData)
       
-      // Cargar ofertas semanales vigentes (una vez para todas las órdenes)
+      // Cargar ofertas semanales (para mostrar en modales de edición)
       const offersData = await fetchWeeklyOffers(true, true)
       setWeeklyOffers(offersData)
       
-      // Cargar pedidos finalizados
-      const allOrders = await fetchOrders()
-      const finalizedOrders = allOrders.filter(o => o.status === 'finalized')
-      
-      // Cargar items de cada pedido EN PARALELO (mucho más rápido)
-      const ordersWithItems = await Promise.all(
-        finalizedOrders.map(async (order) => {
+      // Para cada cliente, cargar deuda y pagos usando el nuevo endpoint simplificado
+      const accountingArray = await Promise.all(
+        allCustomersData.map(async (customer) => {
           try {
-            const data = await fetchOrder(order.id)
-            if (Array.isArray(data.items) && data.items.length > 0) {
-              return { ...order, items: data.items }
+            // Obtener deuda calculada por el backend (incluye conversiones, ofertas, envío)
+            const debtData = await fetchCustomerDebt(customer.id)
+            
+            // Obtener pagos del cliente
+            const payments = await fetchPayments(customer.id)
+            
+            return {
+              customer: customer,
+              orders: debtData.orders || [],
+              total_billed: debtData.total_debt || 0,
+              total_paid: debtData.total_paid || 0,
+              total_debt: debtData.pending_debt || 0,
+              payments: payments || []
             }
-            return null
           } catch (err) {
-            console.error(`Error cargando orden ${order.id}:`, err)
-            return null
+            console.error(`Error cargando datos del cliente ${customer.id}:`, err)
+            return {
+              customer: customer,
+              orders: [],
+              total_billed: 0,
+              total_paid: 0,
+              total_debt: 0,
+              payments: []
+            }
           }
         })
       )
-      // Filtrar los nulls
-      const validOrders = ordersWithItems.filter(o => o !== null)
       
-      // Agrupar por cliente
-      const byCustomer = {}
+      // Filtrar clientes que tienen pedidos o pagos, y ordenar por deuda
+      const filtered = accountingArray.filter(data => data.total_billed > 0 || data.payments.length > 0)
+      filtered.sort((a, b) => b.total_debt - a.total_debt)
       
-      validOrders.forEach(order => {
-        order.items.forEach(item => {
-          const customerId = item.customer_id
-          if (!customerId) return
-          
-          if (!byCustomer[customerId]) {
-            byCustomer[customerId] = {
-              customer: customersMap[customerId] || { id: customerId, name: 'Cliente desconocido' },
-              orders: {}
-            }
-          }
-          
-          if (!byCustomer[customerId].orders[order.id]) {
-            byCustomer[customerId].orders[order.id] = {
-              order_id: order.id,
-              date: order.created_at,
-              items: [],
-              subtotal: 0,
-              total_billed: 0,
-              total_paid: 0,
-              needs_conversion: false,
-              shipping_type: order.shipping_type || 'normal'
-            }
-          }
-          
-          // Verificar si necesita conversión
-          const product = productsMap[item.product_id]
-          const needsConversion = product && item.unit !== product.unit
-          const hasConversion = product && product.avg_units_per_kg !== null && product.avg_units_per_kg !== undefined
-          
-          // Calcular total del item (SIN decimales)
-          // Si el item tiene unit_price, usarlo (puede ser precio editado o de oferta)
-          // Si no, usar precio efectivo considerando ofertas semanales vigentes
-          let effectivePrice = item.unit_price
-          if (!effectivePrice && product) {
-            // Obtener ofertas vigentes para la fecha del pedido
-            const orderDate = new Date(order.created_at)
-            const activeOffers = offersData.filter(offer => {
-              const startDate = new Date(offer.start_date)
-              const endDate = new Date(offer.end_date)
-              return orderDate >= startDate && orderDate <= endDate && offer.active
-            })
-            effectivePrice = getEffectivePrice(product, activeOffers)
-          }
-          if (!effectivePrice) effectivePrice = 0
-          let itemTotal = 0
-          if (needsConversion && hasConversion) {
-            // Convertir usando avg_units_per_kg
-            if (item.unit === 'unit' && product.unit === 'kg') {
-              const kgEquivalent = item.qty / product.avg_units_per_kg
-              itemTotal = Math.round(kgEquivalent * effectivePrice)
-            } else if (item.unit === 'kg' && product.unit === 'unit') {
-              const unitsEquivalent = item.qty * product.avg_units_per_kg
-              itemTotal = Math.round(unitsEquivalent * effectivePrice)
-            }
-          } else {
-            itemTotal = Math.round(item.qty * effectivePrice)
-          }
-          
-          // Total pagado del item (usar paid_amount del backend, o 0 si no existe)
-          const itemPaid = item.paid_amount || 0
-          
-          byCustomer[customerId].orders[order.id].items.push({
-            ...item,
-            product,
-            needs_conversion: needsConversion,
-            has_conversion: hasConversion,
-            calculated_total: itemTotal,
-            paid_amount: itemPaid,
-            order_date: order.created_at
-          })
-          
-          byCustomer[customerId].orders[order.id].subtotal += itemTotal
-          byCustomer[customerId].orders[order.id].total_paid += itemPaid
-          
-          if (needsConversion && !hasConversion) {
-            byCustomer[customerId].orders[order.id].needs_conversion = true
-          }
-        })
-      })
-      
-      // Aplicar envío o descuento según shipping_type y calcular total_paid correctamente
-      Object.values(byCustomer).forEach(customerData => {
-        Object.values(customerData.orders).forEach(order => {
-          const subtotal = order.subtotal || 0
-          const shippingType = order.shipping_type || 'normal'
-          
-          const shipping = calculateShipping(shippingType, subtotal)
-          order.total_billed = subtotal + shipping.amount
-          order.shipping_amount = shipping.amount
-          order.shipping_label = shipping.amount !== 0 ? shipping.label : null
-          
-          // Calcular total_paid: items pagados + envío proporcional
-          const itemsTotal = order.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
-          const itemsPaid = order.items.reduce((sum, item) => sum + (item.paid_amount || 0), 0)
-          const itemsPaidPercentage = itemsTotal > 0 ? itemsPaid / itemsTotal : 0
-          const shippingPaid = Math.round(shipping.amount * itemsPaidPercentage)
-          order.total_paid = itemsPaid + shippingPaid
-        })
-      })
-      
-      // Convertir a array
-      const accountingArray = Object.values(byCustomer).map(data => ({
-        customer: data.customer,
-        orders: Object.values(data.orders).sort((a, b) => new Date(b.date) - new Date(a.date)),
-        total_billed: Object.values(data.orders).reduce((sum, o) => sum + o.total_billed, 0),
-        total_debt: Object.values(data.orders).reduce((sum, o) => sum + (o.total_billed - o.total_paid), 0)
-      })).sort((a, b) => b.total_debt - a.total_debt)
-      
-      setAccountingData(accountingArray)
+      setAccountingData(filtered)
     } catch (err) {
       console.error('Error cargando contabilidad:', err)
+      alert('Error cargando datos: ' + (err.message || 'Error desconocido'))
     } finally {
       setLoading(false)
     }
@@ -244,32 +147,24 @@ export default function Accounting() {
     setShowInvoiceModal(true)
     
     // Preparar datos para la nota de cobro
-    const unpaidOrders = customerData.orders.filter(o => o.total_billed > o.total_paid)
+    // En el nuevo sistema, mostramos todos los items de todos los pedidos
     const unpaidItems = []
     let subtotal = 0
     let shippingTotal = 0
     
-    unpaidOrders.forEach(order => {
+    customerData.orders.forEach(order => {
       order.items.forEach(item => {
-        const itemTotal = item.calculated_total || 0
-        const itemPaid = item.paid_amount || 0
-        if (itemPaid < itemTotal) {
-          unpaidItems.push({
-            ...item,
-            order_id: order.order_id,
-            order_date: order.date
-          })
-          subtotal += itemTotal - itemPaid
-        }
+        unpaidItems.push({
+          ...item,
+          order_id: order.order_id,
+          order_date: order.order_date
+        })
+        subtotal += item.total || 0
       })
       
-      // Agregar envío proporcional a items no pagados
-      const itemsTotal = order.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
-      const itemsPaid = order.items.reduce((sum, item) => sum + (item.paid_amount || 0), 0)
-      const unpaidItemsTotal = itemsTotal - itemsPaid
-      if (unpaidItemsTotal > 0 && order.shipping_amount) {
-        const unpaidPercentage = itemsTotal > 0 ? unpaidItemsTotal / itemsTotal : 0
-        shippingTotal += Math.round(order.shipping_amount * unpaidPercentage)
+      // Agregar envío del pedido
+      if (order.shipping_amount) {
+        shippingTotal += order.shipping_amount
       }
     })
     
@@ -565,7 +460,7 @@ export default function Accounting() {
                     <div style={{ padding: '0 20px 20px 20px' }}>
                       {data.orders.map((order, oidx) => {
                         const isOrderExpanded = expandedOrders.has(order.order_id)
-                        const orderDebt = order.total_billed - order.total_paid
+                        // En el nuevo sistema, no calculamos deuda por pedido, solo a nivel de cliente
                         
                         return (
                           <div key={oidx} style={{
@@ -599,35 +494,21 @@ export default function Accounting() {
                               </div>
                               
                               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                <div style={{ fontSize: '12px', color: '#999' }}>
-                                  Pagado: ${order.total_paid.toLocaleString('es-CL')}
-                                </div>
                                 {order.shipping_amount !== 0 && (
                                   <div style={{ fontSize: '11px', color: '#666' }}>
-                                    {order.shipping_label}: {order.shipping_amount > 0 ? '+' : ''}${order.shipping_amount.toLocaleString('es-CL')}
+                                    {order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
+                                     order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
+                                     'Envío normal'}: {order.shipping_amount > 0 ? '+' : ''}${order.shipping_amount.toLocaleString('es-CL')}
                                   </div>
                                 )}
                                 <div style={{
                                   fontSize: '18px',
                                   fontWeight: 800,
-                                  color: orderDebt === 0 ? '#4caf50' : 'var(--kivi-green)',
+                                  color: 'var(--kivi-green)',
                                   fontFamily: 'monospace'
                                 }}>
-                                  ${order.total_billed.toLocaleString('es-CL')}
-                                  {order.needs_conversion && (
-                                    <span style={{ color: '#ff6b00', marginLeft: '6px' }}>*</span>
-                                  )}
+                                  ${order.total.toLocaleString('es-CL')}
                                 </div>
-                                {orderDebt !== 0 && (
-                                  <div style={{
-                                    fontSize: '14px',
-                                    fontWeight: 700,
-                                    color: orderDebt > 0 ? '#f44336' : '#4caf50',
-                                    fontFamily: 'monospace'
-                                  }}>
-                                    {orderDebt > 0 ? 'Debe: ' : 'A favor: '}${Math.abs(orderDebt).toLocaleString('es-CL')}
-                                  </div>
-                                )}
                               </div>
                             </div>
                             
@@ -652,7 +533,11 @@ export default function Accounting() {
                                     </div>
                                     {order.shipping_amount !== 0 && (
                                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#666' }}>{order.shipping_label}:</span>
+                                        <span style={{ color: '#666' }}>
+                                          {order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
+                                           order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
+                                           'Envío normal'}:
+                                        </span>
                                         <span style={{ 
                                           fontFamily: 'monospace',
                                           color: order.shipping_amount > 0 ? '#4caf50' : '#ff9800'
@@ -663,34 +548,14 @@ export default function Accounting() {
                                     )}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', paddingTop: '4px', borderTop: '1px solid #ddd' }}>
                                       <span style={{ fontWeight: 600 }}>Total facturado:</span>
-                                      <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>${order.total_billed.toLocaleString('es-CL')}</span>
+                                      <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>${order.total.toLocaleString('es-CL')}</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <span style={{ color: '#666' }}>Total pagado:</span>
-                                      <span style={{ 
-                                        fontFamily: 'monospace',
-                                        color: order.total_paid > 0 ? '#4caf50' : '#999'
-                                      }}>
-                                        ${order.total_paid.toLocaleString('es-CL')}
-                                      </span>
-                                    </div>
-                                    {orderDebt !== 0 && (
-                                      <div style={{ 
-                                        display: 'flex', 
-                                        justifyContent: 'space-between',
-                                        marginTop: '4px',
-                                        paddingTop: '4px',
-                                        borderTop: '1px solid #ddd',
-                                        fontWeight: 700
-                                      }}>
-                                        <span style={{ color: orderDebt > 0 ? '#f44336' : '#4caf50' }}>
-                                          {orderDebt > 0 ? 'Deuda pendiente:' : 'A favor:'}
-                                        </span>
-                                        <span style={{ 
-                                          fontFamily: 'monospace',
-                                          color: orderDebt > 0 ? '#f44336' : '#4caf50'
-                                        }}>
-                                          ${Math.abs(orderDebt).toLocaleString('es-CL')}
+                                    {order.shipping_amount !== 0 && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                                        <span style={{ color: '#666', fontSize: '12px' }}>
+                                          {order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
+                                           order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
+                                           'Envío normal'}
                                         </span>
                                       </div>
                                     )}
@@ -731,113 +596,47 @@ export default function Accounting() {
                                         <span style={{ fontSize: '14px', fontWeight: 600 }}>
                                           {item.product_name || item.product?.name}
                                         </span>
-                                        {(() => {
-                                          const itemTotal = item.calculated_total || 0
-                                          const itemPaid = item.paid_amount || 0
-                                          if (itemPaid >= itemTotal && itemTotal > 0) {
-                                            return (
-                                              <span style={{
-                                                background: '#4caf50',
-                                                color: '#fff',
-                                                padding: '2px 8px',
-                                                borderRadius: '10px',
-                                                fontSize: '10px',
-                                                fontWeight: 700
-                                              }}>
-                                                PAGADO
-                                              </span>
-                                            )
-                                          } else if (itemPaid > 0) {
-                                            return (
-                                              <span style={{
-                                                background: '#ff9800',
-                                                color: '#fff',
-                                                padding: '2px 8px',
-                                                borderRadius: '10px',
-                                                fontSize: '10px',
-                                                fontWeight: 700
-                                              }}>
-                                                PARCIAL
-                                              </span>
-                                            )
-                                          }
-                                          return null
-                                        })()}
+                                        {/* En el nuevo sistema, no mostramos estado de pago por item */}
                                         {item.needs_conversion && !item.has_conversion && (
                                           <span style={{ color: '#ff6b00', marginLeft: '6px' }}>*</span>
                                         )}
                                       </div>
                                       
                                       {/* Mostrar conversión si aplica */}
-                                      {item.needs_conversion && item.has_conversion && (
+                                      {item.charged_qty && item.charged_qty !== item.qty && (
                                         <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                          {item.qty} {item.unit} ≈{' '}
-                                          {item.unit === 'unit' && item.product?.unit === 'kg' ? (
-                                            <>
-                                              {(item.qty / item.product.avg_units_per_kg).toFixed(2)} kg
-                                            </>
-                                          ) : item.unit === 'kg' && item.product?.unit === 'unit' ? (
-                                            <>
-                                              {(item.qty * item.product.avg_units_per_kg).toFixed(1)} unid
-                                            </>
-                                          ) : (
-                                            `${item.qty} ${item.unit}`
-                                          )}
-                                          {' '}× ${(item.product?.sale_price || 0).toLocaleString('es-CL')}
+                                          {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit || item.unit}
                                         </div>
                                       )}
                                       
-                                      {item.needs_conversion && !item.has_conversion && (
-                                        <div style={{ 
-                                          fontSize: '11px', 
-                                          color: '#ff6b00',
-                                          marginTop: '4px',
-                                          fontWeight: 600
-                                        }}>
-                                          ⚠️ Falta registrar conversión ({item.unit} → {item.product?.unit})
-                                        </div>
-                                      )}
-                                      
-                                      {!item.needs_conversion && (
-                                        <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                          {item.qty} {item.unit} × ${Math.round((item.unit_price || item.product?.sale_price || 0)).toLocaleString('es-CL')}
-                                        </div>
-                                      )}
+                                      <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                        {(item.charged_qty || item.qty)} {item.charged_unit || item.unit} × ${Math.round((item.unit_price || 0)).toLocaleString('es-CL')}
+                                      </div>
                                     </div>
                                     
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      {(() => {
-                                        const itemTotal = item.calculated_total || 0
-                                        const itemPaid = item.paid_amount || 0
-                                        if (itemPaid < itemTotal) {
-                                          return (
-                                            <button 
-                                              className="button button-sm" 
-                                              onClick={() => {
-                                                setEditingItem(item)
-                                                const basePrice = getBasePriceForEdit(item)
-                                                setEditForm({
-                                                  qty: item.charged_qty || item.qty,
-                                                  unit_price: item.unit_price || basePrice
-                                                })
-                                              }}
-                                              style={{ padding:'4px 8px', fontSize:12 }}
-                                            >
-                                              ✏️ Editar
-                                            </button>
-                                          )
-                                        }
-                                        return null
-                                      })()}
-                                    <div style={{
-                                      fontSize: '16px',
-                                      fontWeight: 700,
-                                      fontFamily: 'monospace',
-                                      color: 'var(--kivi-text-dark)',
-                                      minWidth: '100px',
-                                      textAlign: 'right'
-                                    }}>
-                                      ${item.calculated_total.toLocaleString('es-CL')}
+                                      <button 
+                                        className="button button-sm" 
+                                        onClick={() => {
+                                          setEditingItem(item)
+                                          setEditForm({
+                                            qty: item.charged_qty || item.qty,
+                                            unit_price: item.unit_price || 0
+                                          })
+                                        }}
+                                        style={{ padding:'4px 8px', fontSize:12 }}
+                                      >
+                                        ✏️ Editar
+                                      </button>
+                                      <div style={{
+                                        fontSize: '16px',
+                                        fontWeight: 700,
+                                        fontFamily: 'monospace',
+                                        color: 'var(--kivi-text-dark)',
+                                        minWidth: '100px',
+                                        textAlign: 'right'
+                                      }}>
+                                        ${(item.total || 0).toLocaleString('es-CL')}
                                       </div>
                                     </div>
                                   </div>
@@ -871,6 +670,83 @@ export default function Accounting() {
                           >
                             💵 Registrar Pago
                           </button>
+                        </div>
+                      )}
+                      
+                      {/* Sección de Pagos */}
+                      {data.payments && data.payments.length > 0 && (
+                        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e8e8e8' }}>
+                          <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 700 }}>
+                            💵 Pagos Registrados ({data.payments.length})
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {data.payments.map((payment) => (
+                              <div key={payment.id} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '12px',
+                                background: '#f8f9fa',
+                                borderRadius: '8px',
+                                border: '1px solid #e0e0e0'
+                              }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: '14px', fontWeight: 600 }}>
+                                    ${payment.amount.toLocaleString('es-CL')}
+                                  </div>
+                                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                    {payment.method && `Método: ${payment.method}`}
+                                    {payment.reference && ` • Ref: ${payment.reference}`}
+                                    {payment.date && ` • ${new Date(payment.date).toLocaleDateString('es-CL')}`}
+                                  </div>
+                                  {payment.notes && (
+                                    <div style={{ fontSize: '11px', color: '#999', marginTop: '4px', fontStyle: 'italic' }}>
+                                      {payment.notes}
+                                    </div>
+                                  )}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button
+                                    className="button button-sm"
+                                    onClick={async () => {
+                                      if (confirm(`¿Editar pago de $${payment.amount.toLocaleString('es-CL')}?`)) {
+                                        const newAmount = prompt('Nuevo monto:', payment.amount)
+                                        if (newAmount && !isNaN(newAmount)) {
+                                          try {
+                                            await updatePayment(payment.id, { amount: parseFloat(newAmount) })
+                                            alert('✅ Pago actualizado')
+                                            loadAccountingData()
+                                          } catch (err) {
+                                            alert('Error: ' + err.message)
+                                          }
+                                        }
+                                      }
+                                    }}
+                                    style={{ padding: '4px 8px', fontSize: '12px' }}
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    className="button button-sm"
+                                    onClick={async () => {
+                                      if (confirm(`¿Eliminar pago de $${payment.amount.toLocaleString('es-CL')}?`)) {
+                                        try {
+                                          await deletePayment(payment.id)
+                                          alert('✅ Pago eliminado')
+                                          loadAccountingData()
+                                        } catch (err) {
+                                          alert('Error: ' + err.message)
+                                        }
+                                      }
+                                    }}
+                                    style={{ padding: '4px 8px', fontSize: '12px', background: '#f44336', color: '#fff' }}
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -984,7 +860,7 @@ export default function Accounting() {
                   fontFamily: 'monospace',
                   marginBottom: '8px'
                 }}>
-                  ${(invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)).toLocaleString('es-CL')}
+                  ${(invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.total || 0), 0)).toLocaleString('es-CL')}
                 </div>
                 
                 {invoiceData.shipping_amount !== undefined && invoiceData.shipping_amount !== null && (
@@ -1048,7 +924,7 @@ export default function Accounting() {
                     {item.product_name || item.product?.name}
                   </div>
                   <div style={{ fontSize: '13px', color: '#666' }}>
-                    {item.qty} {item.unit} × ${Math.round(item.calculated_total / item.qty).toLocaleString('es-CL')}
+                    {item.qty} {item.unit} × ${Math.round((item.total || 0) / (item.qty || 1)).toLocaleString('es-CL')}
                     {item.needs_conversion && item.has_conversion && (
                       <span style={{ marginLeft: '8px', fontStyle: 'italic' }}>
                         (aprox. {item.unit === 'unit' && item.product?.unit === 'kg'
@@ -1060,7 +936,7 @@ export default function Accounting() {
                     )}
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 700, marginTop: '4px' }}>
-                    ${item.calculated_total.toLocaleString('es-CL')}
+                    ${(item.total || 0).toLocaleString('es-CL')}
                   </div>
                 </div>
               ))}

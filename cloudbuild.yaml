@@ -1,0 +1,46 @@
+# Cloud Build configuration for frontend deployment
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_API_URL=${_VITE_API_URL}'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/kivi-frontend:$COMMIT_SHA'
+      - '.'
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/kivi-frontend:$COMMIT_SHA']
+
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'kivi-frontend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/kivi-frontend:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '256Mi'
+      - '--cpu'
+      - '1'
+      - '--timeout'
+      - '60'
+      - '--max-instances'
+      - '10'
+
+images:
+  - 'gcr.io/$PROJECT_ID/kivi-frontend:$COMMIT_SHA'
+
+# Substitution variables (configurar en Cloud Build triggers)
+substitutions:
+  _VITE_API_URL: 'https://kivi-backend-xxxxx.run.app'
+

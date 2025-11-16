@@ -27,3 +27,7 @@ export async function deleteCustomer(id) {
 export async function fetchCustomerBalance(id) {
   return get(`/api/customers/${id}/balance`)
 }
+
+export async function fetchCustomerDebt(id) {
+  return get(`/api/customers/${id}/debt`)
+}

@@ -16,8 +16,12 @@ export async function createPayment(data) {
   return post('/api/payments', data)
 }
 
-export async function allocatePayment(paymentId, allocations) {
-  return post(`/api/payments/${paymentId}/allocate`, { allocations })
+export async function updatePayment(id, data) {
+  return put(`/api/payments/${id}`, data)
+}
+
+export async function deletePayment(id) {
+  return del(`/api/payments/${id}`)
 }
 
 export async function generateInvoice(customerId) {
