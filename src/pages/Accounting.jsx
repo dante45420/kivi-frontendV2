@@ -489,8 +489,21 @@ export default function Accounting() {
                                   Pedido #{order.order_id}
                                 </span>
                                 <span style={{ fontSize: '12px', color: '#999', marginLeft: '12px' }}>
-                                  {new Date(order.date).toLocaleDateString('es-CL')}
+                                  {order.order_date ? new Date(order.order_date).toLocaleDateString('es-CL') : 'Sin fecha'}
                                 </span>
+                                {order.order_status && (
+                                  <span style={{ 
+                                    fontSize: '11px', 
+                                    color: order.order_status === 'completed' ? '#4caf50' : '#ff9800',
+                                    marginLeft: '8px',
+                                    padding: '2px 6px',
+                                    background: order.order_status === 'completed' ? '#e8f5e9' : '#fff3e0',
+                                    borderRadius: '4px',
+                                    fontWeight: 600
+                                  }}>
+                                    {order.order_status === 'completed' ? '✓ Completado' : '📤 Emitido'}
+                                  </span>
+                                )}
                               </div>
                               
                               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -602,15 +615,20 @@ export default function Accounting() {
                                         )}
                                       </div>
                                       
-                                      {/* Mostrar conversión si aplica */}
-                                      {item.charged_qty && item.charged_qty !== item.qty && (
+                                      {/* Mostrar conversión si aplica (solo cuando el pedido está completed) */}
+                                      {order.order_status === 'completed' && item.charged_qty && item.charged_qty !== item.qty && (
                                         <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                          {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit || item.unit}
+                                          {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit || item.unit} (conversión aplicada)
                                         </div>
                                       )}
                                       
                                       <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                        {(item.charged_qty || item.qty)} {item.charged_unit || item.unit} × ${Math.round((item.unit_price || 0)).toLocaleString('es-CL')}
+                                        {/* Mostrar cantidad según estado: si está completed y hay charged_qty, usar esa, sino usar qty */}
+                                        {order.order_status === 'completed' && item.charged_qty ? item.charged_qty : item.qty} 
+                                        {' '}
+                                        {order.order_status === 'completed' && item.charged_qty && item.charged_unit ? item.charged_unit : item.unit} 
+                                        {' × $'}
+                                        {Math.round((item.unit_price || 0)).toLocaleString('es-CL')}
                                       </div>
                                     </div>
                                     
