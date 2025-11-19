@@ -283,8 +283,15 @@ export default function Accounting() {
   }
   
   async function handleEditItem() {
+    if (!editingItem || (!editingItem.id && !editingItem.item_id)) {
+      alert('❌ Error: No se puede identificar el item a editar')
+      return
+    }
+    
     try {
-      await updateOrderItem(editingItem.id, {
+      // Usar item_id si existe, sino usar id
+      const itemId = editingItem.item_id || editingItem.id
+      await updateOrderItem(itemId, {
         qty: parseFloat(editForm.qty),
         unit_price: parseFloat(editForm.unit_price)
       })
