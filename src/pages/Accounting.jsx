@@ -171,12 +171,15 @@ export default function Accounting() {
     // Calcular el total correcto: subtotal + shipping
     const calculatedTotal = subtotal + shippingTotal
     
+    // Obtener el shipping_type del primer pedido si existe
+    const firstOrder = customerData.orders.length > 0 ? customerData.orders[0] : null
+    
     setInvoiceData({
       customer,
       items: unpaidItems,
       subtotal: subtotal,
       shipping_amount: shippingTotal,
-      shipping_type: unpaidOrders.length > 0 ? unpaidOrders[0].shipping_type : null,
+      shipping_type: firstOrder ? firstOrder.shipping_type : null,
       total: calculatedTotal
     })
   }
