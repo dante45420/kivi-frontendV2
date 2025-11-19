@@ -647,8 +647,14 @@ export default function Accounting() {
                                         className="button button-sm" 
                                         onClick={() => {
                                           setEditingItem(item)
+                                          // Determinar qué cantidad usar para editar:
+                                          // - Si el item está en la unidad correcta (no hay conversión real), usar qty
+                                          // - Si hay conversión (item.unit !== item.charged_unit), usar charged_qty
+                                          const hasRealConversion = item.charged_unit && item.unit !== item.charged_unit && item.charged_qty !== item.qty
+                                          const qtyToEdit = hasRealConversion ? item.charged_qty : item.qty
+                                          
                                           setEditForm({
-                                            qty: item.charged_qty || item.qty,
+                                            qty: qtyToEdit,
                                             unit_price: item.unit_price || 0
                                           })
                                         }}
