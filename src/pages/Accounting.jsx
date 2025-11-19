@@ -494,14 +494,14 @@ export default function Accounting() {
                                 {order.order_status && (
                                   <span style={{ 
                                     fontSize: '11px', 
-                                    color: order.order_status === 'completed' ? '#4caf50' : '#ff9800',
+                                    color: (order.order_status === 'completed' || order.order_status === 'finalized') ? '#4caf50' : '#ff9800',
                                     marginLeft: '8px',
                                     padding: '2px 6px',
-                                    background: order.order_status === 'completed' ? '#e8f5e9' : '#fff3e0',
+                                    background: (order.order_status === 'completed' || order.order_status === 'finalized') ? '#e8f5e9' : '#fff3e0',
                                     borderRadius: '4px',
                                     fontWeight: 600
                                   }}>
-                                    {order.order_status === 'completed' ? '✓ Completado' : '📤 Emitido'}
+                                    {(order.order_status === 'completed' || order.order_status === 'finalized') ? '✓ Completado' : '📤 Emitido'}
                                   </span>
                                 )}
                               </div>
@@ -616,7 +616,7 @@ export default function Accounting() {
                                       </div>
                                       
                                       {/* Mostrar conversión si aplica (solo cuando el pedido está completed) */}
-                                      {order.order_status === 'completed' && item.charged_qty && item.charged_qty !== item.qty && (
+                                      {(order.order_status === 'completed' || order.order_status === 'finalized') && item.charged_qty && item.charged_qty !== item.qty && (
                                         <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                                           {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit || item.unit} (conversión aplicada)
                                         </div>
@@ -624,9 +624,9 @@ export default function Accounting() {
                                       
                                       <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
                                         {/* Mostrar cantidad según estado: si está completed y hay charged_qty, usar esa, sino usar qty */}
-                                        {order.order_status === 'completed' && item.charged_qty ? item.charged_qty : item.qty} 
+                                        {(order.order_status === 'completed' || order.order_status === 'finalized') && item.charged_qty ? item.charged_qty : item.qty} 
                                         {' '}
-                                        {order.order_status === 'completed' && item.charged_qty && item.charged_unit ? item.charged_unit : item.unit} 
+                                        {(order.order_status === 'completed' || order.order_status === 'finalized') && item.charged_qty && item.charged_unit ? item.charged_unit : item.unit} 
                                         {' × $'}
                                         {Math.round((item.unit_price || 0)).toLocaleString('es-CL')}
                                       </div>
