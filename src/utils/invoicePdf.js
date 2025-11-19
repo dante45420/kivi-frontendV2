@@ -140,40 +140,36 @@ export function generateInvoicePDF(invoiceData) {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(100, 100, 100)
     
-    const unitPrice = Math.round(item.calculated_total / item.qty)
-    const qtyText = `${item.qty} ${item.unit} × $${unitPrice.toLocaleString('es-CL')}`
+    // Usar total o calculated_total, y asegurar que qty y unit existan
+    const itemTotal = item.total || item.calculated_total || 0
+    const itemQty = item.qty || item.charged_qty || 0
+    const itemUnit = item.unit || item.charged_unit || 'kg'
+    
+    // Calcular precio unitario de forma segura
+    const unitPrice = itemQty > 0 ? Math.round(itemTotal / itemQty) : (item.unit_price || 0)
+    const qtyText = `${itemQty} ${itemUnit} × $${unitPrice.toLocaleString('es-CL')}`
     doc.text(qtyText, margin + 3, y)
     
     // Cantidad (derecha)
     doc.setTextColor(40, 40, 40)
-    const quantityText = `${item.qty} ${item.unit}`
+    const quantityText = `${itemQty} ${itemUnit}`
     doc.text(quantityText, pageWidth - margin - 70, y - 5)
     
     // Subtotal (derecha)
     doc.setFont('helvetica', 'bold')
-    const subtotalText = `$${item.calculated_total.toLocaleString('es-CL')}`
+    const subtotalText = `$${itemTotal.toLocaleString('es-CL')}`
     const subtotalWidth = doc.getTextWidth(subtotalText)
     doc.text(subtotalText, pageWidth - margin - subtotalWidth - 3, y - 5)
     
     // Información de conversión si aplica
-    if (item.needs_conversion && item.has_conversion) {
+    if (item.charged_qty && item.charged_qty !== itemQty && item.charged_unit) {
       y += 4
       doc.setFontSize(8)
       doc.setFont('helvetica', 'italic')
       doc.setTextColor(120, 120, 120)
       
-      let conversionText = ''
-      if (item.unit === 'unit' && item.product?.unit === 'kg') {
-        const kgEquivalent = (item.qty / item.product.avg_units_per_kg).toFixed(2)
-        conversionText = `(aprox. ${kgEquivalent} kg)`
-      } else if (item.unit === 'kg' && item.product?.unit === 'unit') {
-        const unitsEquivalent = (item.qty * item.product.avg_units_per_kg).toFixed(1)
-        conversionText = `(aprox. ${unitsEquivalent} unidades)`
-      }
-      
-      if (conversionText) {
-        doc.text(conversionText, margin + 3, y)
-      }
+      const conversionText = `${itemQty} ${itemUnit} → ${item.charged_qty} ${item.charged_unit} (conversión aplicada)`
+      doc.text(conversionText, margin + 3, y)
     }
     
     y += 10
@@ -201,7 +197,7 @@ export function generateInvoicePDF(invoiceData) {
   doc.setTextColor(80, 80, 80)
   doc.text('Subtotal:', margin + 5, y)
   
-  const subtotal = invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.calculated_total || 0), 0)
+  const subtotal = invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.total || item.calculated_total || 0), 0)
   const subtotalText = `$${subtotal.toLocaleString('es-CL')}`
   const subtotalWidth = doc.getTextWidth(subtotalText)
   doc.text(subtotalText, pageWidth - margin - subtotalWidth - 5, y)
