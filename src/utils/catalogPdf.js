@@ -104,7 +104,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
     let currentRow = 0
     let currentCol = 0
     
-    // Primera pasada: calcular alturas de contenido para cada oferta
+    // Primera pasada: calcular alturas de contenido para cada oferta (imagen + nombre)
     const offerContentHeights = []
     for (let i = 0; i < offersOnFirstPage; i++) {
       const offer = weeklyOffers[i]
@@ -119,14 +119,14 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
             const imageWidth = 35
             const imageAspectRatio = imageData.width / imageData.height
             const imageHeight = imageWidth / imageAspectRatio
-            contentHeight += imageHeight + 6
+            contentHeight += imageHeight + 6 // Imagen + espacio
           }
         } catch (e) {
           // Si no se puede cargar, usar altura estimada
-          contentHeight += 25
+          contentHeight += 25 + 6
         }
       } else {
-        contentHeight += 25 // Altura estimada si no hay imagen
+        contentHeight += 25 + 6 // Altura estimada si no hay imagen
       }
       
       // Altura del nombre (aproximadamente 5mm)
@@ -224,19 +224,24 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const nameX = xPos + (offerWidth - nameWidth) / 2
       doc.text(displayName, nameX, offerY)
       
-      // Calcular posición del precio dinámicamente basado en el espacio disponible
-      // Encontrar la oferta de la misma fila con más espacio (imagen más pequeña)
+      // Calcular posición del precio: usar el espacio disponible después del contenido
+      // Encontrar la oferta de la misma fila con MÁS espacio (imagen más pequeña = más margen)
       const rowStart = Math.floor(i / 2) * 2
       const rowEnd = Math.min(rowStart + 2, offersOnFirstPage)
-      let maxContentHeight = 0
+      
+      // Encontrar la altura de contenido MÍNIMA de la fila (la que tiene más espacio/margen)
+      // Esto asegura que el precio se posicione basándose en la oferta con más espacio disponible
+      let minContentHeightInRow = offerHeight
       for (let j = rowStart; j < rowEnd; j++) {
-        if (offerContentHeights[j] > maxContentHeight) {
-          maxContentHeight = offerContentHeights[j]
+        if (offerContentHeights[j] < minContentHeightInRow) {
+          minContentHeightInRow = offerContentHeights[j]
         }
       }
       
-      // Calcular posición del precio: después del contenido más alto + margen
-      const priceY = yPos + maxContentHeight + 8 // 8mm después del contenido más alto
+      // Calcular posición del precio: después del contenido más bajo + margen generoso
+      // Esto asegura que todas las ofertas de la fila tengan el precio a la misma altura
+      // basándose en la que tiene más espacio (más margen con la foto)
+      const priceY = yPos + minContentHeightInRow + 10 // 10mm después del contenido más bajo (más espacio)
       
       // Asegurar que el precio no esté muy abajo (máximo 12mm del borde inferior)
       const maxPriceY = yPos + offerHeight - 12
@@ -337,7 +342,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         if (offer.product?.sale_price) {
           doc.setFontSize(10)
           doc.setFont('helvetica', 'normal')
-          doc.setTextColor(150, 150, 150)
+      doc.setTextColor(150, 150, 150)
           const oldPrice = `$${offer.product.sale_price.toLocaleString('es-CL')}`
           const oldPriceWidth = doc.getTextWidth(oldPrice)
           const oldPriceX = margin + (contentWidth - oldPriceWidth) / 2
