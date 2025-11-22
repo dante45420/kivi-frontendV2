@@ -127,6 +127,23 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       
       let offerY = yPos + 4
       
+      // Badge de descuento - más pequeño pero con letra más grande
+      if (offer.product?.sale_price) {
+        const discount = Math.round((1 - offer.special_price / offer.product.sale_price) * 100)
+        doc.setFillColor(255, 212, 163) // Naranja Kivi
+        const badgeWidth = 22
+        const badgeHeight = 9
+        const badgeX = xPos + offerWidth - badgeWidth - 4
+        const badgeY = yPos + 4
+        doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 2, 2, 'F')
+        doc.setFontSize(10) // Letra más grande en badge más pequeño
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(52, 73, 94) // Texto oscuro
+        const discountText = `-${discount}%`
+        const discountTextWidth = doc.getTextWidth(discountText)
+        doc.text(discountText, badgeX + (badgeWidth - discountTextWidth) / 2, badgeY + 6.5)
+      }
+      
       // Imagen del producto
       if (offer.product?.photo_url) {
         try {
@@ -143,14 +160,14 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
             const imageX = xPos + (offerWidth - imageWidth) / 2
             doc.addImage(imageData.base64, 'PNG', imageX, offerY, imageWidth, imageHeight)
             
-            offerY += imageHeight + 4
+            offerY += imageHeight + 6
           }
         } catch (e) {
           console.warn('No se pudo cargar imagen del producto:', e)
         }
       }
       
-      // Nombre del producto - más grande
+      // Nombre del producto - centrado
       doc.setFontSize(13)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(52, 73, 94) // Texto oscuro
@@ -164,55 +181,43 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         }
         displayName += '...'
       }
-      doc.text(displayName, xPos + 4, offerY, { maxWidth: offerWidth - 8 })
+      // Centrar nombre
+      const nameWidth = doc.getTextWidth(displayName)
+      const nameX = xPos + (offerWidth - nameWidth) / 2
+      doc.text(displayName, nameX, offerY)
       
-      offerY += 6
+      // Calcular posición del precio (lo más abajo posible con margen)
+      const priceY = yPos + offerHeight - 12 // 12mm de margen desde abajo
       
-      // Precio tachado
+      // Precio tachado (si existe)
       if (offer.product?.sale_price) {
-        doc.setFontSize(10)
+        doc.setFontSize(9)
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(150, 150, 150)
         const oldPrice = `$${offer.product.sale_price.toLocaleString('es-CL')}`
         const oldPriceWidth = doc.getTextWidth(oldPrice)
         const oldPriceX = xPos + (offerWidth - oldPriceWidth) / 2
-        doc.text(oldPrice, oldPriceX, offerY)
-        doc.line(oldPriceX, offerY - 1, oldPriceX + oldPriceWidth, offerY - 1)
-        offerY += 5
+        doc.text(oldPrice, oldPriceX, priceY - 6)
+        doc.line(oldPriceX, priceY - 7, oldPriceX + oldPriceWidth, priceY - 7)
       }
       
-      // Precio de oferta - más grande con color de marca
+      // Precio de oferta - centrado, a la misma altura, color negro/gris
       doc.setFontSize(18)
       doc.setFont('helvetica', 'bold')
-      doc.setTextColor(136, 196, 168) // Verde oscuro Kivi
+      doc.setTextColor(80, 80, 80) // Negro/gris, no verde
       const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
       const newPriceWidth = doc.getTextWidth(newPrice)
       const newPriceX = xPos + (offerWidth - newPriceWidth) / 2
-      doc.text(newPrice, newPriceX, offerY)
+      doc.text(newPrice, newPriceX, priceY)
       
-      // Unidad
+      // Unidad - centrada también
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(100, 100, 100)
       const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
-      doc.text(unitText, newPriceX + newPriceWidth + 2, offerY)
-      
-      // Badge de descuento con color de marca
-      if (offer.product?.sale_price) {
-        const discount = Math.round((1 - offer.special_price / offer.product.sale_price) * 100)
-        doc.setFillColor(255, 212, 163) // Naranja Kivi
-        const badgeWidth = 24
-        const badgeHeight = 10
-        const badgeX = xPos + offerWidth - badgeWidth - 4
-        const badgeY = yPos + 4
-        doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 2, 2, 'F')
-        doc.setFontSize(9)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(52, 73, 94) // Texto oscuro
-        const discountText = `-${discount}%`
-        const discountTextWidth = doc.getTextWidth(discountText)
-        doc.text(discountText, badgeX + (badgeWidth - discountTextWidth) / 2, badgeY + 7)
-      }
+      const unitWidth = doc.getTextWidth(unitText)
+      const unitX = xPos + (offerWidth - unitWidth) / 2
+      doc.text(unitText, unitX, priceY + 5)
       
       // Avanzar a la siguiente posición
       currentCol++
@@ -262,43 +267,64 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
           }
         }
         
-        // Nombre
+        // Nombre - centrado
         doc.setFontSize(15)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(52, 73, 94)
-        doc.text(offer.product?.name || 'Producto', margin + 4, offerY)
+        const productName = offer.product?.name || 'Producto'
+        const nameWidth = doc.getTextWidth(productName)
+        const nameX = margin + (contentWidth - nameWidth) / 2
+        doc.text(productName, nameX, offerY)
         offerY += 7
         
-        // Precio tachado
+        // Calcular posición del precio (lo más abajo posible con margen)
+        const priceY = y + 50 - 12 // 12mm de margen desde abajo
+        
+        // Precio tachado (si existe)
         if (offer.product?.sale_price) {
-          doc.setFontSize(11)
+          doc.setFontSize(10)
           doc.setFont('helvetica', 'normal')
           doc.setTextColor(150, 150, 150)
           const oldPrice = `$${offer.product.sale_price.toLocaleString('es-CL')}`
-          doc.text(oldPrice, margin + 4, offerY)
           const oldPriceWidth = doc.getTextWidth(oldPrice)
-          doc.line(margin + 4, offerY - 1, margin + 4 + oldPriceWidth, offerY - 1)
-          offerY += 6
+          const oldPriceX = margin + (contentWidth - oldPriceWidth) / 2
+          doc.text(oldPrice, oldPriceX, priceY - 6)
+          doc.line(oldPriceX, priceY - 7, oldPriceX + oldPriceWidth, priceY - 7)
         }
         
-        // Precio nuevo
+        // Precio nuevo - centrado, a la misma altura, color negro/gris
         doc.setFontSize(20)
         doc.setFont('helvetica', 'bold')
-        doc.setTextColor(136, 196, 168)
+        doc.setTextColor(80, 80, 80) // Negro/gris, no verde
         const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
-        doc.text(newPrice, margin + 4, offerY)
+        const newPriceWidth = doc.getTextWidth(newPrice)
+        const newPriceX = margin + (contentWidth - newPriceWidth) / 2
+        doc.text(newPrice, newPriceX, priceY)
         
-        // Descuento
+        // Unidad - centrada
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(100, 100, 100)
+        const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
+        const unitWidth = doc.getTextWidth(unitText)
+        const unitX = margin + (contentWidth - unitWidth) / 2
+        doc.text(unitText, unitX, priceY + 5)
+        
+        // Badge de descuento - más pequeño pero con letra más grande
         if (offer.product?.sale_price) {
           const discount = Math.round((1 - offer.special_price / offer.product.sale_price) * 100)
-          doc.setFillColor(255, 212, 163)
-          doc.roundedRect(pageWidth - margin - 30, y + 4, 26, 12, 2, 2, 'F')
-          doc.setFontSize(10)
+          doc.setFillColor(255, 212, 163) // Naranja Kivi
+          const badgeWidth = 22
+          const badgeHeight = 9
+          const badgeX = pageWidth - margin - badgeWidth - 4
+          const badgeY = y + 4
+          doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 2, 2, 'F')
+          doc.setFontSize(10) // Letra más grande en badge más pequeño
           doc.setFont('helvetica', 'bold')
           doc.setTextColor(52, 73, 94)
           const discountText = `-${discount}%`
-          const discountWidth = doc.getTextWidth(discountText)
-          doc.text(discountText, pageWidth - margin - 17 - discountWidth / 2, y + 11)
+          const discountTextWidth = doc.getTextWidth(discountText)
+          doc.text(discountText, badgeX + (badgeWidth - discountTextWidth) / 2, badgeY + 6.5)
         }
         
         y += 55
