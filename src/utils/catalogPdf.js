@@ -104,6 +104,38 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
     let currentRow = 0
     let currentCol = 0
     
+    // Primera pasada: calcular alturas de contenido para cada oferta
+    const offerContentHeights = []
+    for (let i = 0; i < offersOnFirstPage; i++) {
+      const offer = weeklyOffers[i]
+      let contentHeight = 4 // Badge
+      
+      // Altura de imagen
+      if (offer.product?.photo_url) {
+        try {
+          const imageUrl = getImageUrl(offer.product.photo_url)
+          if (imageUrl) {
+            const imageData = await loadImageAsBase64(imageUrl)
+            const imageWidth = 35
+            const imageAspectRatio = imageData.width / imageData.height
+            const imageHeight = imageWidth / imageAspectRatio
+            contentHeight += imageHeight + 6
+          }
+        } catch (e) {
+          // Si no se puede cargar, usar altura estimada
+          contentHeight += 25
+        }
+      } else {
+        contentHeight += 25 // Altura estimada si no hay imagen
+      }
+      
+      // Altura del nombre (aproximadamente 5mm)
+      contentHeight += 5
+      
+      offerContentHeights.push(contentHeight)
+    }
+    
+    // Segunda pasada: renderizar ofertas
     for (let i = 0; i < offersOnFirstPage; i++) {
       const offer = weeklyOffers[i]
       
@@ -126,6 +158,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       doc.roundedRect(xPos, yPos, offerWidth, offerHeight, 3, 3, 'S')
       
       let offerY = yPos + 4
+      let actualImageHeight = 0
       
       // Badge de descuento - más pequeño pero con letra más grande
       if (offer.product?.sale_price) {
@@ -154,17 +187,22 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
             // Tamaño de imagen: 35mm de ancho, mantener proporción
             const imageWidth = 35
             const imageAspectRatio = imageData.width / imageData.height
-            const imageHeight = imageWidth / imageAspectRatio
+            actualImageHeight = imageWidth / imageAspectRatio
             
             // Centrar imagen horizontalmente
             const imageX = xPos + (offerWidth - imageWidth) / 2
-            doc.addImage(imageData.base64, 'PNG', imageX, offerY, imageWidth, imageHeight)
+            doc.addImage(imageData.base64, 'PNG', imageX, offerY, imageWidth, actualImageHeight)
             
-            offerY += imageHeight + 6
+            offerY += actualImageHeight + 6
           }
         } catch (e) {
           console.warn('No se pudo cargar imagen del producto:', e)
+          actualImageHeight = 25 // Altura estimada
+          offerY += actualImageHeight + 6
         }
+      } else {
+        actualImageHeight = 25 // Altura estimada si no hay imagen
+        offerY += actualImageHeight + 6
       }
       
       // Nombre del producto - centrado
@@ -186,8 +224,23 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const nameX = xPos + (offerWidth - nameWidth) / 2
       doc.text(displayName, nameX, offerY)
       
-      // Calcular posición del precio (lo más abajo posible con margen)
-      const priceY = yPos + offerHeight - 12 // 12mm de margen desde abajo
+      // Calcular posición del precio dinámicamente basado en el espacio disponible
+      // Encontrar la oferta de la misma fila con más espacio (imagen más pequeña)
+      const rowStart = Math.floor(i / 2) * 2
+      const rowEnd = Math.min(rowStart + 2, offersOnFirstPage)
+      let maxContentHeight = 0
+      for (let j = rowStart; j < rowEnd; j++) {
+        if (offerContentHeights[j] > maxContentHeight) {
+          maxContentHeight = offerContentHeights[j]
+        }
+      }
+      
+      // Calcular posición del precio: después del contenido más alto + margen
+      const priceY = yPos + maxContentHeight + 8 // 8mm después del contenido más alto
+      
+      // Asegurar que el precio no esté muy abajo (máximo 12mm del borde inferior)
+      const maxPriceY = yPos + offerHeight - 12
+      const finalPriceY = Math.min(priceY, maxPriceY)
       
       // Precio tachado (si existe)
       if (offer.product?.sale_price) {
@@ -197,8 +250,8 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         const oldPrice = `$${offer.product.sale_price.toLocaleString('es-CL')}`
         const oldPriceWidth = doc.getTextWidth(oldPrice)
         const oldPriceX = xPos + (offerWidth - oldPriceWidth) / 2
-        doc.text(oldPrice, oldPriceX, priceY - 6)
-        doc.line(oldPriceX, priceY - 7, oldPriceX + oldPriceWidth, priceY - 7)
+        doc.text(oldPrice, oldPriceX, finalPriceY - 6)
+        doc.line(oldPriceX, finalPriceY - 7, oldPriceX + oldPriceWidth, finalPriceY - 7)
       }
       
       // Precio de oferta - centrado, a la misma altura, color negro/gris
@@ -208,7 +261,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
       const newPriceWidth = doc.getTextWidth(newPrice)
       const newPriceX = xPos + (offerWidth - newPriceWidth) / 2
-      doc.text(newPrice, newPriceX, priceY)
+      doc.text(newPrice, newPriceX, finalPriceY)
       
       // Unidad - centrada también
       doc.setFontSize(10)
@@ -217,7 +270,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
       const unitWidth = doc.getTextWidth(unitText)
       const unitX = xPos + (offerWidth - unitWidth) / 2
-      doc.text(unitText, unitX, priceY + 5)
+      doc.text(unitText, unitX, finalPriceY + 5)
       
       // Avanzar a la siguiente posición
       currentCol++
@@ -452,11 +505,11 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         }
         doc.text(productName, xPos, finalColumnY)
         
-        // Precio y unidad - más grande con color de marca
+        // Precio y unidad - más grande con color gris (más claro que el título)
         if (product.sale_price) {
           doc.setFontSize(14)
           doc.setFont('helvetica', 'normal')
-          doc.setTextColor(136, 196, 168) // Verde oscuro Kivi
+          doc.setTextColor(100, 100, 100) // Gris, más claro que el título (52, 73, 94) pero no verde
           const priceText = `$${product.sale_price.toLocaleString('es-CL')} / ${product.unit === 'kg' ? 'kg' : 'unid'}`
           doc.text(priceText, xPos, finalColumnY + 7)
         }
