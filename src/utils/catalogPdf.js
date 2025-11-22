@@ -246,8 +246,8 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       // y que esté siempre debajo de todas las imágenes y nombres
       const priceY = yPos + maxContentHeightInRow + 10 // 10mm después del contenido más alto
       
-      // Asegurar que el precio no esté muy abajo (máximo 12mm del borde inferior)
-      const maxPriceY = yPos + offerHeight - 12
+      // Asegurar que el precio no esté muy abajo (máximo 15mm del borde inferior - más margen)
+      const maxPriceY = yPos + offerHeight - 15
       const finalPriceY = Math.min(priceY, maxPriceY)
       
       // Verificar que el precio no quede sobre el nombre de esta oferta específica
@@ -267,23 +267,35 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         doc.line(oldPriceX, safePriceY - 7, oldPriceX + oldPriceWidth, safePriceY - 7)
       }
       
-      // Precio de oferta - centrado, a la misma altura, color negro/gris
+      // Precio de oferta con unidad al lado - centrado, a la misma altura, color negro/gris
       doc.setFontSize(18)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(80, 80, 80) // Negro/gris, no verde
       const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
       const newPriceWidth = doc.getTextWidth(newPrice)
-      const newPriceX = xPos + (offerWidth - newPriceWidth) / 2
-      doc.text(newPrice, newPriceX, safePriceY)
       
-      // Unidad - centrada también
+      // Calcular ancho de unidad con su tamaño de fuente
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
+      const unitWidth = doc.getTextWidth(unitText)
+      
+      // Calcular ancho total y centrar
+      const totalWidth = newPriceWidth + 2 + unitWidth // 2mm de espacio
+      const priceX = xPos + (offerWidth - totalWidth) / 2
+      
+      // Dibujar precio
+      doc.setFontSize(18)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(80, 80, 80)
+      doc.text(newPrice, priceX, safePriceY)
+      
+      // Dibujar unidad al lado del precio
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(100, 100, 100)
-      const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
-      const unitWidth = doc.getTextWidth(unitText)
-      const unitX = xPos + (offerWidth - unitWidth) / 2
-      doc.text(unitText, unitX, safePriceY + 5)
+      const unitX = priceX + newPriceWidth + 2 // 2mm de espacio entre precio y unidad
+      doc.text(unitText, unitX, safePriceY)
       
       // Avanzar a la siguiente posición
       currentCol++
@@ -343,14 +355,14 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         doc.text(productName, nameX, offerY)
         offerY += 7
         
-        // Calcular posición del precio (lo más abajo posible con margen)
-        const priceY = y + 50 - 12 // 12mm de margen desde abajo
+        // Calcular posición del precio (lo más abajo posible con más margen)
+        const priceY = y + 50 - 15 // 15mm de margen desde abajo (más margen)
         
         // Precio tachado (si existe)
         if (offer.product?.sale_price) {
           doc.setFontSize(10)
           doc.setFont('helvetica', 'normal')
-      doc.setTextColor(150, 150, 150)
+          doc.setTextColor(150, 150, 150)
           const oldPrice = `$${offer.product.sale_price.toLocaleString('es-CL')}`
           const oldPriceWidth = doc.getTextWidth(oldPrice)
           const oldPriceX = margin + (contentWidth - oldPriceWidth) / 2
@@ -358,23 +370,35 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
           doc.line(oldPriceX, priceY - 7, oldPriceX + oldPriceWidth, priceY - 7)
         }
         
-        // Precio nuevo - centrado, a la misma altura, color negro/gris
+        // Precio nuevo con unidad al lado - centrado, a la misma altura, color negro/gris
         doc.setFontSize(20)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(80, 80, 80) // Negro/gris, no verde
         const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
         const newPriceWidth = doc.getTextWidth(newPrice)
-        const newPriceX = margin + (contentWidth - newPriceWidth) / 2
-        doc.text(newPrice, newPriceX, priceY)
         
-        // Unidad - centrada
+        // Calcular ancho de unidad con su tamaño de fuente
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
+        const unitWidth = doc.getTextWidth(unitText)
+        
+        // Calcular ancho total y centrar
+        const totalWidth = newPriceWidth + 2 + unitWidth // 2mm de espacio
+        const priceX = margin + (contentWidth - totalWidth) / 2
+        
+        // Dibujar precio
+        doc.setFontSize(20)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(80, 80, 80)
+        doc.text(newPrice, priceX, priceY)
+        
+        // Dibujar unidad al lado del precio
         doc.setFontSize(10)
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(100, 100, 100)
-        const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
-        const unitWidth = doc.getTextWidth(unitText)
-        const unitX = margin + (contentWidth - unitWidth) / 2
-        doc.text(unitText, unitX, priceY + 5)
+        const unitX = priceX + newPriceWidth + 2 // 2mm de espacio entre precio y unidad
+        doc.text(unitText, unitX, priceY)
         
         // Badge de descuento - más pequeño pero con letra más grande
         if (offer.product?.sale_price) {
