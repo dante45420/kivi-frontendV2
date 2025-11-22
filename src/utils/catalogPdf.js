@@ -224,28 +224,36 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const nameX = xPos + (offerWidth - nameWidth) / 2
       doc.text(displayName, nameX, offerY)
       
-      // Calcular posición del precio: usar el espacio disponible después del contenido
-      // Encontrar la oferta de la misma fila con MÁS espacio (imagen más pequeña = más margen)
+      // Guardar la posición Y después del nombre para esta oferta
+      const nameEndY = offerY + 5 // 5mm después del nombre
+      
+      // Calcular posición del precio: usar la altura MÁXIMA de contenido de la fila
+      // Esto asegura que el precio esté siempre debajo de todas las imágenes y nombres
       const rowStart = Math.floor(i / 2) * 2
       const rowEnd = Math.min(rowStart + 2, offersOnFirstPage)
       
-      // Encontrar la altura de contenido MÍNIMA de la fila (la que tiene más espacio/margen)
-      // Esto asegura que el precio se posicione basándose en la oferta con más espacio disponible
-      let minContentHeightInRow = offerHeight
+      // Encontrar la altura de contenido MÁXIMA de la fila (la que tiene la imagen más grande)
+      // Esto asegura que el precio esté siempre debajo de todas las imágenes
+      let maxContentHeightInRow = 0
       for (let j = rowStart; j < rowEnd; j++) {
-        if (offerContentHeights[j] < minContentHeightInRow) {
-          minContentHeightInRow = offerContentHeights[j]
+        if (offerContentHeights[j] > maxContentHeightInRow) {
+          maxContentHeightInRow = offerContentHeights[j]
         }
       }
       
-      // Calcular posición del precio: después del contenido más bajo + margen generoso
+      // Calcular posición del precio: después del contenido más alto + margen generoso
       // Esto asegura que todas las ofertas de la fila tengan el precio a la misma altura
-      // basándose en la que tiene más espacio (más margen con la foto)
-      const priceY = yPos + minContentHeightInRow + 10 // 10mm después del contenido más bajo (más espacio)
+      // y que esté siempre debajo de todas las imágenes y nombres
+      const priceY = yPos + maxContentHeightInRow + 10 // 10mm después del contenido más alto
       
       // Asegurar que el precio no esté muy abajo (máximo 12mm del borde inferior)
       const maxPriceY = yPos + offerHeight - 12
       const finalPriceY = Math.min(priceY, maxPriceY)
+      
+      // Verificar que el precio no quede sobre el nombre de esta oferta específica
+      // Si el precio calculado está muy arriba, usar la posición después del nombre de esta oferta
+      const minPriceY = nameEndY + 5 // Mínimo 5mm después del nombre
+      const safePriceY = Math.max(finalPriceY, minPriceY)
       
       // Precio tachado (si existe)
       if (offer.product?.sale_price) {
@@ -255,8 +263,8 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
         const oldPrice = `$${offer.product.sale_price.toLocaleString('es-CL')}`
         const oldPriceWidth = doc.getTextWidth(oldPrice)
         const oldPriceX = xPos + (offerWidth - oldPriceWidth) / 2
-        doc.text(oldPrice, oldPriceX, finalPriceY - 6)
-        doc.line(oldPriceX, finalPriceY - 7, oldPriceX + oldPriceWidth, finalPriceY - 7)
+        doc.text(oldPrice, oldPriceX, safePriceY - 6)
+        doc.line(oldPriceX, safePriceY - 7, oldPriceX + oldPriceWidth, safePriceY - 7)
       }
       
       // Precio de oferta - centrado, a la misma altura, color negro/gris
@@ -266,7 +274,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const newPrice = `$${offer.special_price.toLocaleString('es-CL')}`
       const newPriceWidth = doc.getTextWidth(newPrice)
       const newPriceX = xPos + (offerWidth - newPriceWidth) / 2
-      doc.text(newPrice, newPriceX, finalPriceY)
+      doc.text(newPrice, newPriceX, safePriceY)
       
       // Unidad - centrada también
       doc.setFontSize(10)
@@ -275,7 +283,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const unitText = `/${offer.product?.unit === 'kg' ? 'kg' : 'unid'}`
       const unitWidth = doc.getTextWidth(unitText)
       const unitX = xPos + (offerWidth - unitWidth) / 2
-      doc.text(unitText, unitX, finalPriceY + 5)
+      doc.text(unitText, unitX, safePriceY + 5)
       
       // Avanzar a la siguiente posición
       currentCol++
