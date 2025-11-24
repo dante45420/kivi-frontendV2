@@ -309,6 +309,20 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       }
     }
     
+    // Título grande debajo de las ofertas
+    const textAfterOffers = "¡Más frutas y verduras abajo en el pdf!"
+    const textY = y + (currentRow * (offerHeight + 8)) + 15 // 15mm después de la última fila de ofertas
+    
+    // Solo mostrar si hay espacio y si hay más productos después
+    if (textY < pageHeight - 40 && (weeklyOffers.length > offersOnFirstPage || (products && products.length > 0))) {
+      doc.setFontSize(28) // Título muy grande
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(136, 196, 168) // Verde oscuro Kivi
+      const textWidth = doc.getTextWidth(textAfterOffers)
+      const textX = margin + (contentWidth - textWidth) / 2 // Centrado
+      doc.text(textAfterOffers, textX, textY)
+    }
+    
     // Si hay más ofertas, continuar en siguiente página
     if (weeklyOffers.length > offersOnFirstPage) {
       doc.addPage()
