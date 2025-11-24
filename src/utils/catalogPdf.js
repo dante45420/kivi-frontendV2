@@ -84,7 +84,10 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
     // Usar toda la primera página para ofertas
     // Calcular espacio disponible (desde y hasta el pie de página)
     const availableHeight = pageHeight - 30 - y // 30 para pie de página
-    const offersPerPage = Math.floor(availableHeight / 65) // ~65mm por oferta con imagen
+    // Asegurar que todas las ofertas quepan en la primera página
+    // Con grid de 2 columnas, podemos tener hasta 2 filas (4 ofertas) cómodamente
+    // Si hay 4 ofertas o menos, todas deben ir en la primera página
+    const offersPerPage = weeklyOffers.length <= 4 ? 4 : Math.floor(availableHeight / 65)
     const offersOnFirstPage = Math.min(weeklyOffers.length, offersPerPage)
     
     // Título de ofertas - más grande
@@ -143,9 +146,10 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
       const xPos = margin + (currentCol * (offerWidth + 8))
       const yPos = y + (currentRow * (offerHeight + 8))
       
-      // Verificar si cabe en la página
-      if (yPos + offerHeight > pageHeight - 30) {
-        break // No cabe más en esta página
+      // Si hay 4 ofertas o menos, todas deben quedar en la primera página
+      // Solo verificar espacio si hay más de 4 ofertas
+      if (weeklyOffers.length > 4 && yPos + offerHeight > pageHeight - 20) {
+        break // Solo romper si hay más de 4 ofertas y no cabe
       }
       
       // Caja de oferta con color de marca
