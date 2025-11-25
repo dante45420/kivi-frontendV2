@@ -47,7 +47,7 @@ export function generateInvoicePDF(invoiceData) {
   doc.setFontSize(20)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(50, 50, 50)
-  const titleText = 'NOTA DE COBRO'
+  const titleText = invoiceData.order_id ? `NOTA DE COBRO - PEDIDO #${invoiceData.order_id}` : 'NOTA DE COBRO'
   const titleWidth = doc.getTextWidth(titleText)
   doc.text(titleText, (pageWidth - titleWidth) / 2, y)
   
@@ -308,7 +308,8 @@ export function generateInvoicePDF(invoiceData) {
   doc.text(contactText, (pageWidth - contactWidth) / 2, footerY + 4)
   
   // Descargar el PDF
-  const filename = `nota-cobro-${invoiceData.customer.name.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().split('T')[0]}.pdf`
+  const orderSuffix = invoiceData.order_id ? `-pedido-${invoiceData.order_id}` : ''
+  const filename = `nota-cobro-${invoiceData.customer.name.replace(/\s+/g, '-').toLowerCase()}${orderSuffix}-${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(filename)
 }
 

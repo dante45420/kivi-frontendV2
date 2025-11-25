@@ -198,6 +198,7 @@ export default function Shopping() {
           qty: item.total_qty,
           price_total: parseFloat(data.price_total),
           price_per_unit: parseFloat(data.price_per_unit || data.price_total / item.total_qty),
+          price_per_charged_unit: data.price_per_charged_unit ? parseFloat(data.price_per_charged_unit) : null,
           conversion_qty: data.conversion_qty ? parseFloat(data.conversion_qty) : null,
           conversion_unit: data.conversion_qty ? data.conversion_unit : null
         })
@@ -584,6 +585,23 @@ export default function Shopping() {
                             <option value="unit">unid</option>
                             <option value="kg">kg</option>
                           </select>
+                          <div style={{ flex: 1, minWidth: '120px' }}>
+                            <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '4px' }}>
+                              Por {item.product_default_unit} $ (opcional)
+                            </label>
+                            <input
+                              type="number"
+                              className="input"
+                              value={data.price_per_charged_unit || ''}
+                              onChange={e => handlePriceChange(key, 'price_per_charged_unit', e.target.value)}
+                              placeholder="Precio por unidad de cobro"
+                              step="0.01"
+                              style={{ width: '100%', padding: '8px', fontSize: '14px' }}
+                            />
+                            <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>
+                              Si conoces el precio por {item.product_default_unit}
+                            </div>
+                          </div>
                         </>
                       )}
                     </div>

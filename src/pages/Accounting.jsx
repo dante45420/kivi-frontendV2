@@ -142,17 +142,19 @@ export default function Accounting() {
     })
   }
 
-  async function openInvoiceModal(customer, customerData) {
+  async function openInvoiceModal(customer, customerData, specificOrder = null) {
     setSelectedCustomer(customer)
     setShowInvoiceModal(true)
     
     // Preparar datos para la nota de cobro
-    // En el nuevo sistema, mostramos todos los items de todos los pedidos
+    // Si se especifica un pedido, solo mostrar ese pedido
+    const ordersToProcess = specificOrder ? [specificOrder] : customerData.orders
+    
     const unpaidItems = []
     let subtotal = 0
     let shippingTotal = 0
     
-    customerData.orders.forEach(order => {
+    ordersToProcess.forEach(order => {
       order.items.forEach(item => {
         unpaidItems.push({
           ...item,
@@ -171,8 +173,8 @@ export default function Accounting() {
     // Calcular el total correcto: subtotal + shipping
     const calculatedTotal = subtotal + shippingTotal
     
-    // Obtener el shipping_type del primer pedido si existe
-    const firstOrder = customerData.orders.length > 0 ? customerData.orders[0] : null
+    // Obtener el shipping_type del primer pedido procesado
+    const firstOrder = ordersToProcess.length > 0 ? ordersToProcess[0] : null
     
     setInvoiceData({
       customer,
@@ -180,7 +182,9 @@ export default function Accounting() {
       subtotal: subtotal,
       shipping_amount: shippingTotal,
       shipping_type: firstOrder ? firstOrder.shipping_type : null,
-      total: calculatedTotal
+      total: calculatedTotal,
+      order_id: specificOrder ? specificOrder.order_id : null,
+      order_date: specificOrder ? specificOrder.order_date : null
     })
   }
 
@@ -675,6 +679,21 @@ export default function Accounting() {
                                     </div>
                                   </div>
                                 ))}
+                                
+                                {/* Botón Nota de Cobro para este pedido */}
+                                <div style={{ 
+                                  marginTop: '12px', 
+                                  paddingTop: '12px', 
+                                  borderTop: '1px solid #e0e0e0' 
+                                }}>
+                                  <button
+                                    className="button button-sm"
+                                    onClick={() => openInvoiceModal(data.customer, data, order)}
+                                    style={{ width: '100%' }}
+                                  >
+                                    📄 Nota de Cobro (Pedido #{order.order_id})
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>

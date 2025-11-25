@@ -27,6 +27,10 @@ export default function KPIs() {
     topProducts: [],
     ordersGrowth: 0,
     revenueGrowth: 0,
+    avgProductUtilityPercent: 0,
+    avgOrderUtilityPercent: 0,
+    avgOrderUtilityAmount: 0,
+    avgOrdersPerWeek: 0,
     catalogViews: 0, // TODO: Implementar tracking
     catalogClicks: 0, // TODO: Implementar tracking
     clickToOrderRate: 0
@@ -126,6 +130,67 @@ export default function KPIs() {
       ? ((totalOrders - previousPeriodOrders.length) / previousPeriodOrders.length) * 100 
       : 0
     
+    // Calcular utilidad por producto (promedio de porcentaje)
+    const productUtilities = []
+    productsData.forEach(product => {
+      if (product.sale_price && product.purchase_price && product.sale_price > 0) {
+        const utility = ((product.sale_price - product.purchase_price) / product.sale_price) * 100
+        productUtilities.push(utility)
+      }
+    })
+    const avgProductUtilityPercent = productUtilities.length > 0
+      ? productUtilities.reduce((sum, u) => sum + u, 0) / productUtilities.length
+      : 0
+    
+    // Calcular utilidad por pedido (porcentaje y número real)
+    const orderUtilities = []
+    periodOrders.forEach(order => {
+      let orderRevenue = 0
+      let orderCost = 0
+      
+      (order.items || []).forEach(item => {
+        const product = productsData.find(p => p.id === item.product_id)
+        if (product) {
+          const itemRevenue = (item.charged_qty || item.qty) * item.unit_price
+          const itemCost = (item.charged_qty || item.qty) * (product.purchase_price || 0)
+          orderRevenue += itemRevenue
+          orderCost += itemCost
+        }
+      })
+      
+      if (orderRevenue > 0) {
+        const utilityAmount = orderRevenue - orderCost
+        const utilityPercent = (utilityAmount / orderRevenue) * 100
+        orderUtilities.push({
+          amount: utilityAmount,
+          percent: utilityPercent
+        })
+      }
+    })
+    
+    const avgOrderUtilityPercent = orderUtilities.length > 0
+      ? orderUtilities.reduce((sum, u) => sum + u.percent, 0) / orderUtilities.length
+      : 0
+    
+    const avgOrderUtilityAmount = orderUtilities.length > 0
+      ? orderUtilities.reduce((sum, u) => sum + u.amount, 0) / orderUtilities.length
+      : 0
+    
+    // Calcular promedio de pedidos por semana
+    const weeksMap = new Map()
+    periodOrders.forEach(order => {
+      const orderDate = new Date(order.created_at)
+      const weekKey = `${orderDate.getFullYear()}-W${getWeekNumber(orderDate)}`
+      if (!weeksMap.has(weekKey)) {
+        weeksMap.set(weekKey, 0)
+      }
+      weeksMap.set(weekKey, weeksMap.get(weekKey) + 1)
+    })
+    
+    const avgOrdersPerWeek = weeksMap.size > 0
+      ? Array.from(weeksMap.values()).reduce((sum, count) => sum + count, 0) / weeksMap.size
+      : 0
+    
     setMetrics({
       totalOrders,
       totalRevenue,
@@ -135,6 +200,10 @@ export default function KPIs() {
       topProducts,
       ordersGrowth,
       revenueGrowth,
+      avgProductUtilityPercent,
+      avgOrderUtilityPercent,
+      avgOrderUtilityAmount,
+      avgOrdersPerWeek,
       catalogViews: 0, // Placeholder
       catalogClicks: 0, // Placeholder
       clickToOrderRate: 0 // Placeholder
@@ -158,6 +227,14 @@ export default function KPIs() {
     }
     
     return date
+  }
+  
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
   }
   
   const formatCurrency = (value) => {
@@ -318,6 +395,51 @@ export default function KPIs() {
           </div>
           <div style={{ fontSize: '13px', color: '#999' }}>
             ⚠️ Implementar tracking de clicks en catálogo
+          </div>
+        </div>
+        
+        {/* Promedio de Utilidad por Producto */}
+        <div className="card">
+          <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>
+            📊 Utilidad Promedio por Producto
+          </h3>
+          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>
+            {metrics.avgProductUtilityPercent.toFixed(1)}%
+          </div>
+          <div style={{ fontSize: '13px', color: '#999' }}>
+            Margen promedio de todos los productos
+          </div>
+        </div>
+        
+        {/* Promedio de Utilidad por Pedido */}
+        <div className="card">
+          <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>
+            💰 Utilidad Promedio por Pedido
+          </h3>
+          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>
+            {metrics.avgOrderUtilityPercent.toFixed(1)}%
+          </div>
+          <div style={{ fontSize: '13px', color: '#999', marginBottom: '8px' }}>
+            Margen promedio en porcentaje
+          </div>
+          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--kivi-green)' }}>
+            {formatCurrency(metrics.avgOrderUtilityAmount)}
+          </div>
+          <div style={{ fontSize: '13px', color: '#999' }}>
+            Utilidad promedio en pesos
+          </div>
+        </div>
+        
+        {/* Promedio de Pedidos por Semana */}
+        <div className="card">
+          <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>
+            📅 Pedidos Promedio por Semana
+          </h3>
+          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>
+            {metrics.avgOrdersPerWeek.toFixed(1)}
+          </div>
+          <div style={{ fontSize: '13px', color: '#999' }}>
+            Cantidad promedio de pedidos por semana
           </div>
         </div>
       </div>
