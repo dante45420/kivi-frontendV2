@@ -73,6 +73,14 @@ export default function KPIs() {
     }
   }
   
+  const getWeekNumber = (date) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
+  }
+  
   const calculateMetrics = (ordersData, customersData, productsData) => {
     const now = new Date()
     const periodStart = getPeriodStart(period, now)
@@ -132,41 +140,53 @@ export default function KPIs() {
     
     // Calcular utilidad por producto (promedio de porcentaje)
     const productUtilities = []
-    productsData.forEach(product => {
-      if (product.sale_price && product.purchase_price && product.sale_price > 0) {
-        const utility = ((product.sale_price - product.purchase_price) / product.sale_price) * 100
-        productUtilities.push(utility)
-      }
-    })
+    if (Array.isArray(productsData)) {
+      productsData.forEach(product => {
+        if (product && product.sale_price && product.purchase_price && product.sale_price > 0) {
+          const utility = ((product.sale_price - product.purchase_price) / product.sale_price) * 100
+          productUtilities.push(utility)
+        }
+      })
+    }
     const avgProductUtilityPercent = productUtilities.length > 0
       ? productUtilities.reduce((sum, u) => sum + u, 0) / productUtilities.length
       : 0
     
     // Calcular utilidad por pedido (porcentaje y número real)
     const orderUtilities = []
-    periodOrders.forEach(order => {
-      let orderRevenue = 0
-      let orderCost = 0
-      
-      (order.items || []).forEach(item => {
-        const product = productsData.find(p => p.id === item.product_id)
-        if (product) {
-          const itemRevenue = (item.charged_qty || item.qty) * item.unit_price
-          const itemCost = (item.charged_qty || item.qty) * (product.purchase_price || 0)
-          orderRevenue += itemRevenue
-          orderCost += itemCost
+    if (Array.isArray(periodOrders)) {
+      periodOrders.forEach(order => {
+        if (!order || !order.items) return
+        
+        let orderRevenue = 0
+        let orderCost = 0
+        
+        if (Array.isArray(order.items)) {
+          order.items.forEach(item => {
+            if (!item || !item.product_id) return
+            const product = Array.isArray(productsData) ? productsData.find(p => p && p.id === item.product_id) : null
+            if (product) {
+              const qty = item.charged_qty || item.qty || 0
+              const unitPrice = item.unit_price || 0
+              const purchasePrice = product.purchase_price || 0
+              const itemRevenue = qty * unitPrice
+              const itemCost = qty * purchasePrice
+              orderRevenue += itemRevenue
+              orderCost += itemCost
+            }
+          })
+        }
+        
+        if (orderRevenue > 0) {
+          const utilityAmount = orderRevenue - orderCost
+          const utilityPercent = (utilityAmount / orderRevenue) * 100
+          orderUtilities.push({
+            amount: utilityAmount,
+            percent: utilityPercent
+          })
         }
       })
-      
-      if (orderRevenue > 0) {
-        const utilityAmount = orderRevenue - orderCost
-        const utilityPercent = (utilityAmount / orderRevenue) * 100
-        orderUtilities.push({
-          amount: utilityAmount,
-          percent: utilityPercent
-        })
-      }
-    })
+    }
     
     const avgOrderUtilityPercent = orderUtilities.length > 0
       ? orderUtilities.reduce((sum, u) => sum + u.percent, 0) / orderUtilities.length
@@ -178,14 +198,22 @@ export default function KPIs() {
     
     // Calcular promedio de pedidos por semana
     const weeksMap = new Map()
-    periodOrders.forEach(order => {
-      const orderDate = new Date(order.created_at)
-      const weekKey = `${orderDate.getFullYear()}-W${getWeekNumber(orderDate)}`
-      if (!weeksMap.has(weekKey)) {
-        weeksMap.set(weekKey, 0)
-      }
-      weeksMap.set(weekKey, weeksMap.get(weekKey) + 1)
-    })
+    if (Array.isArray(periodOrders)) {
+      periodOrders.forEach(order => {
+        if (order && order.created_at) {
+          try {
+            const orderDate = new Date(order.created_at)
+            if (!isNaN(orderDate.getTime())) {
+              const weekKey = `${orderDate.getFullYear()}-W${getWeekNumber(orderDate)}`
+              const currentCount = weeksMap.get(weekKey) || 0
+              weeksMap.set(weekKey, currentCount + 1)
+            }
+          } catch (err) {
+            console.warn('Error procesando fecha de pedido:', err, order)
+          }
+        }
+      })
+    }
     
     const avgOrdersPerWeek = weeksMap.size > 0
       ? Array.from(weeksMap.values()).reduce((sum, count) => sum + count, 0) / weeksMap.size
@@ -227,14 +255,6 @@ export default function KPIs() {
     }
     
     return date
-  }
-  
-  const getWeekNumber = (date) => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-    const dayNum = d.getUTCDay() || 7
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
   }
   
   const formatCurrency = (value) => {
