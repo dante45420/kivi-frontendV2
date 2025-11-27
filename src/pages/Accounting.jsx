@@ -161,12 +161,18 @@ export default function Accounting() {
     
     ordersToProcess.forEach(order => {
       order.items.forEach(item => {
+        // Recalcular el total del item usando charged_qty si existe
+        const qtyToCharge = item.charged_qty !== null && item.charged_qty !== undefined ? item.charged_qty : item.qty
+        const unitPrice = item.unit_price || 0
+        const itemTotal = Math.round(qtyToCharge * unitPrice)
+        
         unpaidItems.push({
           ...item,
           order_id: order.order_id,
-          order_date: order.order_date
+          order_date: order.order_date,
+          total: itemTotal // Asegurar que el total esté calculado correctamente
         })
-        subtotal += item.total || 0
+        subtotal += itemTotal
       })
       
       // Agregar envío del pedido
@@ -217,7 +223,21 @@ export default function Accounting() {
       tempDiv.style.color = '#333'
       
       // Construir el HTML de la nota de cobro
-      const subtotal = invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.total || 0), 0)
+      // Recalcular subtotal correctamente usando charged_qty si existe
+      let subtotal = 0
+      if (invoiceData.items && invoiceData.items.length > 0) {
+        invoiceData.items.forEach(item => {
+          // Usar charged_qty si existe (para conversiones), sino usar qty
+          const qtyToCharge = item.charged_qty !== null && item.charged_qty !== undefined ? item.charged_qty : item.qty
+          const unitPrice = item.unit_price || 0
+          const itemTotal = Math.round(qtyToCharge * unitPrice)
+          subtotal += itemTotal
+        })
+      } else {
+        // Fallback al subtotal que viene en invoiceData
+        subtotal = invoiceData.subtotal || 0
+      }
+      
       const shipping = invoiceData.shipping_amount || 0
       const total = invoiceData.total || (subtotal + shipping)
       
@@ -242,11 +262,13 @@ export default function Accounting() {
         <div style="margin-bottom: 30px;">
           <h3 style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">DETALLE DE PRODUCTOS</h3>
           ${invoiceData.items.map(item => {
-            const itemQty = item.charged_qty || item.qty || 0
+            // Usar charged_qty si existe (para conversiones), sino usar qty
+            const itemQty = item.charged_qty !== null && item.charged_qty !== undefined ? item.charged_qty : (item.qty || 0)
             const itemUnit = item.charged_unit || item.unit || 'kg'
             const itemPrice = item.unit_price || 0
-            const itemTotal = item.total || (itemQty * itemPrice)
-            const hasConversion = item.charged_qty && item.charged_qty !== item.qty && item.charged_unit
+            // Recalcular el total usando la cantidad correcta (charged_qty si existe)
+            const itemTotal = Math.round(itemQty * itemPrice)
+            const hasConversion = item.charged_qty !== null && item.charged_qty !== undefined && item.charged_qty !== item.qty && item.charged_unit
             
             return `
               <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; margin-bottom: 12px;">
@@ -2059,17 +2081,35 @@ export default function Accounting() {
                   className="button"
                   onClick={async () => {
                     // Preparar datos para nota de cobro
-                    const invoiceData = {
-                      customer: selectedOrderPopup.customer,
-                      items: selectedOrderPopup.order.items.map(item => ({
+                    // Recalcular subtotal correctamente usando charged_qty si existe
+                    let recalculatedSubtotal = 0
+                    const itemsWithCorrectTotals = selectedOrderPopup.order.items.map(item => {
+                      // Usar charged_qty si existe (para conversiones), sino usar qty
+                      const qtyToCharge = item.charged_qty !== null && item.charged_qty !== undefined ? item.charged_qty : item.qty
+                      const unitPrice = item.unit_price || 0
+                      const itemTotal = Math.round(qtyToCharge * unitPrice)
+                      recalculatedSubtotal += itemTotal
+                      
+                      return {
                         ...item,
                         order_id: selectedOrderPopup.order.order_id,
-                        order_date: selectedOrderPopup.order.order_date
-                      })),
-                      subtotal: selectedOrderPopup.order.subtotal || 0,
-                      shipping_amount: selectedOrderPopup.order.shipping_amount || 0,
+                        order_date: selectedOrderPopup.order.order_date,
+                        total: itemTotal // Asegurar que el total esté calculado correctamente
+                      }
+                    })
+                    
+                    // Usar el subtotal del pedido si está disponible, sino usar el recalculado
+                    const subtotal = selectedOrderPopup.order.subtotal || recalculatedSubtotal
+                    const shipping = selectedOrderPopup.order.shipping_amount || 0
+                    const total = selectedOrderPopup.order.total || (subtotal + shipping)
+                    
+                    const invoiceData = {
+                      customer: selectedOrderPopup.customer,
+                      items: itemsWithCorrectTotals,
+                      subtotal: subtotal,
+                      shipping_amount: shipping,
                       shipping_type: selectedOrderPopup.order.shipping_type,
-                      total: selectedOrderPopup.order.total || 0,
+                      total: total,
                       order_id: selectedOrderPopup.order.order_id,
                       order_date: selectedOrderPopup.order.order_date
                     }
