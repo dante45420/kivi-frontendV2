@@ -504,6 +504,18 @@ export default function Accounting() {
       <style>{`
         details summary::-webkit-details-marker { display: none; }
         details summary::marker { display: none; }
+        
+        @media (max-width: 1200px) {
+          .accounting-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .accounting-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
       
       <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
@@ -561,10 +573,10 @@ export default function Accounting() {
             No hay pedidos finalizados
           </div>
         ) : (
-          <div style={{ 
+          <div className="accounting-grid" style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '24px'
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '32px'
           }}>
             {accountingData.map((data, idx) => {
               const debtColor = data.total_debt === 0 ? '#4caf50' : '#f44336'
@@ -579,48 +591,49 @@ export default function Accounting() {
                   background: '#fff',
                   borderRadius: '16px',
                   border: '2px solid #e1e7e1',
-                  padding: '32px',
+                  padding: '48px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '24px',
-                  minHeight: '400px',
-                  aspectRatio: '1',
+                  gap: '40px',
+                  minHeight: '600px',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
                   {/* Header del cliente - Minimalista */}
                   <div style={{ textAlign: 'center' }}>
                     <h3 style={{ 
-                      margin: '0 0 8px 0', 
-                      fontSize: '24px', 
+                      margin: '0 0 12px 0', 
+                      fontSize: '28px', 
                       fontWeight: 800,
-                      color: '#333'
+                      color: '#333',
+                      lineHeight: '1.2'
                     }}>
                       {data.customer.name}
                     </h3>
-                    <div style={{ fontSize: '14px', color: '#666' }}>
+                    <div style={{ fontSize: '16px', color: '#666' }}>
                       {data.orders.length} pedido{data.orders.length !== 1 ? 's' : ''}
                     </div>
                   </div>
                   
                   {/* Totales - Minimalista */}
                   <div style={{ 
-                    padding: '20px',
+                    padding: '24px',
                     background: '#f8f9fa',
                     borderRadius: '12px',
                     textAlign: 'center'
                   }}>
-                    <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+                    <div style={{ fontSize: '16px', color: '#666', marginBottom: '12px' }}>
                       Deuda Pendiente
                     </div>
                     <div style={{
-                      fontSize: '32px',
+                      fontSize: '24px',
                       fontWeight: 800,
                       color: debtColor,
-                      fontFamily: 'monospace'
+                      fontFamily: 'monospace',
+                      marginBottom: '12px'
                     }}>
                       ${data.total_debt.toLocaleString('es-CL')}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#999', marginTop: '8px' }}>
+                    <div style={{ fontSize: '14px', color: '#999' }}>
                       Facturado: ${data.total_billed.toLocaleString('es-CL')}
                     </div>
                   </div>
@@ -630,11 +643,13 @@ export default function Accounting() {
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '12px',
+                    gap: '20px',
                     overflowY: 'auto',
-                    maxHeight: '300px'
+                    minHeight: '250px',
+                    maxHeight: '450px',
+                    paddingRight: '12px'
                   }}>
-                    {recentOrders.map((order, oidx) => (
+                    {recentOrders.length > 0 ? recentOrders.map((order, oidx) => (
                       <div
                         key={oidx}
                         onClick={async () => {
@@ -650,41 +665,44 @@ export default function Accounting() {
                           }
                         }}
                         style={{
-                          padding: '16px',
+                          padding: '24px',
                           background: '#f8f9fa',
-                          borderRadius: '8px',
+                          borderRadius: '12px',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
-                          border: '1px solid #e0e0e0'
+                          border: '2px solid #e0e0e0',
+                          minHeight: '120px'
                         }}
                         onMouseEnter={e => {
                           e.currentTarget.style.background = '#e8f5e9'
+                          e.currentTarget.style.borderColor = 'var(--kivi-green)'
                           e.currentTarget.style.transform = 'translateY(-2px)'
                           e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
                         }}
                         onMouseLeave={e => {
                           e.currentTarget.style.background = '#f8f9fa'
+                          e.currentTarget.style.borderColor = '#e0e0e0'
                           e.currentTarget.style.transform = 'translateY(0)'
                           e.currentTarget.style.boxShadow = 'none'
                         }}
                       >
                         <div style={{ 
-                          fontSize: '18px', 
+                          fontSize: '20px', 
                           fontWeight: 700, 
-                          marginBottom: '8px',
+                          marginBottom: '12px',
                           color: '#333'
                         }}>
                           Pedido #{order.order_id}
                         </div>
                         <div style={{ 
-                          fontSize: '14px', 
+                          fontSize: '16px', 
                           color: '#666', 
-                          marginBottom: '8px' 
+                          marginBottom: '12px' 
                         }}>
                           {order.order_date ? new Date(order.order_date).toLocaleDateString('es-CL') : 'Sin fecha'}
                         </div>
                         <div style={{ 
-                          fontSize: '20px', 
+                          fontSize: '24px', 
                           fontWeight: 800, 
                           color: 'var(--kivi-green)',
                           fontFamily: 'monospace'
@@ -692,7 +710,16 @@ export default function Accounting() {
                           ${order.total.toLocaleString('es-CL')}
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div style={{ 
+                        textAlign: 'center', 
+                        padding: '40px 20px',
+                        color: '#999',
+                        fontSize: '16px'
+                      }}>
+                        No hay pedidos
+                      </div>
+                    )}
                     
                     {hasMoreOrders && (
                       <div style={{ 
@@ -712,19 +739,20 @@ export default function Accounting() {
                   {/* Botones de acción */}
                   <div style={{ 
                     display: 'flex', 
-                    gap: '8px',
-                    marginTop: 'auto'
+                    gap: '12px',
+                    marginTop: 'auto',
+                    paddingTop: '16px'
                   }}>
                     <button 
                       className="button ghost" 
-                      style={{ flex: 1, padding: '12px', fontSize: '14px' }}
+                      style={{ flex: 1, padding: '16px', fontSize: '16px', fontWeight: 700 }}
                       onClick={() => openInvoiceModal(data.customer, data)}
                     >
                       📄 Nota
                     </button>
                     <button 
                       className="button" 
-                      style={{ flex: 1, padding: '12px', fontSize: '14px' }}
+                      style={{ flex: 1, padding: '16px', fontSize: '16px', fontWeight: 700 }}
                       onClick={() => openPaymentModal(data.customer)}
                     >
                       💵 Pago
