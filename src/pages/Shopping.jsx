@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { fetchOrders } from '../api/orders'
 import { fetchProducts } from '../api/products'
+import { fetchPurchases } from '../api/purchases'
 import Loader from '../components/Loader'
 
 export default function Shopping() {
@@ -15,6 +16,9 @@ export default function Shopping() {
   const [showModal, setShowModal] = useState(false)
   const [purchaseData, setPurchaseData] = useState({}) // { product_id_unit: { price_total, conversion_qty, ... } }
   const [expandedProducts, setExpandedProducts] = useState(new Set())
+  const [showHistory, setShowHistory] = useState(false)
+  const [pastPurchases, setPastPurchases] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
 
   useEffect(() => {
     loadAllData()
@@ -292,6 +296,26 @@ export default function Shopping() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>🛒 Lista de Compras</h2>
           <div style={{ display: 'flex', gap: '12px' }}>
+            <button 
+              className="button ghost" 
+              onClick={async () => {
+                setShowHistory(!showHistory)
+                if (!showHistory && pastPurchases.length === 0) {
+                  setLoadingHistory(true)
+                  try {
+                    const purchases = await fetchPurchases(true)
+                    setPastPurchases(purchases)
+                  } catch (err) {
+                    console.error('Error cargando compras pasadas:', err)
+                    alert('Error cargando compras pasadas: ' + (err.message || 'Error desconocido'))
+                  } finally {
+                    setLoadingHistory(false)
+                  }
+                }
+              }}
+            >
+              📜 Ver Compras Pasadas
+            </button>
             <button className="button ghost" onClick={downloadList} disabled={consolidatedList.length === 0}>
               📥 Descargar
             </button>
@@ -304,6 +328,117 @@ export default function Shopping() {
             </button>
           </div>
         </div>
+        
+        {/* Sección de Compras Pasadas */}
+        {showHistory && (
+          <div style={{ 
+            marginBottom: '32px', 
+            background: '#fff', 
+            borderRadius: '12px', 
+            border: '2px solid #e1e7e1',
+            padding: '24px'
+          }}>
+            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 700 }}>
+              📜 Historial de Compras Completas
+            </h3>
+            
+            {loadingHistory ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Loader />
+              </div>
+            ) : pastPurchases.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                No hay compras registradas
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {pastPurchases.map((purchase, idx) => (
+                  <div key={idx} style={{
+                    padding: '20px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>
+                          {purchase.product?.name || 'Producto desconocido'}
+                        </div>
+                        <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>
+                          {purchase.qty} {purchase.unit} × ${purchase.price_per_unit.toLocaleString('es-CL')} = ${purchase.price_total.toLocaleString('es-CL')}
+                        </div>
+                        {purchase.conversion_qty && (
+                          <div style={{ fontSize: '13px', color: '#999', marginBottom: '4px' }}>
+                            Conversión: {purchase.conversion_qty} {purchase.conversion_unit}
+                          </div>
+                        )}
+                        <div style={{ fontSize: '12px', color: '#999' }}>
+                          {purchase.created_at ? new Date(purchase.created_at).toLocaleDateString('es-CL', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          }) : 'Sin fecha'}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Clientes asociados */}
+                    {purchase.customers && purchase.customers.length > 0 && (
+                      <div style={{ 
+                        marginTop: '16px', 
+                        paddingTop: '16px', 
+                        borderTop: '1px solid #e0e0e0' 
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: '#666' }}>
+                          Clientes asociados:
+                        </div>
+                        {purchase.customers.map((customerInfo, cidx) => (
+                          <div key={cidx} style={{
+                            padding: '12px',
+                            background: '#fff',
+                            borderRadius: '6px',
+                            marginBottom: '8px',
+                            border: '1px solid #e8e8e8'
+                          }}>
+                            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
+                              {customerInfo.customer.name}
+                            </div>
+                            <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
+                              Total: {customerInfo.total_qty.toFixed(customerInfo.items[0]?.unit === 'kg' ? 1 : 0)} {customerInfo.items[0]?.unit || purchase.unit}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#999' }}>
+                              {customerInfo.items.map((item, iidx) => (
+                                <div key={iidx} style={{ marginBottom: '2px' }}>
+                                  Pedido #{item.order_id}: {item.qty} {item.unit}
+                                  {item.order_date && ` (${new Date(item.order_date).toLocaleDateString('es-CL')})`}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {(!purchase.customers || purchase.customers.length === 0) && (
+                      <div style={{ 
+                        marginTop: '12px', 
+                        padding: '12px', 
+                        background: '#fff3e0', 
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        color: '#ff6b00'
+                      }}>
+                        ⚠️ No se encontraron clientes asociados a esta compra
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {consolidatedList.length === 0 ? (
           <div className="card" style={{ padding: '60px 20px', textAlign: 'center', opacity: 0.5 }}>

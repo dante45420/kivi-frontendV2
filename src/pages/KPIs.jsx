@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import { fetchOrders, fetchOrder } from '../api/orders'
 import { fetchCustomers } from '../api/customers'
-import { fetchProducts } from '../api/products'
+import { fetchProducts, getPriceAtDate } from '../api/products'
 import Loader from '../components/Loader'
 
 export default function KPIs() {
@@ -65,7 +65,7 @@ export default function KPIs() {
       setCustomers(customersData)
       setProducts(productsData)
       
-      calculateMetrics(ordersWithItems, customersData, productsData)
+      await calculateMetrics(ordersWithItems, customersData, productsData)
     } catch (error) {
       console.error('Error cargando datos:', error)
     } finally {
@@ -81,7 +81,7 @@ export default function KPIs() {
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
   }
   
-  const calculateMetrics = (ordersData, customersData, productsData) => {
+  const calculateMetrics = async (ordersData, customersData, productsData) => {
     const now = new Date()
     const periodStart = getPeriodStart(period, now)
     
@@ -138,7 +138,8 @@ export default function KPIs() {
       ? ((totalOrders - previousPeriodOrders.length) / previousPeriodOrders.length) * 100 
       : 0
     
-    // Calcular utilidad por producto (promedio de porcentaje)
+    // Calcular utilidad por producto (promedio de porcentaje) - usando precios actuales
+    // Nota: Para utilidad por producto, usamos precios actuales ya que es un promedio general
     const productUtilities = []
     if (Array.isArray(productsData)) {
       productsData.forEach(product => {
@@ -152,39 +153,74 @@ export default function KPIs() {
       ? productUtilities.reduce((sum, u) => sum + u, 0) / productUtilities.length
       : 0
     
-    // Calcular utilidad por pedido (porcentaje y número real)
+    // Calcular utilidad por pedido (porcentaje y número real) - usando precios históricos reales
     const orderUtilities = []
     if (Array.isArray(periodOrders)) {
-      periodOrders.forEach(order => {
-        if (!order || !order.items) return
+      // Procesar pedidos en paralelo para obtener precios históricos
+      const orderUtilitiesPromises = periodOrders.map(async (order) => {
+        if (!order || !order.items) return null
         
         let orderRevenue = 0
         let orderCost = 0
+        const orderDate = order.created_at ? new Date(order.created_at) : new Date()
         
         if (Array.isArray(order.items)) {
-          order.items.forEach(item => {
-            if (!item || !item.product_id) return
+          // Procesar items en paralelo
+          const itemCostsPromises = order.items.map(async (item) => {
+            if (!item || !item.product_id) return { revenue: 0, cost: 0 }
+            
             const product = Array.isArray(productsData) ? productsData.find(p => p && p.id === item.product_id) : null
-            if (product) {
-              const qty = item.charged_qty || item.qty || 0
-              const unitPrice = item.unit_price || 0
-              const purchasePrice = product.purchase_price || 0
-              const itemRevenue = qty * unitPrice
-              const itemCost = qty * purchasePrice
-              orderRevenue += itemRevenue
-              orderCost += itemCost
+            if (!product) return { revenue: 0, cost: 0 }
+            
+            const qty = item.charged_qty || item.qty || 0
+            
+            // Obtener precio de venta al momento de la venta
+            // Si unit_price está guardado, usarlo (es el precio real al momento de la venta)
+            // Si no, usar el sale_price del producto (fallback)
+            let unitPrice = item.unit_price
+            if (!unitPrice || unitPrice === 0) {
+              // Si no hay unit_price guardado, usar el precio de venta del producto
+              // Nota: Esto puede no ser 100% exacto si el precio cambió después, pero es el mejor fallback
+              unitPrice = product.sale_price || 0
             }
+            const itemRevenue = qty * unitPrice
+            
+            // Obtener precio de compra histórico al momento de la venta
+            let purchasePrice = 0
+            try {
+              const priceData = await getPriceAtDate(item.product_id, orderDate)
+              purchasePrice = priceData.purchase_price || 0
+            } catch (err) {
+              console.warn(`Error obteniendo precio histórico de compra para producto ${item.product_id}:`, err)
+              // Fallback al precio actual si falla
+              purchasePrice = product.purchase_price || 0
+            }
+            
+            const itemCost = qty * purchasePrice
+            return { revenue: itemRevenue, cost: itemCost }
+          })
+          
+          const itemCosts = await Promise.all(itemCostsPromises)
+          itemCosts.forEach(({ revenue, cost }) => {
+            orderRevenue += revenue
+            orderCost += cost
           })
         }
         
         if (orderRevenue > 0) {
           const utilityAmount = orderRevenue - orderCost
           const utilityPercent = (utilityAmount / orderRevenue) * 100
-          orderUtilities.push({
+          return {
             amount: utilityAmount,
             percent: utilityPercent
-          })
+          }
         }
+        return null
+      })
+      
+      const results = await Promise.all(orderUtilitiesPromises)
+      results.forEach(result => {
+        if (result) orderUtilities.push(result)
       })
     }
     

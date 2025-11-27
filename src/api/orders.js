@@ -32,6 +32,11 @@ export async function addOrderItem(orderId, item) {
   return post(`/api/orders/${orderId}/items`, item)
 }
 
+export async function addOrderItemAutoCreate(item) {
+  // Si item tiene order_id, lo usa; si no, crea un pedido nuevo
+  return post(`/api/orders/items/add`, item)
+}
+
 export async function updateOrderItem(itemId, data) {
   return put(`/api/orders/items/${itemId}`, data)
 }

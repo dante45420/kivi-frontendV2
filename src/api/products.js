@@ -35,3 +35,9 @@ export async function deleteProductPhoto(id) {
 export async function fetchPriceHistory(id) {
   return get(`/api/products/${id}/price-history`)
 }
+
+export async function getPriceAtDate(id, date) {
+  // date debe ser un string ISO o Date object
+  const dateStr = date instanceof Date ? date.toISOString() : date
+  return get(`/api/products/${id}/price-at-date?date=${encodeURIComponent(dateStr)}`)
+}
