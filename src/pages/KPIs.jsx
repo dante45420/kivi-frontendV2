@@ -20,6 +20,9 @@ export default function KPIs() {
   const [showUtilityDetails, setShowUtilityDetails] = useState(false)
   const [utilityDetails, setUtilityDetails] = useState(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
+  const [editingCost, setEditingCost] = useState(null) // { itemId, orderIdx, itemIdx, currentCost }
+  const [newCostValue, setNewCostValue] = useState('')
+  const [savingCost, setSavingCost] = useState(false)
   
   useEffect(() => {
     loadKPIs()
@@ -70,6 +73,77 @@ export default function KPIs() {
       alert('Error cargando detalles: ' + error.message)
     } finally {
       setLoadingDetails(false)
+    }
+  }
+  
+  const startEditCost = (itemId, orderIdx, itemIdx, currentCost) => {
+    setEditingCost({ itemId, orderIdx, itemIdx })
+    setNewCostValue(currentCost ? currentCost.toString() : '')
+  }
+  
+  const cancelEditCost = () => {
+    setEditingCost(null)
+    setNewCostValue('')
+  }
+  
+  const saveCost = async () => {
+    if (!editingCost || !newCostValue) {
+      alert('Ingresa un costo válido')
+      return
+    }
+    
+    const cost = parseFloat(newCostValue)
+    if (isNaN(cost) || cost < 0) {
+      alert('El costo debe ser un número positivo')
+      return
+    }
+    
+    setSavingCost(true)
+    try {
+      const response = await fetch(`${API_URL}/api/orders/items/${editingCost.itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cost: cost })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }))
+        throw new Error(errorData.error || 'Error actualizando costo')
+      }
+      
+      // Actualizar el costo en el estado local
+      const updatedOrders = [...utilityDetails.orders]
+      const order = updatedOrders[editingCost.orderIdx]
+      const item = order.items[editingCost.itemIdx]
+      
+      // Recalcular valores del item
+      const qtyToCharge = item.charged_qty || item.qty
+      item.cost = cost
+      item.item_cost = qtyToCharge * cost
+      item.item_utility = item.item_revenue - item.item_cost
+      item.item_utility_percent = item.item_revenue > 0 ? (item.item_utility / item.item_revenue * 100) : 0
+      
+      // Recalcular totales del pedido
+      order.order_cost = order.items.reduce((sum, i) => {
+        const qty = i.charged_qty || i.qty
+        return sum + (qty * (i.id === editingCost.itemId ? cost : i.cost))
+      }, 0)
+      order.utility_amount = order.order_total - order.order_cost
+      order.utility_percent = order.order_total > 0 ? (order.utility_amount / order.order_total * 100) : 0
+      
+      setUtilityDetails({ ...utilityDetails, orders: updatedOrders })
+      setEditingCost(null)
+      setNewCostValue('')
+      
+      // Recargar KPIs para actualizar el promedio
+      await loadKPIs()
+      
+      alert('✅ Costo actualizado correctamente')
+    } catch (error) {
+      console.error('Error guardando costo:', error)
+      alert('Error: ' + error.message)
+    } finally {
+      setSavingCost(false)
     }
   }
   
@@ -355,8 +429,75 @@ export default function KPIs() {
                               <div>
                                 <span style={{ fontWeight: 600 }}>Precio:</span> {formatCurrency(item.unit_price)}/{item.charged_unit || item.unit}
                               </div>
-                              <div>
-                                <span style={{ fontWeight: 600 }}>Costo:</span> {formatCurrency(item.cost)}/{item.charged_unit || item.unit}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: 600 }}>Costo:</span>
+                                {editingCost && editingCost.itemId === item.item_id ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <input
+                                      type="number"
+                                      value={newCostValue}
+                                      onChange={(e) => setNewCostValue(e.target.value)}
+                                      style={{
+                                        width: '80px',
+                                        padding: '4px 6px',
+                                        border: '1px solid #4caf50',
+                                        borderRadius: '4px',
+                                        fontSize: '12px'
+                                      }}
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={saveCost}
+                                      disabled={savingCost}
+                                      style={{
+                                        padding: '4px 8px',
+                                        background: '#4caf50',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        cursor: savingCost ? 'not-allowed' : 'pointer',
+                                        opacity: savingCost ? 0.6 : 1
+                                      }}
+                                    >
+                                      ✓
+                                    </button>
+                                    <button
+                                      onClick={cancelEditCost}
+                                      style={{
+                                        padding: '4px 8px',
+                                        background: '#999',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '11px',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span>{formatCurrency(item.cost)}/{item.charged_unit || item.unit}</span>
+                                    <button
+                                      onClick={() => startEditCost(item.item_id, idx, itemIdx, item.cost)}
+                                      style={{
+                                        padding: '2px 6px',
+                                        background: 'transparent',
+                                        border: '1px solid #4caf50',
+                                        color: '#4caf50',
+                                        borderRadius: '4px',
+                                        fontSize: '10px',
+                                        cursor: 'pointer',
+                                        marginLeft: '4px'
+                                      }}
+                                      title="Editar costo"
+                                    >
+                                      ✏️
+                                    </button>
+                                  </>
+                                )}
                               </div>
                               <div>
                                 <span style={{ fontWeight: 600 }}>Utilidad:</span> {formatPercent(item.item_utility_percent)}
