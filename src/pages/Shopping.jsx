@@ -250,17 +250,25 @@ export default function Shopping() {
     try {
       // Guardar todas las compras EN PARALELO (mucho más rápido)
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      await Promise.all(
-        toSave.map(purchase => 
-          fetch(`${API_URL}/api/purchases`, {
+      const responses = await Promise.all(
+        toSave.map(async (purchase) => {
+          const response = await fetch(`${API_URL}/api/purchases`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(purchase)
           })
-        )
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }))
+            throw new Error(`Error registrando compra de ${purchase.product_name}: ${errorData.error || response.statusText}`)
+          }
+          
+          return response.json()
+        })
       )
       
-      alert(`✅ ${toSave.length} compras registradas`)
+      console.log('✅ Compras registradas:', responses)
+      alert(`✅ ${toSave.length} compras registradas exitosamente`)
       setShowModal(false)
       setPurchaseData({})
       
@@ -270,9 +278,10 @@ export default function Shopping() {
         return purchaseData[key]?.price_total ? { ...item, purchased: true } : item
       }))
       
-      // Recargar datos
+      // Recargar datos para ver los cambios (pedidos completados, etc.)
       await loadAllData()
     } catch (err) {
+      console.error('Error guardando compras:', err)
       alert('Error: ' + err.message)
     } finally {
       setSaving(false)
