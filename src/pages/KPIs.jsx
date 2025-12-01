@@ -17,6 +17,9 @@ export default function KPIs() {
     avg_utility_amount: 0,
     avg_orders_per_week: 0
   })
+  const [showUtilityDetails, setShowUtilityDetails] = useState(false)
+  const [utilityDetails, setUtilityDetails] = useState(null)
+  const [loadingDetails, setLoadingDetails] = useState(false)
   
   useEffect(() => {
     loadKPIs()
@@ -50,6 +53,24 @@ export default function KPIs() {
   
   const formatPercent = (value) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+  }
+  
+  const loadUtilityDetails = async () => {
+    setLoadingDetails(true)
+    try {
+      const response = await fetch(`${API_URL}/api/kpis/utility-details`)
+      if (!response.ok) {
+        throw new Error('Error cargando detalles')
+      }
+      const data = await response.json()
+      setUtilityDetails(data)
+      setShowUtilityDetails(true)
+    } catch (error) {
+      console.error('Error cargando detalles:', error)
+      alert('Error cargando detalles: ' + error.message)
+    } finally {
+      setLoadingDetails(false)
+    }
   }
   
   if (loading) {
@@ -132,7 +153,22 @@ export default function KPIs() {
         </div>
         
         {/* Utilidad Promedio por Pedido - Porcentaje */}
-        <div className="card">
+        <div 
+          className="card" 
+          onClick={loadUtilityDetails}
+          style={{ 
+            cursor: 'pointer',
+            transition: 'transform 0.2s, box-shadow 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = ''
+          }}
+        >
           <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
             Utilidad Promedio por Pedido
           </div>
@@ -144,6 +180,9 @@ export default function KPIs() {
           </div>
           <div style={{ fontSize: '13px', color: '#999', marginTop: '4px' }}>
             Solo pedidos con costo registrado
+          </div>
+          <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+            👆 Click para ver detalles
           </div>
         </div>
         
@@ -174,6 +213,213 @@ export default function KPIs() {
         La utilidad promedio solo considera pedidos que tienen el costo registrado en los items 
         (pedidos registrados después de implementar esta funcionalidad).
       </div>
+      
+      {/* Modal de Detalles de Utilidad */}
+      {showUtilityDetails && (
+        <>
+          <div 
+            onClick={() => setShowUtilityDetails(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 999
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '0',
+            maxWidth: '900px',
+            width: '95%',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+            zIndex: 1000,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: '1px solid #e8e8e8',
+              background: '#fff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>
+                📊 Detalles de Utilidad por Pedido
+              </h2>
+              <button 
+                onClick={() => setShowUtilityDetails(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  opacity: 0.5,
+                  padding: '0',
+                  width: '32px',
+                  height: '32px'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div style={{ 
+              maxHeight: 'calc(85vh - 140px)',
+              overflowY: 'auto',
+              padding: '16px 24px'
+            }}>
+              {loadingDetails ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <Loader />
+                </div>
+              ) : utilityDetails && utilityDetails.orders && utilityDetails.orders.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ 
+                    padding: '12px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 600
+                  }}>
+                    Total: {utilityDetails.total_orders} pedidos con utilidad calculada
+                  </div>
+                  
+                  {utilityDetails.orders.map((order, idx) => (
+                    <div key={idx} style={{
+                      padding: '16px',
+                      background: '#f9f9f9',
+                      borderRadius: '8px',
+                      border: '1px solid #e0e0e0'
+                    }}>
+                      {/* Header del Pedido */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        marginBottom: '12px',
+                        paddingBottom: '12px',
+                        borderBottom: '2px solid #e0e0e0'
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>
+                            Pedido #{order.order_id}
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#666' }}>
+                            {order.order_date ? new Date(order.order_date).toLocaleDateString('es-CL', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : 'Sin fecha'}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--kivi-green)' }}>
+                            {formatPercent(order.utility_percent)}
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#666' }}>
+                            {formatCurrency(order.utility_amount)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Items del Pedido */}
+                      <div style={{ marginBottom: '12px' }}>
+                        {order.items.map((item, itemIdx) => (
+                          <div key={itemIdx} style={{
+                            padding: '10px',
+                            background: '#fff',
+                            borderRadius: '6px',
+                            marginBottom: '8px',
+                            fontSize: '13px'
+                          }}>
+                            <div style={{ fontWeight: 600, marginBottom: '6px' }}>
+                              {item.product_name}
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', color: '#666' }}>
+                              <div>
+                                <span style={{ fontWeight: 600 }}>Cantidad:</span> {item.charged_qty || item.qty} {item.charged_unit || item.unit}
+                              </div>
+                              <div>
+                                <span style={{ fontWeight: 600 }}>Precio:</span> {formatCurrency(item.unit_price)}/{item.charged_unit || item.unit}
+                              </div>
+                              <div>
+                                <span style={{ fontWeight: 600 }}>Costo:</span> {formatCurrency(item.cost)}/{item.charged_unit || item.unit}
+                              </div>
+                              <div>
+                                <span style={{ fontWeight: 600 }}>Utilidad:</span> {formatPercent(item.item_utility_percent)}
+                              </div>
+                            </div>
+                            <div style={{ 
+                              marginTop: '6px', 
+                              paddingTop: '6px', 
+                              borderTop: '1px solid #f0f0f0',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              fontSize: '12px'
+                            }}>
+                              <span>Ingreso: <strong>{formatCurrency(item.item_revenue)}</strong></span>
+                              <span>Costo: <strong>{formatCurrency(item.item_cost)}</strong></span>
+                              <span style={{ color: 'var(--kivi-green)' }}>
+                                Utilidad: <strong>{formatCurrency(item.item_utility)}</strong>
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Totales del Pedido */}
+                      <div style={{
+                        padding: '12px',
+                        background: '#fff',
+                        borderRadius: '6px',
+                        border: '1px solid #e0e0e0'
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
+                          <div><strong>Subtotal:</strong> {formatCurrency(order.subtotal)}</div>
+                          <div><strong>Envío:</strong> {formatCurrency(order.shipping_amount)}</div>
+                          <div><strong>Total Ingresos:</strong> {formatCurrency(order.order_total)}</div>
+                          <div><strong>Total Costos:</strong> {formatCurrency(order.order_cost)}</div>
+                        </div>
+                        <div style={{
+                          marginTop: '8px',
+                          paddingTop: '8px',
+                          borderTop: '2px solid #e0e0e0',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '16px',
+                          fontWeight: 700
+                        }}>
+                          <span>Utilidad Total:</span>
+                          <span style={{ color: 'var(--kivi-green)' }}>
+                            {formatCurrency(order.utility_amount)} ({formatPercent(order.utility_percent)})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  No hay pedidos con utilidad calculada
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
