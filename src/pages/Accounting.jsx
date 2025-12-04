@@ -53,6 +53,20 @@ export default function Accounting() {
   
   // Modal Popup de Pedido (minimalista)
   const [selectedOrderPopup, setSelectedOrderPopup] = useState(null) // { order, customer }
+  
+  // Modal Editar Pago
+  const [showEditPaymentModal, setShowEditPaymentModal] = useState(false)
+  const [editingPayment, setEditingPayment] = useState(null)
+  const [editPaymentForm, setEditPaymentForm] = useState({
+    amount: '',
+    method: 'transferencia',
+    reference: '',
+    notes: '',
+    date: ''
+  })
+  
+  // Estado para mostrar/ocultar pagos por cliente
+  const [showPaymentsForCustomer, setShowPaymentsForCustomer] = useState(null) // customer_id
 
   useEffect(() => {
     loadAccountingData()
@@ -347,6 +361,47 @@ export default function Accounting() {
     setPaymentReference('')
     setPaymentNotes('')
     setShowPaymentModal(true)
+  }
+  
+  function openEditPaymentModal(payment) {
+    setEditingPayment(payment)
+    const paymentDate = payment.date ? new Date(payment.date).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+    setEditPaymentForm({
+      amount: payment.amount.toString(),
+      method: payment.method || 'transferencia',
+      reference: payment.reference || '',
+      notes: payment.notes || '',
+      date: paymentDate
+    })
+    setShowEditPaymentModal(true)
+  }
+  
+  async function saveEditedPayment() {
+    if (!editingPayment) return
+    
+    if (!editPaymentForm.amount || parseFloat(editPaymentForm.amount) <= 0) {
+      alert('⚠️ Ingresa un monto válido')
+      return
+    }
+    
+    try {
+      const paymentData = {
+        amount: Math.round(parseFloat(editPaymentForm.amount)),
+        method: editPaymentForm.method,
+        reference: editPaymentForm.reference || '',
+        notes: editPaymentForm.notes || '',
+        date: new Date(editPaymentForm.date).toISOString()
+      }
+      
+      await updatePayment(editingPayment.id, paymentData)
+      alert('✅ Pago actualizado exitosamente')
+      setShowEditPaymentModal(false)
+      setEditingPayment(null)
+      loadAccountingData()
+    } catch (err) {
+      console.error('Error actualizando pago:', err)
+      alert('Error: ' + err.message)
+    }
   }
 
   async function savePayment() {
@@ -1125,77 +1180,95 @@ export default function Accounting() {
                       {/* Sección de Pagos */}
                       {data.payments && data.payments.length > 0 && (
                         <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e8e8e8' }}>
-                          <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 700 }}>
-                            💵 Pagos Registrados ({data.payments.length})
-                          </h4>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {data.payments.map((payment) => (
-                              <div key={payment.id} style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '12px',
-                                background: '#f8f9fa',
-                                borderRadius: '8px',
-                                border: '1px solid #e0e0e0'
-                              }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontSize: '14px', fontWeight: 600 }}>
-                                    ${payment.amount.toLocaleString('es-CL')}
-                                  </div>
-                                  <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                    {payment.method && `Método: ${payment.method}`}
-                                    {payment.reference && ` • Ref: ${payment.reference}`}
-                                    {payment.date && ` • ${new Date(payment.date).toLocaleDateString('es-CL')}`}
-                                  </div>
-                                  {payment.notes && (
-                                    <div style={{ fontSize: '11px', color: '#999', marginTop: '4px', fontStyle: 'italic' }}>
-                                      {payment.notes}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>
+                              💵 Pagos Registrados ({data.payments.length})
+                            </h4>
+                            <button
+                              className="button button-sm"
+                              onClick={() => {
+                                if (showPaymentsForCustomer === data.customer.id) {
+                                  setShowPaymentsForCustomer(null)
+                                } else {
+                                  setShowPaymentsForCustomer(data.customer.id)
+                                }
+                              }}
+                              style={{ 
+                                padding: '6px 12px', 
+                                fontSize: '12px',
+                                background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#f0f0f0',
+                                color: showPaymentsForCustomer === data.customer.id ? '#fff' : '#333'
+                              }}
+                            >
+                              {showPaymentsForCustomer === data.customer.id ? '👁️ Ocultar' : '👁️ Ver Pagos'}
+                            </button>
+                          </div>
+                          
+                          {showPaymentsForCustomer === data.customer.id && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {data.payments.map((payment) => (
+                                <div key={payment.id} style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '12px',
+                                  background: '#f8f9fa',
+                                  borderRadius: '8px',
+                                  border: '1px solid #e0e0e0'
+                                }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: '14px', fontWeight: 600 }}>
+                                      ${payment.amount.toLocaleString('es-CL')}
                                     </div>
-                                  )}
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                  <button
-                                    className="button button-sm"
-                                    onClick={async () => {
-                                      if (confirm(`¿Editar pago de $${payment.amount.toLocaleString('es-CL')}?`)) {
-                                        const newAmount = prompt('Nuevo monto:', payment.amount)
-                                        if (newAmount && !isNaN(newAmount)) {
+                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                      {payment.method && `Método: ${payment.method}`}
+                                      {payment.reference && ` • Ref: ${payment.reference}`}
+                                      {payment.date && ` • ${new Date(payment.date).toLocaleDateString('es-CL', {
+                                        year: 'numeric',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}`}
+                                    </div>
+                                    {payment.notes && (
+                                      <div style={{ fontSize: '11px', color: '#999', marginTop: '4px', fontStyle: 'italic' }}>
+                                        {payment.notes}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button
+                                      className="button button-sm"
+                                      onClick={() => openEditPaymentModal(payment)}
+                                      style={{ padding: '4px 8px', fontSize: '12px' }}
+                                      title="Editar pago"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      className="button button-sm"
+                                      onClick={async () => {
+                                        if (confirm(`¿Eliminar pago de $${payment.amount.toLocaleString('es-CL')}?\n\nEsta acción no se puede deshacer.`)) {
                                           try {
-                                            await updatePayment(payment.id, { amount: parseFloat(newAmount) })
-                                            alert('✅ Pago actualizado')
+                                            await deletePayment(payment.id)
+                                            alert('✅ Pago eliminado')
                                             loadAccountingData()
                                           } catch (err) {
                                             alert('Error: ' + err.message)
                                           }
                                         }
-                                      }
-                                    }}
-                                    style={{ padding: '4px 8px', fontSize: '12px' }}
-                                  >
-                                    ✏️
-                                  </button>
-                                  <button
-                                    className="button button-sm"
-                                    onClick={async () => {
-                                      if (confirm(`¿Eliminar pago de $${payment.amount.toLocaleString('es-CL')}?`)) {
-                                        try {
-                                          await deletePayment(payment.id)
-                                          alert('✅ Pago eliminado')
-                                          loadAccountingData()
-                                        } catch (err) {
-                                          alert('Error: ' + err.message)
-                                        }
-                                      }
-                                    }}
-                                    style={{ padding: '4px 8px', fontSize: '12px', background: '#f44336', color: '#fff' }}
-                                  >
-                                    🗑️
-                                  </button>
+                                      }}
+                                      style={{ padding: '4px 8px', fontSize: '12px', background: '#f44336', color: '#fff' }}
+                                      title="Eliminar pago"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1413,6 +1486,147 @@ export default function Accounting() {
                 style={{ minWidth: '120px' }}
               >
                 📥 Descargar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {/* Modal Editar Pago */}
+      {showEditPaymentModal && editingPayment && (
+        <>
+          <div 
+            onClick={() => {
+              setShowEditPaymentModal(false)
+              setEditingPayment(null)
+            }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 999
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '95%',
+            zIndex: 1000,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 700 }}>
+              ✏️ Editar Pago
+            </h2>
+            <div style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+              Pago ID: <strong>#{editingPayment.id}</strong>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Monto Pagado *
+                </label>
+                <input
+                  type="number"
+                  className="input"
+                  value={editPaymentForm.amount}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, amount: e.target.value })}
+                  placeholder="15000"
+                  style={{ width: '100%', padding: '10px', fontSize: '15px' }}
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Método de Pago
+                </label>
+                <select
+                  className="input"
+                  value={editPaymentForm.method}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, method: e.target.value })}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="transferencia">Transferencia</option>
+                  <option value="efectivo">Efectivo</option>
+                  <option value="debito">Débito</option>
+                  <option value="credito">Crédito</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Referencia (opcional)
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  value={editPaymentForm.reference}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, reference: e.target.value })}
+                  placeholder="Número de transferencia, comprobante, etc."
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Fecha del Pago
+                </label>
+                <input
+                  type="datetime-local"
+                  className="input"
+                  value={editPaymentForm.date}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, date: e.target.value })}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Notas (opcional)
+                </label>
+                <textarea
+                  className="input"
+                  value={editPaymentForm.notes}
+                  onChange={(e) => setEditPaymentForm({ ...editPaymentForm, notes: e.target.value })}
+                  placeholder="Notas adicionales sobre el pago..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{
+              marginTop: '24px',
+              display: 'flex',
+              gap: '8px',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={() => {
+                  setShowEditPaymentModal(false)
+                  setEditingPayment(null)
+                }}
+                className="button ghost"
+                style={{ minWidth: '100px' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveEditedPayment}
+                className="button"
+                style={{ minWidth: '120px' }}
+              >
+                💾 Guardar Cambios
               </button>
             </div>
           </div>
