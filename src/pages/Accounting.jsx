@@ -1181,34 +1181,28 @@ export default function Accounting() {
                         >
                           💵 Registrar Pago
                         </button>
-                        {(() => {
-                          // Debug: verificar pagos
-                          const hasPayments = data.payments && Array.isArray(data.payments) && data.payments.length > 0
-                          if (hasPayments) {
-                            console.log(`Cliente ${data.customer.name} tiene ${data.payments.length} pagos`)
-                          }
-                          return hasPayments ? (
-                            <button
-                              className="button"
-                              onClick={() => {
-                                if (showPaymentsForCustomer === data.customer.id) {
-                                  setShowPaymentsForCustomer(null)
-                                } else {
-                                  setShowPaymentsForCustomer(data.customer.id)
-                                }
-                              }}
-                              style={{ 
-                                flex: 1,
-                                minWidth: '120px',
-                                background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#2196F3',
-                                color: '#fff',
-                                fontWeight: 600
-                              }}
-                            >
-                              {showPaymentsForCustomer === data.customer.id ? '👁️ Ocultar Pagos' : '👁️ Ver Pagos'}
-                            </button>
-                          ) : null
-                        })()}
+                        <button
+                          className="button"
+                          onClick={() => {
+                            if (showPaymentsForCustomer === data.customer.id) {
+                              setShowPaymentsForCustomer(null)
+                            } else {
+                              setShowPaymentsForCustomer(data.customer.id)
+                            }
+                          }}
+                          disabled={!data.payments || !Array.isArray(data.payments) || data.payments.length === 0}
+                          style={{ 
+                            flex: 1,
+                            minWidth: '120px',
+                            background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#2196F3',
+                            color: '#fff',
+                            fontWeight: 600,
+                            opacity: (!data.payments || !Array.isArray(data.payments) || data.payments.length === 0) ? 0.5 : 1,
+                            cursor: (!data.payments || !Array.isArray(data.payments) || data.payments.length === 0) ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {showPaymentsForCustomer === data.customer.id ? '👁️ Ocultar Pagos' : '👁️ Ver Pagos'}
+                        </button>
                       </div>
                       
                       {/* Sección de Pagos */}
