@@ -1152,24 +1152,27 @@ export default function Accounting() {
                       })}
                       
                       {/* Botones de acción */}
-                      {data.total_debt > 0 && (
+                      {(data.total_debt > 0 || (data.payments && data.payments.length > 0) || data.orders.length > 0) && (
                         <div style={{
                           display: 'flex',
                           gap: '8px',
                           marginTop: '16px',
                           paddingTop: '16px',
-                          borderTop: '2px solid #e8e8e8'
+                          borderTop: '2px solid #e8e8e8',
+                          flexWrap: 'wrap'
                         }}>
-                          <button 
-                            className="button ghost" 
-                            style={{ flex: 1 }}
-                            onClick={() => openInvoiceModal(data.customer, data)}
-                          >
-                            📄 Nota de Cobro
-                          </button>
+                          {data.total_debt > 0 && (
+                            <button 
+                              className="button ghost" 
+                              style={{ flex: 1, minWidth: '120px' }}
+                              onClick={() => openInvoiceModal(data.customer, data)}
+                            >
+                              📄 Nota de Cobro
+                            </button>
+                          )}
                           <button 
                             className="button" 
-                            style={{ flex: 1 }}
+                            style={{ flex: 1, minWidth: '120px' }}
                             onClick={() => openPaymentModal(data.customer)}
                           >
                             💵 Registrar Pago
@@ -1186,6 +1189,7 @@ export default function Accounting() {
                               }}
                               style={{ 
                                 flex: 1,
+                                minWidth: '120px',
                                 background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#2196F3',
                                 color: '#fff'
                               }}
