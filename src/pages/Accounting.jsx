@@ -102,6 +102,11 @@ export default function Accounting() {
             // Obtener pagos del cliente
             const payments = await fetchPayments(customer.id)
             
+            // Debug: verificar que los pagos se carguen
+            if (payments && payments.length > 0) {
+              console.log(`Cliente ${customer.name} tiene ${payments.length} pagos:`, payments)
+            }
+            
             return {
               customer: customer,
               orders: debtData.orders || [],
@@ -1152,32 +1157,37 @@ export default function Accounting() {
                       })}
                       
                       {/* Botones de acción */}
-                      {(data.total_debt > 0 || (data.payments && data.payments.length > 0) || data.orders.length > 0) && (
-                        <div style={{
-                          display: 'flex',
-                          gap: '8px',
-                          marginTop: '16px',
-                          paddingTop: '16px',
-                          borderTop: '2px solid #e8e8e8',
-                          flexWrap: 'wrap'
-                        }}>
-                          {data.total_debt > 0 && (
-                            <button 
-                              className="button ghost" 
-                              style={{ flex: 1, minWidth: '120px' }}
-                              onClick={() => openInvoiceModal(data.customer, data)}
-                            >
-                              📄 Nota de Cobro
-                            </button>
-                          )}
+                      <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        marginTop: '16px',
+                        paddingTop: '16px',
+                        borderTop: '2px solid #e8e8e8',
+                        flexWrap: 'wrap'
+                      }}>
+                        {data.total_debt > 0 && (
                           <button 
-                            className="button" 
+                            className="button ghost" 
                             style={{ flex: 1, minWidth: '120px' }}
-                            onClick={() => openPaymentModal(data.customer)}
+                            onClick={() => openInvoiceModal(data.customer, data)}
                           >
-                            💵 Registrar Pago
+                            📄 Nota de Cobro
                           </button>
-                          {data.payments && data.payments.length > 0 && (
+                        )}
+                        <button 
+                          className="button" 
+                          style={{ flex: 1, minWidth: '120px' }}
+                          onClick={() => openPaymentModal(data.customer)}
+                        >
+                          💵 Registrar Pago
+                        </button>
+                        {(() => {
+                          // Debug: verificar pagos
+                          const hasPayments = data.payments && Array.isArray(data.payments) && data.payments.length > 0
+                          if (hasPayments) {
+                            console.log(`Cliente ${data.customer.name} tiene ${data.payments.length} pagos`)
+                          }
+                          return hasPayments ? (
                             <button
                               className="button"
                               onClick={() => {
@@ -1191,14 +1201,15 @@ export default function Accounting() {
                                 flex: 1,
                                 minWidth: '120px',
                                 background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#2196F3',
-                                color: '#fff'
+                                color: '#fff',
+                                fontWeight: 600
                               }}
                             >
                               {showPaymentsForCustomer === data.customer.id ? '👁️ Ocultar Pagos' : '👁️ Ver Pagos'}
                             </button>
-                          )}
-                        </div>
-                      )}
+                          ) : null
+                        })()}
+                      </div>
                       
                       {/* Sección de Pagos */}
                       {data.payments && data.payments.length > 0 && (
