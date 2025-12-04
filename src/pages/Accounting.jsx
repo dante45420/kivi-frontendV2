@@ -1153,9 +1153,9 @@ export default function Accounting() {
                       
                       {/* Botones de acción */}
                       {data.total_debt > 0 && (
-                        <div style={{ 
-                          display: 'flex', 
-                          gap: '8px', 
+                        <div style={{
+                          display: 'flex',
+                          gap: '8px',
                           marginTop: '16px',
                           paddingTop: '16px',
                           borderTop: '2px solid #e8e8e8'
@@ -1174,18 +1174,9 @@ export default function Accounting() {
                           >
                             💵 Registrar Pago
                           </button>
-                        </div>
-                      )}
-                      
-                      {/* Sección de Pagos */}
-                      {data.payments && data.payments.length > 0 && (
-                        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e8e8e8' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>
-                              💵 Pagos Registrados ({data.payments.length})
-                            </h4>
+                          {data.payments && data.payments.length > 0 && (
                             <button
-                              className="button button-sm"
+                              className="button"
                               onClick={() => {
                                 if (showPaymentsForCustomer === data.customer.id) {
                                   setShowPaymentsForCustomer(null)
@@ -1194,15 +1185,23 @@ export default function Accounting() {
                                 }
                               }}
                               style={{ 
-                                padding: '6px 12px', 
-                                fontSize: '12px',
-                                background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#f0f0f0',
-                                color: showPaymentsForCustomer === data.customer.id ? '#fff' : '#333'
+                                flex: 1,
+                                background: showPaymentsForCustomer === data.customer.id ? '#4caf50' : '#2196F3',
+                                color: '#fff'
                               }}
                             >
-                              {showPaymentsForCustomer === data.customer.id ? '👁️ Ocultar' : '👁️ Ver Pagos'}
+                              {showPaymentsForCustomer === data.customer.id ? '👁️ Ocultar Pagos' : '👁️ Ver Pagos'}
                             </button>
-                          </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Sección de Pagos */}
+                      {data.payments && data.payments.length > 0 && (
+                        <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '2px solid #e8e8e8' }}>
+                          <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 700 }}>
+                            💵 Pagos Registrados ({data.payments.length})
+                          </h4>
                           
                           {showPaymentsForCustomer === data.customer.id && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
