@@ -1,7 +1,7 @@
 /**
  * API: Pagos
  */
-import { get, post } from './client'
+import { get, post, put, del } from './client'
 
 export async function fetchPayments(customerId = null) {
   const params = customerId ? `?customer_id=${customerId}` : ''

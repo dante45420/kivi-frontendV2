@@ -67,6 +67,13 @@ export default function Accounting() {
   
   // Estado para mostrar/ocultar pagos por cliente
   const [showPaymentsForCustomer, setShowPaymentsForCustomer] = useState(null) // customer_id
+  
+  // Modal Ver Pagos del Cliente
+  const [showViewPaymentsModal, setShowViewPaymentsModal] = useState(false)
+  const [viewPaymentsCustomer, setViewPaymentsCustomer] = useState(null)
+  const [customerPayments, setCustomerPayments] = useState([])
+  const [loadingPayments, setLoadingPayments] = useState(false)
+  const [editingFromViewModal, setEditingFromViewModal] = useState(false)
 
   useEffect(() => {
     loadAccountingData()
@@ -381,6 +388,41 @@ export default function Accounting() {
     setShowEditPaymentModal(true)
   }
   
+  async function openViewPaymentsModal(customer) {
+    setViewPaymentsCustomer(customer)
+    setLoadingPayments(true)
+    setShowViewPaymentsModal(true)
+    
+    try {
+      const payments = await fetchPayments(customer.id)
+      setCustomerPayments(payments || [])
+    } catch (err) {
+      console.error('Error cargando pagos:', err)
+      alert('Error al cargar los pagos: ' + err.message)
+      setCustomerPayments([])
+    } finally {
+      setLoadingPayments(false)
+    }
+  }
+  
+  async function handleDeletePaymentFromModal(paymentId) {
+    if (!confirm('¿Eliminar este pago?\n\nEsta acción no se puede deshacer.')) {
+      return
+    }
+    
+    try {
+      await deletePayment(paymentId)
+      alert('✅ Pago eliminado')
+      // Recargar pagos del cliente
+      const payments = await fetchPayments(viewPaymentsCustomer.id)
+      setCustomerPayments(payments || [])
+      // Recargar datos de contabilidad
+      loadAccountingData()
+    } catch (err) {
+      alert('Error: ' + err.message)
+    }
+  }
+  
   async function saveEditedPayment() {
     if (!editingPayment) return
     
@@ -401,7 +443,20 @@ export default function Accounting() {
       await updatePayment(editingPayment.id, paymentData)
       alert('✅ Pago actualizado exitosamente')
       setShowEditPaymentModal(false)
+      
+      // Si se estaba editando desde el modal de ver pagos, recargar pagos y volver a abrir
+      if (editingFromViewModal && viewPaymentsCustomer) {
+        try {
+          const payments = await fetchPayments(viewPaymentsCustomer.id)
+          setCustomerPayments(payments || [])
+          setShowViewPaymentsModal(true)
+        } catch (err) {
+          console.error('Error recargando pagos:', err)
+        }
+      }
+      
       setEditingPayment(null)
+      setEditingFromViewModal(false)
       loadAccountingData()
     } catch (err) {
       console.error('Error actualizando pago:', err)
@@ -828,9 +883,9 @@ export default function Accounting() {
                     <button 
                       className="button ghost" 
                       style={{ flex: 1, padding: '16px', fontSize: '16px', fontWeight: 700 }}
-                      onClick={() => openInvoiceModal(data.customer, data)}
+                      onClick={() => openViewPaymentsModal(data.customer)}
                     >
-                      📄 Nota
+                      💵 Ver Pagos
                     </button>
                     <button 
                       className="button" 
@@ -1623,6 +1678,11 @@ export default function Accounting() {
                 onClick={() => {
                   setShowEditPaymentModal(false)
                   setEditingPayment(null)
+                  // Si se estaba editando desde el modal de ver pagos, volver a abrirlo
+                  if (editingFromViewModal && viewPaymentsCustomer) {
+                    setShowViewPaymentsModal(true)
+                  }
+                  setEditingFromViewModal(false)
                 }}
                 className="button ghost"
                 style={{ minWidth: '100px' }}
@@ -1635,6 +1695,208 @@ export default function Accounting() {
                 style={{ minWidth: '120px' }}
               >
                 💾 Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {/* Modal Ver Pagos del Cliente */}
+      {showViewPaymentsModal && viewPaymentsCustomer && (
+        <>
+          <div 
+            onClick={() => {
+              setShowViewPaymentsModal(false)
+              setViewPaymentsCustomer(null)
+              setCustomerPayments([])
+            }}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 999
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '700px',
+            width: '95%',
+            maxHeight: '85vh',
+            zIndex: 1000,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: 700 }}>
+                💵 Pagos del Cliente
+              </h2>
+              <div style={{ fontSize: '14px', color: '#666' }}>
+                Cliente: <strong>{viewPaymentsCustomer.name}</strong>
+              </div>
+            </div>
+            
+            {loadingPayments ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Loader />
+              </div>
+            ) : customerPayments.length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px',
+                color: '#999',
+                fontSize: '14px'
+              }}>
+                No hay pagos registrados para este cliente
+              </div>
+            ) : (
+              <div style={{ 
+                flex: 1,
+                overflowY: 'auto',
+                marginBottom: '20px',
+                paddingRight: '8px'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {customerPayments.map((payment) => (
+                    <div 
+                      key={payment.id} 
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        padding: '16px',
+                        background: '#f8f9fa',
+                        borderRadius: '8px',
+                        border: '1px solid #e0e0e0',
+                        gap: '16px'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '12px',
+                          marginBottom: '8px'
+                        }}>
+                          <div style={{ 
+                            fontSize: '18px', 
+                            fontWeight: 700,
+                            color: '#4caf50'
+                          }}>
+                            ${payment.amount.toLocaleString('es-CL')}
+                          </div>
+                          {payment.method && (
+                            <span style={{
+                              fontSize: '12px',
+                              padding: '4px 8px',
+                              background: '#e3f2fd',
+                              color: '#1976d2',
+                              borderRadius: '4px',
+                              fontWeight: 600
+                            }}>
+                              {payment.method}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                          {payment.date && (
+                            <div>
+                              📅 {new Date(payment.date).toLocaleDateString('es-CL', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          )}
+                          {payment.reference && (
+                            <div style={{ marginTop: '4px' }}>
+                              🔖 Referencia: <strong>{payment.reference}</strong>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {payment.notes && (
+                          <div style={{ 
+                            fontSize: '12px', 
+                            color: '#999', 
+                            marginTop: '8px',
+                            fontStyle: 'italic',
+                            padding: '8px',
+                            background: '#fff',
+                            borderRadius: '4px'
+                          }}>
+                            {payment.notes}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          className="button button-sm"
+                          onClick={() => {
+                            setEditingFromViewModal(true)
+                            setShowViewPaymentsModal(false)
+                            openEditPaymentModal(payment)
+                          }}
+                          style={{ 
+                            padding: '8px 12px', 
+                            fontSize: '13px',
+                            background: '#2196F3',
+                            color: '#fff'
+                          }}
+                          title="Editar pago"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          className="button button-sm"
+                          onClick={() => handleDeletePaymentFromModal(payment.id)}
+                          style={{ 
+                            padding: '8px 12px', 
+                            fontSize: '13px', 
+                            background: '#f44336', 
+                            color: '#fff' 
+                          }}
+                          title="Eliminar pago"
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div style={{
+              display: 'flex',
+              gap: '8px',
+              justifyContent: 'flex-end',
+              paddingTop: '16px',
+              borderTop: '1px solid #e0e0e0'
+            }}>
+              <button
+                onClick={() => {
+                  setShowViewPaymentsModal(false)
+                  setViewPaymentsCustomer(null)
+                  setCustomerPayments([])
+                }}
+                className="button ghost"
+                style={{ minWidth: '100px' }}
+              >
+                Cerrar
               </button>
             </div>
           </div>
