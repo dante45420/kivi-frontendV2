@@ -10,7 +10,6 @@ import { useCart } from '../../hooks/useCart'
 import { generateCatalogPDF } from '../../utils/catalogPdf'
 import { getImageUrl } from '../../utils/imageUrl'
 import { getEffectivePrice, hasActiveOffer, getActiveOffer } from '../../utils/productPrice'
-import { calculateShipping, calculateTotalWithShipping } from '../../utils/shipping'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
 import Loader from '../../components/Loader'
@@ -38,26 +37,16 @@ export default function CatalogV3() {
   // Checkout
   const [showCheckout, setShowCheckout] = useState(false)
   const [customerData, setCustomerData] = useState({ name: '', phone: '', address: '' })
-  const [shippingType, setShippingType] = useState('normal')
   const [submitting, setSubmitting] = useState(false)
   
   // Adding state
   const [addingProduct, setAddingProduct] = useState(null)
   
-  // Modal de restricción de horario
-  const [showTimeRestrictionModal, setShowTimeRestrictionModal] = useState(false)
   
   useEffect(() => {
     loadData()
   }, [])
   
-  // Verificar y ajustar el tipo de envío si es necesario
-  useEffect(() => {
-    if ((shippingType === 'fast' || shippingType === 'fastest') && !isFastShippingAvailable()) {
-      setShippingType('normal')
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   
   // Prevenir scroll del body cuando el modal está abierto
   useEffect(() => {
@@ -128,25 +117,6 @@ export default function CatalogV3() {
     setAddingProduct(null)
   }
   
-  // Verificar si el envío rápido está disponible (solo hasta las 12:00 PM hora de Chile)
-  const isFastShippingAvailable = () => {
-    // Obtener la hora actual en la zona horaria de Chile (America/Santiago)
-    const now = new Date()
-    const chileTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Santiago" }))
-    const hour = chileTime.getHours()
-    // Disponible desde las 00:00 hasta las 12:00 (antes del mediodía) hora de Chile
-    return hour < 12
-  }
-  
-  const handleShippingTypeChange = (type) => {
-    if (type === 'fast' || type === 'fastest') {
-      if (!isFastShippingAvailable()) {
-        setShowTimeRestrictionModal(true)
-        return
-      }
-    }
-    setShippingType(type)
-  }
   
   const handleCheckout = async () => {
     if (!customerData.name || !customerData.phone || !customerData.address) {
@@ -165,8 +135,8 @@ export default function CatalogV3() {
           unit_price: getEffectivePrice(item.product, weeklyOffers)
         })),
         source: 'web',
-        shipping_type: shippingType,
-        notes: `Pedido desde catálogo web - ${calculateShipping(shippingType, cartTotalWithOffers).label}`
+        shipping_type: 'normal',
+        notes: 'Pedido desde catálogo web'
       }
       
       await createOrder(orderData)
@@ -176,7 +146,6 @@ export default function CatalogV3() {
       setShowCheckout(false)
       setShowCart(false)
       setCustomerData({ name: '', phone: '', address: '' })
-      setShippingType('normal')
     } catch (error) {
       alert('Error enviando pedido: ' + error.message)
     } finally {
@@ -731,70 +700,10 @@ export default function CatalogV3() {
                 />
               </div>
               
-              <div className="catalog-checkout-field">
-                <label className="label" style={{ marginBottom: '12px', display: 'block' }}>Tipo de envío</label>
-                <div className="catalog-shipping-options">
-                  <div
-                    onClick={() => {
-                      if (isFastShippingAvailable()) {
-                        handleShippingTypeChange('fast')
-                      }
-                    }}
-                    className={`catalog-shipping-option ${shippingType === 'fast' || shippingType === 'fastest' ? 'active' : ''} ${!isFastShippingAvailable() ? 'disabled' : ''}`}
-                  >
-                    <div className="catalog-shipping-icon">⚡</div>
-                    <div className="catalog-shipping-title">Rápido</div>
-                    <div className="catalog-shipping-desc">
-                      {isFastShippingAvailable() 
-                        ? 'Envío el mismo día (solo antes de las 12:00)'
-                        : 'No disponible después de las 12:00'
-                      }
-                    </div>
-                    <div className="catalog-shipping-price">+10%</div>
-                  </div>
-                  <div
-                    onClick={() => handleShippingTypeChange('normal')}
-                    className={`catalog-shipping-option ${shippingType === 'normal' ? 'active' : ''}`}
-                  >
-                    <div className="catalog-shipping-icon">📦</div>
-                    <div className="catalog-shipping-title">Normal</div>
-                    <div className="catalog-shipping-desc">Envío al día siguiente</div>
-                    <div className="catalog-shipping-price">+0%</div>
-                  </div>
-                  <div
-                    onClick={() => handleShippingTypeChange('cheap')}
-                    className={`catalog-shipping-option ${shippingType === 'cheap' || shippingType === 'cheapest' ? 'active' : ''}`}
-                  >
-                    <div className="catalog-shipping-icon">💰</div>
-                    <div className="catalog-shipping-title">Económico</div>
-                    <div className="catalog-shipping-desc">Entrega en 1-3 días</div>
-                    <div className="catalog-shipping-price discount">-10%</div>
-                  </div>
-                </div>
-              </div>
-              
               <div className="catalog-checkout-summary">
                 <div className="catalog-summary-row">
-                  <span>Subtotal:</span>
-                  <span>${cartTotalWithOffers.toLocaleString('es-CL')}</span>
-                </div>
-                {(() => {
-                  const shipping = calculateShipping(shippingType, cartTotalWithOffers)
-                  if (shipping.amount !== 0) {
-                    return (
-                      <div className={`catalog-summary-row highlight ${shipping.amount < 0 ? 'discount' : ''}`}>
-                        <span>{shipping.label}:</span>
-                        <span>{shipping.amount > 0 ? '+' : ''}${Math.abs(shipping.amount).toLocaleString('es-CL')}</span>
-                      </div>
-                    )
-                  }
-                  return null
-                })()}
-                <div className="catalog-summary-total">
                   <span>Total:</span>
-                  <span>
-                    ${calculateTotalWithShipping(cartTotalWithOffers, shippingType).toLocaleString('es-CL')}
-                  </span>
+                  <span>${cartTotalWithOffers.toLocaleString('es-CL')}</span>
                 </div>
               </div>
               
@@ -831,33 +740,6 @@ export default function CatalogV3() {
             </div>
           </div>
         </>
-      )}
-      
-      {/* Modal de restricción de horario */}
-      {showTimeRestrictionModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => setShowTimeRestrictionModal(false)}
-          title="⏰ Envío Rápido No Disponible"
-          size="sm"
-        >
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏰</div>
-            <p style={{ fontSize: '16px', lineHeight: '1.6', color: '#666', marginBottom: '24px' }}>
-              El envío rápido solo está disponible hasta las <strong>12:00 PM</strong> (mediodía).
-            </p>
-            <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#999', marginBottom: '24px' }}>
-              Después de las 12:00 PM, puedes seleccionar envío <strong>Normal</strong> (día siguiente) o <strong>Económico</strong> (1-3 días).
-            </p>
-            <button
-              onClick={() => setShowTimeRestrictionModal(false)}
-              className="button"
-              style={{ width: '100%' }}
-            >
-              Entendido
-            </button>
-          </div>
-        </Modal>
       )}
       
       {/* Modal para seleccionar unidad */}
@@ -1055,7 +937,7 @@ export default function CatalogV3() {
         
         .catalog-image-container {
           width: 100%;
-          padding-top: 100%;
+          padding-top: 70%;
           position: relative;
           border-radius: var(--radius-sm);
           overflow: hidden;
@@ -1696,7 +1578,7 @@ export default function CatalogV3() {
           }
           
           .catalog-image-container {
-            padding-top: 60% !important;
+            padding-top: 50% !important;
           }
           
           .catalog-product-name {

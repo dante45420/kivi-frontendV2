@@ -120,8 +120,8 @@ export default function App() {
         </Routes>
       </main>
       
-      {/* Kivi Helper - disponible en todas las páginas */}
-      <KiviHelper />
+      {/* Kivi Helper - solo para usuarios logueados */}
+      {isAuthenticated && <KiviHelper />}
     </div>
   )
 }

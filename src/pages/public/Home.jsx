@@ -31,99 +31,241 @@ export default function Home() {
       setDownloading(false)
     }
   }
+  
+  const testimonials = [
+    {
+      name: 'Cora Giugliano',
+      text: 'Se nota el tremendo trabajo que hay detrás, está todo exquisito y en perfecta calidad!! Se pasaron!!',
+      rating: 5
+    },
+    {
+      name: 'Viviana Werth',
+      text: 'Los encuentro realmente espectaculares, productos, presentación, calidad, rapidez y lo eficiente del despacho',
+      rating: 5
+    },
+    {
+      name: 'Barbara Valdés',
+      text: 'Hola!! Quería escribirles porque ayer recibí mi primera compra con ustedes y estoy feliz. SE PASARON!!! Dan ganas de comer frutas y verduras, están todos deliciosos!!',
+      rating: 5
+    },
+    {
+      name: 'Dante Parodi',
+      text: 'Todo fantástico, tuve problemas con el pago y al día siguiente se comunicaron conmigo y me dieron opciones para solucionarlo en el momento.',
+      rating: 5
+    }
+  ]
+  
   return (
     <div style={{ minHeight: '100vh', background: 'var(--kivi-cream)' }}>
       <PublicNavbar />
       
       {/* Hero */}
       <div style={{
-        padding: '80px 20px',
+        padding: '100px 20px',
         textAlign: 'center',
-        background: 'var(--kivi-green)'
+        background: 'linear-gradient(135deg, var(--kivi-green) 0%, var(--kivi-green-dark) 100%)',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div className="container">
-          <img 
-            src="/Perro_kivi.PNG" 
-            alt="Kivi el perro" 
-            style={{ 
-              width: '140px', 
-              height: '140px', 
-              borderRadius: '50%', 
-              objectFit: 'cover',
-              margin: '0 auto 24px',
-              display: 'block',
-              border: '6px solid #fff',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-            }} 
-          />
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <h1 style={{
-            fontSize: '48px',
+            fontSize: 'clamp(32px, 5vw, 56px)',
             fontWeight: 800,
             color: '#fff',
-            marginBottom: '16px',
+            marginBottom: '24px',
             lineHeight: 1.2
           }}>
-            Tu Personal Shopper<br />de Lo Valledor
+            Fruta Fresca<br />
+            La mejor relación precio-calidad<br />
+            A domicilio
           </h1>
           <p style={{
-            fontSize: '20px',
+            fontSize: 'clamp(18px, 2.5vw, 24px)',
             color: '#fff',
             marginBottom: '32px',
-            maxWidth: '600px',
+            maxWidth: '700px',
             margin: '0 auto 32px',
-            opacity: 0.95
+            opacity: 0.95,
+            lineHeight: 1.5
           }}>
-            Frutas y verduras frescas directo de Lo Valledor a tu casa.
-            Seleccionadas especialmente para ti por Kivi 🐕
+            Pide exactamente lo que quieras, como quieras.<br />
+            Directo del campo a tu mesa.
           </p>
-          <Link to="/catalogo" className="button button-lg" style={{ background: '#fff', color: 'var(--kivi-green)' }}>
-            <span>🥬</span>
+          <Link to="/catalogo" className="button button-lg" style={{ background: '#fff', color: 'var(--kivi-green)', fontSize: '18px', padding: '16px 32px' }}>
+            <span>🛒</span>
             <span>Ver catálogo</span>
           </Link>
+        </div>
+        
+        {/* Video/Foto de fondo del campo */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          opacity: 0.15,
+          zIndex: 1,
+          backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1920&q=80)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }} />
+      </div>
+      
+      {/* Galería del Campo */}
+      <div style={{
+        padding: '60px 20px',
+        background: '#fff'
+      }}>
+        <div className="container">
+          <h2 style={{
+            fontSize: 'clamp(24px, 4vw, 36px)',
+            fontWeight: 800,
+            textAlign: 'center',
+            marginBottom: '40px',
+            color: 'var(--kivi-text-dark)'
+          }}>
+            Del campo a tu mesa
+          </h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '16px',
+            marginBottom: '40px'
+          }}>
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              aspectRatio: '16/9',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              aspectRatio: '16/9',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1560493676-04071c5f467b?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              aspectRatio: '16/9',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1573246123716-6b1782bfc499?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              aspectRatio: '16/9',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
+          </div>
         </div>
       </div>
       
       {/* Features */}
       <div className="container" style={{ padding: '80px 20px' }}>
         <h2 style={{
-          fontSize: '32px',
+          fontSize: 'clamp(24px, 4vw, 36px)',
           fontWeight: 800,
           textAlign: 'center',
           marginBottom: '48px',
           color: 'var(--kivi-text-dark)'
         }}>
-          ¿Por qué Kivi?
+          ¿Por qué elegirnos?
         </h2>
         
         <div className="grid grid-3">
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>🥬</div>
             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
-              Frescura garantizada
+              Fruta fresca
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Productos frescos directo de Lo Valledor, seleccionados cada día
+              Productos frescos directo del campo, seleccionados cada día
             </p>
           </div>
           
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>💰</div>
             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
-              Mejores precios
+              Mejor precio-calidad
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Sin intermediarios. Los mismos precios de Lo Valledor en tu casa
+              Sin intermediarios. La mejor relación precio-calidad del mercado
             </p>
           </div>
           
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>🚚</div>
             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
-              Entrega rápida
+              A domicilio
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Pide hoy y recibe mañana. Delivery coordinado por WhatsApp
+              Pide exactamente lo que quieras, como quieras. Delivery a tu casa
             </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Testimonios */}
+      <div style={{
+        padding: '80px 20px',
+        background: 'linear-gradient(135deg, var(--kivi-cream) 0%, #fff 100%)'
+      }}>
+        <div className="container">
+          <h2 style={{
+            fontSize: 'clamp(24px, 4vw, 36px)',
+            fontWeight: 800,
+            textAlign: 'center',
+            marginBottom: '48px',
+            color: 'var(--kivi-text-dark)'
+          }}>
+            Lo que dicen nuestros clientes
+          </h2>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '24px'
+          }}>
+            {testimonials.map((testimonial, idx) => (
+              <div key={idx} className="card" style={{ padding: '24px' }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  marginBottom: '16px',
+                  justifyContent: 'center'
+                }}>
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <span key={i} style={{ fontSize: '20px' }}>⭐</span>
+                  ))}
+                </div>
+                <p style={{
+                  color: 'var(--kivi-text)',
+                  fontSize: '15px',
+                  lineHeight: 1.6,
+                  marginBottom: '16px',
+                  fontStyle: 'italic'
+                }}>
+                  "{testimonial.text}"
+                </p>
+                <p style={{
+                  fontWeight: 700,
+                  color: 'var(--kivi-text-dark)',
+                  fontSize: '14px',
+                  textAlign: 'right'
+                }}>
+                  — {testimonial.name}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -211,16 +353,16 @@ export default function Home() {
               ¿Cuánto tarda la entrega?
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-              Ofrecemos 3 opciones: <strong>Rápido</strong> (mismo día antes de las 12:00, +10%), <strong>Normal</strong> (día siguiente, +0%), o <strong>Económico</strong> (1-3 días, -10%).
+              Pide hoy y recibe mañana. Coordinamos la entrega contigo por WhatsApp para que llegue en el momento perfecto.
             </p>
           </div>
           
           <div className="card" style={{ marginBottom: '16px', padding: '20px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
-              ¿Cuál es el costo de envío?
+              ¿Puedo pedir por kg o por unidades?
             </h3>
             <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-              El envío <strong>Normal</strong> es sin costo adicional. Puedes elegir <strong>Rápido</strong> (+10% al total) para entrega el mismo día, o <strong>Económico</strong> (-10% descuento) para entrega en 1-3 días.
+              ¡Por supuesto! Puedes pedir exactamente lo que quieras, como quieras. Por kilogramo o por unidades, tú decides.
             </p>
           </div>
           
