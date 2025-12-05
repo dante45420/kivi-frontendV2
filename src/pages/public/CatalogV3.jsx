@@ -244,14 +244,13 @@ export default function CatalogV3() {
       {/* Ofertas de la Semana */}
       {weeklyOffers.length > 0 && (
         <div className="catalog-offers-section">
-          <div className="catalog-offers-box">
-            <h2 className="catalog-offers-title">
-              <span>🏷️</span>
-              <span>Ofertas de la Semana</span>
-            </h2>
-            
-            <div className="catalog-grid-3">
-              {weeklyOffers.map(offer => {
+          <h2 className="catalog-offers-title-simple">
+            <span>🏷️</span>
+            <span>Ofertas de la Semana</span>
+          </h2>
+          
+          <div className="catalog-offers-grid-2">
+            {weeklyOffers.map(offer => {
                 const offerInCart = hasProductInCart(offer.product?.id)
                 const offerCartItemKg = getCartItem(offer.product?.id, 'kg')
                 const offerCartItemUnit = getCartItem(offer.product?.id, 'unit')
@@ -347,7 +346,6 @@ export default function CatalogV3() {
                   </div>
                 )
               })}
-            </div>
           </div>
         </div>
       )}
@@ -675,7 +673,7 @@ export default function CatalogV3() {
                   setShowCheckout(true)
                 }}
                 className="button"
-                style={{ background: '#000', color: '#fff', fontWeight: 800 }}
+                style={{ background: '#333', color: '#fff', fontWeight: 800 }}
               >
                 <span>✅</span>
                 <span>Continuar con pedido</span>
@@ -751,7 +749,7 @@ export default function CatalogV3() {
                 onClick={handleCheckout}
                 className="button"
                 disabled={submitting}
-                style={{ background: '#000', color: '#fff', fontWeight: 800 }}
+                style={{ background: '#333', color: '#fff', fontWeight: 800 }}
               >
                 {submitting ? (
                   <>
@@ -919,31 +917,42 @@ export default function CatalogV3() {
           box-sizing: border-box;
         }
         
-        .catalog-offers-box {
-          background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-          border-radius: 12px;
-          border: 2px solid #ff9800;
-          padding: 12px;
-          margin-bottom: 8px;
-        }
-        
-        .catalog-offers-title {
-          margin: 0 0 8px 0;
-          font-size: 22px;
+        .catalog-offers-title-simple {
+          margin: 0 0 16px 0;
+          font-size: 24px;
           font-weight: 800;
-          color: #e65100;
+          color: var(--kivi-text-dark);
           display: flex;
           align-items: center;
           gap: 8px;
+          text-align: center;
+          justify-content: center;
+        }
+        
+        .catalog-offers-grid-2 {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 16px;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+        }
+        
+        @media (max-width: 768px) {
+          .catalog-offers-grid-2 {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
         }
         
         .catalog-offer-card {
           background: #fff;
           border-radius: 8px;
           padding: 12px;
-          border: 2px solid #ff5722;
+          border: 1px solid #eee;
           position: relative;
           overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         
         .offer-badge {
@@ -1078,7 +1087,7 @@ export default function CatalogV3() {
           justify-content: center;
           font-size: 13px;
           height: 36px;
-          background: #000 !important;
+          background: #333 !important;
           color: #fff !important;
           font-weight: 800;
         }

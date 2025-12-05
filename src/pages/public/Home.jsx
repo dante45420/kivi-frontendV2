@@ -188,8 +188,17 @@ export default function Home() {
         </h2>
         
         <div className="grid grid-3">
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🥬</div>
+          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ 
+              width: '100%', 
+              height: '200px', 
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
               Fruta fresca
             </h3>
@@ -198,8 +207,17 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>💰</div>
+          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ 
+              width: '100%', 
+              height: '200px', 
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
               Mejor precio-calidad
             </h3>
@@ -208,8 +226,17 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '64px', marginBottom: '16px' }}>🚚</div>
+          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+            <div style={{ 
+              width: '100%', 
+              height: '200px', 
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&q=80)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }} />
             <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
               A domicilio
             </h3>
@@ -241,36 +268,66 @@ export default function Home() {
             maxWidth: '800px',
             margin: '0 auto'
           }}>
-            <div className="card" style={{ padding: '40px', minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="card" style={{ 
+              padding: '40px', 
+              minHeight: '300px', 
+              display: 'flex', 
+              flexDirection: 'row', 
+              gap: '24px', 
+              alignItems: 'center'
+            }}>
               <div style={{
-                display: 'flex',
-                gap: '4px',
-                marginBottom: '24px',
-                justifyContent: 'center'
-              }}>
-                {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
-                  <span key={i} style={{ fontSize: '24px' }}>⭐</span>
-                ))}
+                flex: '0 0 200px',
+                height: '200px',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                backgroundImage: 'url(https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                minWidth: '200px'
+              }} />
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  marginBottom: '16px',
+                  justifyContent: 'flex-start'
+                }}>
+                  {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
+                    <span key={i} style={{ fontSize: '20px' }}>⭐</span>
+                  ))}
+                </div>
+                <p style={{
+                  color: 'var(--kivi-text)',
+                  fontSize: '18px',
+                  lineHeight: 1.8,
+                  marginBottom: '16px',
+                  fontStyle: 'italic'
+                }}>
+                  "{testimonials[testimonialIndex].text}"
+                </p>
+                <p style={{
+                  fontWeight: 700,
+                  color: 'var(--kivi-text-dark)',
+                  fontSize: '16px'
+                }}>
+                  — {testimonials[testimonialIndex].name}
+                </p>
               </div>
-              <p style={{
-                color: 'var(--kivi-text)',
-                fontSize: '18px',
-                lineHeight: 1.8,
-                marginBottom: '24px',
-                fontStyle: 'italic',
-                textAlign: 'center'
-              }}>
-                "{testimonials[testimonialIndex].text}"
-              </p>
-              <p style={{
-                fontWeight: 700,
-                color: 'var(--kivi-text-dark)',
-                fontSize: '16px',
-                textAlign: 'center'
-              }}>
-                — {testimonials[testimonialIndex].name}
-              </p>
             </div>
+            
+            <style>{`
+              @media (max-width: 768px) {
+                .card[style*="flex-direction: row"] {
+                  flex-direction: column !important;
+                }
+                .card[style*="flex-direction: row"] > div:first-child {
+                  width: 100% !important;
+                  height: 200px !important;
+                  min-width: auto !important;
+                }
+              }
+            `}</style>
             
             {/* Controles del carrusel */}
             <div style={{
@@ -296,6 +353,56 @@ export default function Home() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+      
+      {/* Video separador */}
+      <div style={{
+        width: '100%',
+        height: '400px',
+        overflow: 'hidden',
+        position: 'relative',
+        background: '#000',
+        backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1920&q=80)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
+      }}>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.9
+          }}
+        >
+          <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4" type="video/mp4" />
+        </video>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <h2 style={{
+            color: '#fff',
+            fontSize: 'clamp(24px, 4vw, 36px)',
+            fontWeight: 800,
+            textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+            textAlign: 'center',
+            padding: '20px'
+          }}>
+            Frutas frescas del campo<br />
+            Directo a tu mesa
+          </h2>
         </div>
       </div>
       
