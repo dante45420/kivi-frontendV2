@@ -180,37 +180,62 @@ export default function CatalogV3() {
             <button
               onClick={() => setShowCategoryMenu(!showCategoryMenu)}
               className="button ghost"
+              style={{ 
+                background: '#fff', 
+                border: '2px solid var(--kivi-green)',
+                color: 'var(--kivi-text-dark)',
+                fontWeight: 700
+              }}
             >
-              <span>☰</span>
+              <span>📂</span>
               <span className="hide-mobile">
-                {categoryFilter ? categories.find(c => c.id === categoryFilter)?.name : 'Todas'}
+                {categoryFilter ? categories.find(c => c.id === categoryFilter)?.name : 'Filtrar por categoría'}
               </span>
+              <span className="hide-desktop">Filtrar</span>
             </button>
             
             {showCategoryMenu && (
-              <div className="category-menu">
-                <button
-                  onClick={() => {
-                    setCategoryFilter(null)
-                    setShowCategoryMenu(false)
-                  }}
-                  className={!categoryFilter ? 'active' : ''}
-                >
-                  Todas las categorías
-                </button>
-                {categories.map(cat => (
+              <>
+                <div 
+                  className="catalog-overlay" 
+                  onClick={() => setShowCategoryMenu(false)}
+                  style={{ zIndex: 99 }}
+                />
+                <div className="category-menu" style={{ zIndex: 100 }}>
+                  <div style={{ 
+                    padding: '12px 16px', 
+                    borderBottom: '1px solid #eee',
+                    fontWeight: 700,
+                    color: 'var(--kivi-text-dark)',
+                    fontSize: '14px'
+                  }}>
+                    Selecciona una categoría:
+                  </div>
                   <button
-                    key={cat.id}
                     onClick={() => {
-                      setCategoryFilter(cat.id)
+                      setCategoryFilter(null)
                       setShowCategoryMenu(false)
                     }}
-                    className={categoryFilter === cat.id ? 'active' : ''}
+                    className={!categoryFilter ? 'active' : ''}
+                    style={{ fontWeight: !categoryFilter ? 700 : 400 }}
                   >
-                    {cat.emoji} {cat.name}
+                    📦 Todas las categorías
                   </button>
-                ))}
-              </div>
+                  {categories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setCategoryFilter(cat.id)
+                        setShowCategoryMenu(false)
+                      }}
+                      className={categoryFilter === cat.id ? 'active' : ''}
+                      style={{ fontWeight: categoryFilter === cat.id ? 700 : 400 }}
+                    >
+                      {cat.emoji} {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -650,6 +675,7 @@ export default function CatalogV3() {
                   setShowCheckout(true)
                 }}
                 className="button"
+                style={{ background: '#000', color: '#fff', fontWeight: 800 }}
               >
                 <span>✅</span>
                 <span>Continuar con pedido</span>
@@ -717,6 +743,7 @@ export default function CatalogV3() {
                 onClick={() => setShowCheckout(false)}
                 className="button ghost"
                 disabled={submitting}
+                style={{ background: '#fff', color: '#000', border: '2px solid #000', fontWeight: 800 }}
               >
                 Cancelar
               </button>
@@ -724,6 +751,7 @@ export default function CatalogV3() {
                 onClick={handleCheckout}
                 className="button"
                 disabled={submitting}
+                style={{ background: '#000', color: '#fff', fontWeight: 800 }}
               >
                 {submitting ? (
                   <>
@@ -857,11 +885,28 @@ export default function CatalogV3() {
           cursor: pointer;
           font-size: 14px;
           font-weight: 400;
+          color: var(--kivi-text-dark);
+          transition: all 0.2s;
+        }
+        
+        .category-menu button:hover {
+          background: #f5f5f5;
         }
         
         .category-menu button.active {
-          background: #f0f0f0;
+          background: var(--kivi-green);
+          color: #fff;
           font-weight: 700;
+        }
+        
+        .hide-desktop {
+          display: none;
+        }
+        
+        @media (max-width: 768px) {
+          .hide-desktop {
+            display: inline;
+          }
         }
         
         /* Ofertas */
@@ -1033,6 +1078,9 @@ export default function CatalogV3() {
           justify-content: center;
           font-size: 13px;
           height: 36px;
+          background: #000 !important;
+          color: #fff !important;
+          font-weight: 800;
         }
         
         .catalog-quantity-controls {
@@ -1323,7 +1371,7 @@ export default function CatalogV3() {
           transform: translate(-50%, -50%);
           background: #fff;
           border-radius: var(--radius);
-          padding: 24px;
+          padding: 20px;
           max-width: 400px;
           width: 90%;
           max-height: 90vh;
@@ -1332,6 +1380,13 @@ export default function CatalogV3() {
           display: flex;
           flex-direction: column;
           overflow: hidden;
+        }
+        
+        @media (min-width: 769px) {
+          .catalog-checkout-modal {
+            max-width: 400px;
+            width: 400px;
+          }
         }
         
         .catalog-checkout-modal-content {
@@ -1502,7 +1557,7 @@ export default function CatalogV3() {
           padding: 16px;
           font-size: 16px;
           font-weight: 700;
-          background: var(--kivi-green);
+          background: #000;
           color: #fff;
           display: flex;
           flex-direction: column;

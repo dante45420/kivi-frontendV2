@@ -13,6 +13,8 @@ import {
   deleteProductPhoto
 } from '../api/products'
 import { fetchCategories } from '../api/categories'
+import { fetchWeeklyOffers } from '../api/weeklyOffers'
+import { generateCatalogPDF } from '../utils/catalogPdf'
 import { getImageUrl } from '../utils/imageUrl'
 import Modal from '../components/Modal'
 import ImageUploader from '../components/ImageUploader'
@@ -42,6 +44,7 @@ export default function Products() {
   })
   const [saving, setSaving] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   
   useEffect(() => {
     loadData()
@@ -195,10 +198,37 @@ export default function Products() {
           🥬 Productos
         </h1>
         
-        <button onClick={handleOpenNew} className="button">
-          <span>➕</span>
-          <span>Nuevo producto</span>
-        </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <button 
+            className="button" 
+            onClick={async () => {
+              setDownloading(true)
+              try {
+                const [productsData, categoriesData, offersData] = await Promise.all([
+                  fetchProducts(),
+                  fetchCategories(),
+                  fetchWeeklyOffers(true, true)
+                ])
+                const products = productsData.filter(p => p.active)
+                await generateCatalogPDF(products, offersData)
+              } catch (error) {
+                console.error('Error generando PDF:', error)
+                alert('Error al generar el catálogo PDF')
+              } finally {
+                setDownloading(false)
+              }
+            }}
+            disabled={downloading}
+            style={{ background: '#000', color: '#fff' }}
+          >
+            <span>📥</span>
+            <span>{downloading ? 'Generando...' : 'Descargar Catálogo PDF'}</span>
+          </button>
+          <button onClick={handleOpenNew} className="button" style={{ background: '#000', color: '#fff' }}>
+            <span>➕</span>
+            <span>Nuevo producto</span>
+          </button>
+        </div>
       </div>
       
       {/* Filtros */}
