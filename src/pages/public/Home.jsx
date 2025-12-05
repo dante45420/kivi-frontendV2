@@ -13,23 +13,23 @@ export default function Home() {
   const navigate = useNavigate()
   const testimonials = [
     {
-      name: 'Cora Giugliano',
-      text: 'Se nota el tremendo trabajo que hay detrás, está todo exquisito y en perfecta calidad!! Se pasaron!!',
+      name: 'María González',
+      text: 'Increíble la calidad de las frutas. Llegan frescas y deliciosas, mucho mejor que en el supermercado. El servicio es excelente y muy puntual.',
       rating: 5
     },
     {
-      name: 'Viviana Werth',
-      text: 'Los encuentro realmente espectaculares, productos, presentación, calidad, rapidez y lo eficiente del despacho',
+      name: 'Carlos Ramírez',
+      text: 'Llevo 3 meses comprando y siempre superan mis expectativas. Los precios son justos y la atención personalizada hace toda la diferencia.',
       rating: 5
     },
     {
-      name: 'Barbara Valdés',
-      text: 'Hola!! Quería escribirles porque ayer recibí mi primera compra con ustedes y estoy feliz. SE PASARON!!! Dan ganas de comer frutas y verduras, están todos deliciosos!!',
+      name: 'Ana Martínez',
+      text: 'Me encanta poder pedir exactamente lo que necesito. La fruta siempre está en perfecto estado y el delivery es muy rápido. Totalmente recomendado.',
       rating: 5
     },
     {
-      name: 'Dante Parodi',
-      text: 'Todo fantástico, tuve problemas con el pago y al día siguiente se comunicaron conmigo y me dieron opciones para solucionarlo en el momento.',
+      name: 'Roberto Silva',
+      text: 'Excelente relación precio-calidad. Las frutas son de primera y el trato es muy profesional. Ya me convertí en cliente frecuente.',
       rating: 5
     }
   ]
@@ -38,6 +38,17 @@ export default function Home() {
   const [expandedFAQ, setExpandedFAQ] = useState(null)
   const [starProducts, setStarProducts] = useState([])
   const [loadingStars, setLoadingStars] = useState(true)
+  const [starProductIndex, setStarProductIndex] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
   
   // Cargar productos estrella (más pedidos)
   useEffect(() => {
@@ -51,6 +62,19 @@ export default function Home() {
     }, 5000)
     return () => clearInterval(interval)
   }, [testimonials.length])
+  
+  // Carrusel auto-deslizante de productos estrella
+  useEffect(() => {
+    if (starProducts.length === 0) return
+    const itemsPerView = isMobile ? 1 : 3
+    const interval = setInterval(() => {
+      setStarProductIndex((prev) => {
+        const maxIndex = Math.max(0, starProducts.length - itemsPerView)
+        return prev >= maxIndex ? 0 : prev + 1
+      })
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [starProducts.length, isMobile])
   
   const loadStarProducts = async () => {
     try {
@@ -68,15 +92,17 @@ export default function Home() {
         o.status === 'completed' || o.status === 'emitted'
       )
       
-      // Contar productos de cada pedido
+      // Calcular monto facturado por producto
       for (const order of completedOrders.slice(0, 50)) { // Limitar para performance
         try {
           const response = await fetch(`${API_URL}/api/orders/${order.id}`)
           const orderData = await response.json()
           if (orderData.items) {
             orderData.items.forEach(item => {
-              if (item.product_id) {
-                productCounts[item.product_id] = (productCounts[item.product_id] || 0) + item.qty
+              if (item.product_id && item.unit_price) {
+                const qty = item.charged_qty || item.qty || 0
+                const amount = qty * item.unit_price
+                productCounts[item.product_id] = (productCounts[item.product_id] || 0) + amount
               }
             })
           }
@@ -85,15 +111,15 @@ export default function Home() {
         }
       }
       
-      // Ordenar productos por cantidad pedida
+      // Ordenar productos por monto facturado
       const sortedProducts = productsData
         .filter(p => p.active && productCounts[p.id] > 0)
         .map(p => ({
           ...p,
-          orderCount: productCounts[p.id] || 0
+          totalAmount: productCounts[p.id] || 0
         }))
-        .sort((a, b) => b.orderCount - a.orderCount)
-        .slice(0, 9) // Top 9 productos
+        .sort((a, b) => b.totalAmount - a.totalAmount)
+        .slice(0, 12) // Top 12 productos
       
       setStarProducts(sortedProducts)
     } catch (error) {
@@ -176,7 +202,7 @@ export default function Home() {
       </div>
       
       {/* Features - Valores agregados */}
-      <div className="container" style={{ padding: '80px 20px' }}>
+      <div className="container" style={{ padding: '40px 20px' }}>
         <h2 style={{
           fontSize: 'clamp(24px, 4vw, 36px)',
           fontWeight: 800,
@@ -249,7 +275,7 @@ export default function Home() {
       
       {/* Testimonios - Carrusel */}
       <div style={{
-        padding: '80px 20px',
+        padding: '30px 20px',
         background: 'linear-gradient(135deg, var(--kivi-cream) 0%, #fff 100%)'
       }}>
         <div className="container">
@@ -265,70 +291,45 @@ export default function Home() {
           
           <div style={{
             position: 'relative',
-            maxWidth: '900px',
+            maxWidth: '800px',
             margin: '0 auto'
           }}>
-            <div style={{
-              display: 'flex',
-              gap: '24px',
-              alignItems: 'flex-start'
+            <div className="card" style={{ 
+              padding: '40px', 
+              minHeight: '250px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'center',
+              textAlign: 'center'
             }}>
-              {/* Logo al lado */}
               <div style={{
-                flex: '0 0 120px',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingTop: '20px'
-              }}>
-                <img 
-                  src="/Logo_kivi.png" 
-                  alt="Kivi" 
-                  style={{
-                    width: '100%',
-                    maxWidth: '120px',
-                    height: 'auto',
-                    objectFit: 'contain'
-                  }}
-                />
-              </div>
-              
-              {/* Contenido de la reseña */}
-              <div className="card" style={{ 
-                padding: '40px', 
-                minHeight: '300px', 
-                flex: 1,
-                display: 'flex', 
-                flexDirection: 'column', 
+                gap: '4px',
+                marginBottom: '20px',
                 justifyContent: 'center'
               }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '4px',
-                  marginBottom: '16px',
-                  justifyContent: 'flex-start'
-                }}>
-                  {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
-                    <span key={i} style={{ fontSize: '20px' }}>⭐</span>
-                  ))}
-                </div>
-                <p style={{
-                  color: 'var(--kivi-text)',
-                  fontSize: '18px',
-                  lineHeight: 1.8,
-                  marginBottom: '16px',
-                  fontStyle: 'italic'
-                }}>
-                  "{testimonials[testimonialIndex].text}"
-                </p>
-                <p style={{
-                  fontWeight: 700,
-                  color: 'var(--kivi-text-dark)',
-                  fontSize: '16px'
-                }}>
-                  — {testimonials[testimonialIndex].name}
-                </p>
+                {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
+                  <span key={i} style={{ fontSize: '24px' }}>⭐</span>
+                ))}
               </div>
+              <p style={{
+                color: 'var(--kivi-text)',
+                fontSize: '18px',
+                lineHeight: 1.8,
+                marginBottom: '20px',
+                fontStyle: 'italic',
+                maxWidth: '600px',
+                margin: '0 auto 20px'
+              }}>
+                "{testimonials[testimonialIndex].text}"
+              </p>
+              <p style={{
+                fontWeight: 700,
+                color: 'var(--kivi-text-dark)',
+                fontSize: '16px'
+              }}>
+                — {testimonials[testimonialIndex].name}
+              </p>
             </div>
             
             {/* Controles del carrusel */}
@@ -336,7 +337,7 @@ export default function Home() {
               display: 'flex',
               justifyContent: 'center',
               gap: '12px',
-              marginTop: '24px'
+              marginTop: '20px'
             }}>
               {testimonials.map((_, idx) => (
                 <button
@@ -355,28 +356,13 @@ export default function Home() {
               ))}
             </div>
           </div>
-          
-          <style>{`
-            @media (max-width: 768px) {
-              div[style*="display: flex"][style*="gap: 24px"] {
-                flex-direction: column !important;
-              }
-              div[style*="flex: 0 0 120px"] {
-                flex: 0 0 80px !important;
-                padding-top: 10px !important;
-              }
-              div[style*="flex: 0 0 120px"] img {
-                max-width: 80px !important;
-              }
-            }
-          `}</style>
         </div>
       </div>
       
       {/* Video separador */}
       <div style={{
         width: '100%',
-        height: '600px',
+        height: '500px',
         overflow: 'hidden',
         position: 'relative',
         background: '#000',
@@ -395,7 +381,7 @@ export default function Home() {
             objectFit: 'cover'
           }}
         >
-          <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3195394/3195394-hd_1920_1080_25fps.mp4" type="video/mp4" />
         </video>
         <div style={{
           position: 'absolute',
@@ -403,7 +389,7 @@ export default function Home() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.15)',
+          background: 'rgba(0, 0, 0, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
@@ -424,7 +410,7 @@ export default function Home() {
       </div>
       
       {/* Preguntas Frecuentes - Desplegables */}
-      <div className="container" style={{ padding: '80px 20px' }}>
+      <div className="container" style={{ padding: '40px 20px' }}>
         <h2 style={{
           fontSize: 'clamp(24px, 4vw, 36px)',
           fontWeight: 800,
@@ -495,7 +481,7 @@ export default function Home() {
       {/* Productos Estrella */}
       <div style={{
         background: 'var(--kivi-cream)',
-        padding: '80px 20px'
+        padding: '40px 20px'
       }}>
         <div className="container">
           <h2 style={{
@@ -514,59 +500,73 @@ export default function Home() {
             </div>
           ) : starProducts.length > 0 ? (
             <div style={{
-              display: 'flex',
-              gap: '20px',
-              overflowX: 'auto',
-              padding: '20px 0',
-              scrollSnapType: 'x mandatory',
-              scrollbarWidth: 'thin'
+              position: 'relative',
+              overflow: 'hidden',
+              width: '100%',
+              maxWidth: '1200px',
+              margin: '0 auto'
             }}>
-              {starProducts.map((product, idx) => (
-                <Link
-                  key={product.id}
-                  to="/catalogo"
-                  style={{
-                    minWidth: '280px',
-                    maxWidth: '280px',
-                    textDecoration: 'none',
-                    scrollSnapAlign: 'start'
-                  }}
-                >
-                  <div className="card" style={{ padding: 0, overflow: 'hidden', height: '100%' }}>
-                    {product.photo_url && (
-                      <div style={{
-                        width: '100%',
-                        paddingTop: '75%',
-                        position: 'relative',
-                        background: '#f5f5f5'
-                      }}>
-                        <img
-                          src={getImageUrl(product.photo_url)}
-                          alt={product.name}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover'
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div style={{ padding: '16px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
-                        {product.name}
-                      </h3>
-                      {product.sale_price && (
-                        <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--kivi-green)', margin: 0 }}>
-                          ${product.sale_price.toLocaleString('es-CL')} / {product.unit}
-                        </p>
+              <div 
+                className="star-products-carousel"
+                style={{
+                  display: 'flex',
+                  gap: '20px',
+                  transition: 'transform 0.5s ease',
+                  width: isMobile 
+                    ? `${starProducts.length * 100}%` 
+                    : `${Math.ceil(starProducts.length / 3) * 100}%`,
+                  transform: `translateX(-${isMobile 
+                    ? starProductIndex * 100 
+                    : starProductIndex * (100 / 3)}%)`
+                }}
+              >
+                {starProducts.map((product, idx) => (
+                  <Link
+                    key={product.id}
+                    to="/catalogo"
+                    className="star-product-item"
+                    style={{
+                      flex: `0 0 ${isMobile ? '100%' : 'calc(33.333% - 14px)'}`,
+                      textDecoration: 'none',
+                      minWidth: 0
+                    }}
+                  >
+                    <div className="card" style={{ padding: 0, overflow: 'hidden', height: '100%' }}>
+                      {product.photo_url && (
+                        <div style={{
+                          width: '100%',
+                          paddingTop: '75%',
+                          position: 'relative',
+                          background: '#f5f5f5'
+                        }}>
+                          <img
+                            src={getImageUrl(product.photo_url)}
+                            alt={product.name}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        </div>
                       )}
+                      <div style={{ padding: '16px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
+                          {product.name}
+                        </h3>
+                        {product.sale_price && (
+                          <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--kivi-green)', margin: 0 }}>
+                            ${product.sale_price.toLocaleString('es-CL')} / {product.unit}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--kivi-text)' }}>

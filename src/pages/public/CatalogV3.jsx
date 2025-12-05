@@ -249,7 +249,7 @@ export default function CatalogV3() {
             <span>Ofertas de la Semana</span>
           </h2>
           
-          <div className="catalog-offers-grid-2">
+          <div className="catalog-offers-grid-3">
             {weeklyOffers.map(offer => {
                 const offerInCart = hasProductInCart(offer.product?.id)
                 const offerCartItemKg = getCartItem(offer.product?.id, 'kg')
@@ -347,6 +347,9 @@ export default function CatalogV3() {
                 )
               })}
           </div>
+          
+          {/* Línea separadora */}
+          <div className="catalog-offers-separator"></div>
         </div>
       )}
       
@@ -918,31 +921,44 @@ export default function CatalogV3() {
         }
         
         .catalog-offers-title-simple {
-          margin: 0 0 16px 0;
-          font-size: 24px;
+          margin: 0 0 24px 0;
+          font-size: 36px;
           font-weight: 800;
           color: var(--kivi-text-dark);
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
           text-align: center;
           justify-content: center;
+          letter-spacing: -0.5px;
         }
         
-        .catalog-offers-grid-2 {
+        .catalog-offers-grid-3 {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
           width: 100%;
           max-width: 100%;
           box-sizing: border-box;
         }
         
         @media (max-width: 768px) {
-          .catalog-offers-grid-2 {
+          .catalog-offers-grid-3 {
             grid-template-columns: 1fr;
             gap: 12px;
           }
+          .catalog-offers-title-simple {
+            font-size: 28px;
+          }
+        }
+        
+        .catalog-offers-separator {
+          width: 100%;
+          max-width: 200px;
+          height: 3px;
+          background: linear-gradient(90deg, transparent, var(--kivi-green), transparent);
+          margin: 24px auto;
+          border-radius: 2px;
         }
         
         .catalog-offer-card {
