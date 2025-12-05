@@ -214,7 +214,7 @@ export default function Home() {
               marginBottom: '16px',
               borderRadius: '12px',
               overflow: 'hidden',
-              backgroundImage: 'url(https://images.unsplash.com/photo-1556740758-90de374c12ad?w=800&q=80)',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1560493676-04071c5f467b?w=800&q=80)',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }} />
@@ -233,7 +233,7 @@ export default function Home() {
               marginBottom: '16px',
               borderRadius: '12px',
               overflow: 'hidden',
-              backgroundImage: 'url(https://images.unsplash.com/photo-1607082349566-187342175e2f?w=800&q=80)',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80)',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }} />
@@ -265,69 +265,84 @@ export default function Home() {
           
           <div style={{
             position: 'relative',
-            maxWidth: '800px',
-            margin: '0 auto'
+            maxWidth: '900px',
+            margin: '0 auto',
+            display: 'flex',
+            gap: '24px',
+            alignItems: 'flex-start'
           }}>
+            {/* Logo al lado */}
+            <div style={{
+              flex: '0 0 120px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: '20px'
+            }}>
+              <img 
+                src="/Logo_kivi.png" 
+                alt="Kivi" 
+                style={{
+                  width: '100%',
+                  maxWidth: '120px',
+                  height: 'auto',
+                  objectFit: 'contain'
+                }}
+              />
+            </div>
+            
+            {/* Contenido de la reseña */}
             <div className="card" style={{ 
               padding: '40px', 
               minHeight: '300px', 
+              flex: 1,
               display: 'flex', 
-              flexDirection: 'row', 
-              gap: '24px', 
-              alignItems: 'center'
+              flexDirection: 'column', 
+              justifyContent: 'center'
             }}>
               <div style={{
-                flex: '0 0 200px',
-                height: '200px',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                backgroundImage: 'url(https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                minWidth: '200px'
-              }} />
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '4px',
-                  marginBottom: '16px',
-                  justifyContent: 'flex-start'
-                }}>
-                  {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
-                    <span key={i} style={{ fontSize: '20px' }}>⭐</span>
-                  ))}
-                </div>
-                <p style={{
-                  color: 'var(--kivi-text)',
-                  fontSize: '18px',
-                  lineHeight: 1.8,
-                  marginBottom: '16px',
-                  fontStyle: 'italic'
-                }}>
-                  "{testimonials[testimonialIndex].text}"
-                </p>
-                <p style={{
-                  fontWeight: 700,
-                  color: 'var(--kivi-text-dark)',
-                  fontSize: '16px'
-                }}>
-                  — {testimonials[testimonialIndex].name}
-                </p>
+                display: 'flex',
+                gap: '4px',
+                marginBottom: '16px',
+                justifyContent: 'flex-start'
+              }}>
+                {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
+                  <span key={i} style={{ fontSize: '20px' }}>⭐</span>
+                ))}
               </div>
+              <p style={{
+                color: 'var(--kivi-text)',
+                fontSize: '18px',
+                lineHeight: 1.8,
+                marginBottom: '16px',
+                fontStyle: 'italic'
+              }}>
+                "{testimonials[testimonialIndex].text}"
+              </p>
+              <p style={{
+                fontWeight: 700,
+                color: 'var(--kivi-text-dark)',
+                fontSize: '16px'
+              }}>
+                — {testimonials[testimonialIndex].name}
+              </p>
             </div>
-            
-            <style>{`
-              @media (max-width: 768px) {
-                .card[style*="flex-direction: row"] {
-                  flex-direction: column !important;
-                }
-                .card[style*="flex-direction: row"] > div:first-child {
-                  width: 100% !important;
-                  height: 200px !important;
-                  min-width: auto !important;
-                }
+          </div>
+          
+          <style>{`
+            @media (max-width: 768px) {
+              .card[style*="flex-direction: column"] {
+                flex-direction: column !important;
               }
-            `}</style>
+              div[style*="flex: 0 0 120px"] {
+                flex: 0 0 80px !important;
+                padding-top: 10px !important;
+              }
+              div[style*="flex: 0 0 120px"] img {
+                max-width: 80px !important;
+              }
+            }
+          `}</style>
             
             {/* Controles del carrusel */}
             <div style={{
@@ -359,7 +374,7 @@ export default function Home() {
       {/* Video separador */}
       <div style={{
         width: '100%',
-        height: '400px',
+        height: '600px',
         overflow: 'hidden',
         position: 'relative',
         background: '#000',
@@ -375,8 +390,7 @@ export default function Home() {
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            opacity: 0.9
+            objectFit: 'cover'
           }}
         >
           <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4" type="video/mp4" />
@@ -387,18 +401,19 @@ export default function Home() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
+          background: 'rgba(0, 0, 0, 0.15)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
         }}>
           <h2 style={{
             color: '#fff',
-            fontSize: 'clamp(24px, 4vw, 36px)',
+            fontSize: 'clamp(28px, 5vw, 48px)',
             fontWeight: 800,
-            textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+            textShadow: '3px 3px 6px rgba(0,0,0,0.7)',
             textAlign: 'center',
-            padding: '20px'
+            padding: '20px',
+            lineHeight: 1.3
           }}>
             Frutas frescas del campo<br />
             Directo a tu mesa
