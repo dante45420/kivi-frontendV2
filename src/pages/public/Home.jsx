@@ -266,83 +266,70 @@ export default function Home() {
           <div style={{
             position: 'relative',
             maxWidth: '900px',
-            margin: '0 auto',
-            display: 'flex',
-            gap: '24px',
-            alignItems: 'flex-start'
+            margin: '0 auto'
           }}>
-            {/* Logo al lado */}
             <div style={{
-              flex: '0 0 120px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingTop: '20px'
+              gap: '24px',
+              alignItems: 'flex-start'
             }}>
-              <img 
-                src="/Logo_kivi.png" 
-                alt="Kivi" 
-                style={{
-                  width: '100%',
-                  maxWidth: '120px',
-                  height: 'auto',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
-            
-            {/* Contenido de la reseña */}
-            <div className="card" style={{ 
-              padding: '40px', 
-              minHeight: '300px', 
-              flex: 1,
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'center'
-            }}>
+              {/* Logo al lado */}
               <div style={{
+                flex: '0 0 120px',
                 display: 'flex',
-                gap: '4px',
-                marginBottom: '16px',
-                justifyContent: 'flex-start'
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingTop: '20px'
               }}>
-                {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
-                  <span key={i} style={{ fontSize: '20px' }}>⭐</span>
-                ))}
+                <img 
+                  src="/Logo_kivi.png" 
+                  alt="Kivi" 
+                  style={{
+                    width: '100%',
+                    maxWidth: '120px',
+                    height: 'auto',
+                    objectFit: 'contain'
+                  }}
+                />
               </div>
-              <p style={{
-                color: 'var(--kivi-text)',
-                fontSize: '18px',
-                lineHeight: 1.8,
-                marginBottom: '16px',
-                fontStyle: 'italic'
+              
+              {/* Contenido de la reseña */}
+              <div className="card" style={{ 
+                padding: '40px', 
+                minHeight: '300px', 
+                flex: 1,
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'center'
               }}>
-                "{testimonials[testimonialIndex].text}"
-              </p>
-              <p style={{
-                fontWeight: 700,
-                color: 'var(--kivi-text-dark)',
-                fontSize: '16px'
-              }}>
-                — {testimonials[testimonialIndex].name}
-              </p>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  marginBottom: '16px',
+                  justifyContent: 'flex-start'
+                }}>
+                  {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
+                    <span key={i} style={{ fontSize: '20px' }}>⭐</span>
+                  ))}
+                </div>
+                <p style={{
+                  color: 'var(--kivi-text)',
+                  fontSize: '18px',
+                  lineHeight: 1.8,
+                  marginBottom: '16px',
+                  fontStyle: 'italic'
+                }}>
+                  "{testimonials[testimonialIndex].text}"
+                </p>
+                <p style={{
+                  fontWeight: 700,
+                  color: 'var(--kivi-text-dark)',
+                  fontSize: '16px'
+                }}>
+                  — {testimonials[testimonialIndex].name}
+                </p>
+              </div>
             </div>
-          </div>
-          
-          <style>{`
-            @media (max-width: 768px) {
-              .card[style*="flex-direction: column"] {
-                flex-direction: column !important;
-              }
-              div[style*="flex: 0 0 120px"] {
-                flex: 0 0 80px !important;
-                padding-top: 10px !important;
-              }
-              div[style*="flex: 0 0 120px"] img {
-                max-width: 80px !important;
-              }
-            }
-          `}</style>
             
             {/* Controles del carrusel */}
             <div style={{
@@ -368,6 +355,21 @@ export default function Home() {
               ))}
             </div>
           </div>
+          
+          <style>{`
+            @media (max-width: 768px) {
+              div[style*="display: flex"][style*="gap: 24px"] {
+                flex-direction: column !important;
+              }
+              div[style*="flex: 0 0 120px"] {
+                flex: 0 0 80px !important;
+                padding-top: 10px !important;
+              }
+              div[style*="flex: 0 0 120px"] img {
+                max-width: 80px !important;
+              }
+            }
+          `}</style>
         </div>
       </div>
       
