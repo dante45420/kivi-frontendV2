@@ -264,7 +264,7 @@ export default function Home() {
               marginBottom: '16px',
               borderRadius: '12px',
               overflow: 'hidden',
-              backgroundImage: 'url(https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80)',
+              backgroundImage: 'url(https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80)',
               backgroundSize: 'cover',
               backgroundPosition: 'center'
             }} />
@@ -317,13 +317,13 @@ export default function Home() {
                   <span key={i} style={{ fontSize: '24px' }}>⭐</span>
                 ))}
               </div>
-              <p style={{
+          <p style={{
                 color: 'var(--kivi-text)',
-                fontSize: '18px',
+            fontSize: '18px',
                 lineHeight: 1.8,
                 marginBottom: '20px',
                 fontStyle: 'italic',
-                maxWidth: '600px',
+            maxWidth: '600px',
                 margin: '0 auto 20px'
               }}>
                 "{testimonials[testimonialIndex].text}"
@@ -345,7 +345,7 @@ export default function Home() {
               marginTop: '20px'
             }}>
               {testimonials.map((_, idx) => (
-                <button
+            <button
                   key={idx}
                   onClick={() => setTestimonialIndex(idx)}
                   style={{
@@ -364,30 +364,17 @@ export default function Home() {
         </div>
       </div>
       
-      {/* Video separador */}
+      {/* Foto separadora */}
       <div style={{
         width: '100%',
         height: '500px',
         overflow: 'hidden',
         position: 'relative',
         background: '#000',
-        backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1920&q=80)',
+        backgroundImage: 'url(https://images.unsplash.com/photo-1573246123716-6b1782bfc499?w=1920&q=80)',
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}>
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
-        >
-          <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4" type="video/mp4" />
-        </video>
         <div style={{
           position: 'absolute',
           top: 0,
@@ -466,19 +453,19 @@ export default function Home() {
               >
                 <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--kivi-text-dark)', margin: 0 }}>
                   {faq.question}
-                </h3>
+            </h3>
                 <span style={{ fontSize: '24px', color: 'var(--kivi-green)', transition: 'transform 0.3s', transform: expandedFAQ === idx ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                   ▼
                 </span>
               </button>
               {expandedFAQ === idx && (
                 <div style={{ padding: '0 20px 20px 20px' }}>
-                  <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
                     {faq.answer}
-                  </p>
-                </div>
+            </p>
+          </div>
               )}
-            </div>
+          </div>
           ))}
         </div>
       </div>
@@ -508,60 +495,68 @@ export default function Home() {
               position: 'relative',
               overflow: 'hidden',
               width: '100%',
-              maxWidth: '1200px',
-              margin: '0 auto'
+              maxWidth: '1400px',
+              margin: '0 auto',
+              display: 'flex',
+              justifyContent: 'center'
             }}>
-              <div 
-                className="star-products-carousel"
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  transition: 'transform 0.5s ease',
-                  width: `${Math.ceil(starProducts.length / itemsPerView) * 100}%`,
-                  transform: `translateX(-${starProductIndex * (100 / itemsPerView)}%)`
-                }}
-              >
-                {starProducts.map((product, idx) => (
-                  <Link
-                    key={product.id}
-                    to="/catalogo"
-                    className="star-product-item"
-                    style={{
-                      flex: `0 0 calc(${100 / itemsPerView}% - ${(itemsPerView - 1) * 12 / itemsPerView}px)`,
-                      textDecoration: 'none',
-                      minWidth: 0
-                    }}
-                  >
-                    <div className="catalog-product-card" style={{ padding: '12px', height: '100%' }}>
-                      {product.photo_url && (
-                        <div className="catalog-image-container">
-                          <img
-                            src={getImageUrl(product.photo_url)}
-                            alt={product.name}
-                          />
-                        </div>
-                      )}
-                      <div className="catalog-product-info">
-                        <div className="catalog-product-name">{product.name}</div>
-                        {product.sale_price && (
-                          <div className="catalog-price">
-                            <div style={{ 
-                              fontSize: '16px', 
-                              fontWeight: 800, 
-                              color: 'var(--kivi-green)',
-                              textAlign: 'center'
-                            }}>
-                              ${product.sale_price.toLocaleString('es-CL')}
-                              <span className="catalog-price-unit-small">
-                                / {product.unit === 'kg' ? 'kg' : 'unidad'}
-                              </span>
-                            </div>
+              <div style={{
+                width: '100%',
+                overflow: 'hidden',
+                position: 'relative'
+              }}>
+                <div 
+                  className="star-products-carousel"
+                  style={{
+                    display: 'flex',
+                    gap: '12px',
+                    transition: 'transform 0.5s ease',
+                    width: `${Math.ceil(starProducts.length / itemsPerView) * 100}%`,
+                    transform: `translateX(-${starProductIndex * (100 / itemsPerView)}%)`
+                  }}
+                >
+                  {starProducts.map((product, idx) => (
+                    <Link
+                      key={product.id}
+                      to="/catalogo"
+                      className="star-product-item"
+                      style={{
+                        flex: `0 0 calc(${100 / itemsPerView}% - ${(itemsPerView - 1) * 12 / itemsPerView}px)`,
+                        textDecoration: 'none',
+                        minWidth: 0
+                      }}
+                    >
+                      <div className="catalog-product-card" style={{ padding: '12px', height: '100%' }}>
+                        {product.photo_url && (
+                          <div className="catalog-image-container">
+                            <img
+                              src={getImageUrl(product.photo_url)}
+                              alt={product.name}
+                            />
                           </div>
                         )}
+                        <div className="catalog-product-info">
+                          <div className="catalog-product-name">{product.name}</div>
+                          {product.sale_price && (
+                            <div className="catalog-price">
+                              <div style={{ 
+                                fontSize: '16px', 
+                                fontWeight: 800, 
+                                color: 'var(--kivi-green)',
+                                textAlign: 'center'
+                              }}>
+                                ${product.sale_price.toLocaleString('es-CL')}
+                                <span className="catalog-price-unit-small">
+                                  / {product.unit === 'kg' ? 'kg' : 'unidad'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -572,9 +567,9 @@ export default function Home() {
           
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
             <Link to="/catalogo" className="button button-lg" style={{ background: '#000', color: '#fff', fontWeight: 800 }}>
-              <span>🛒</span>
+            <span>🛒</span>
               <span>Ver todos los productos</span>
-            </Link>
+          </Link>
           </div>
         </div>
       </div>
