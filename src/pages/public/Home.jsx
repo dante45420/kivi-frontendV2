@@ -39,15 +39,21 @@ export default function Home() {
   const [starProducts, setStarProducts] = useState([])
   const [loadingStars, setLoadingStars] = useState(true)
   const [starProductIndex, setStarProductIndex] = useState(0)
-  const [isMobile, setIsMobile] = useState(false)
+  const [itemsPerView, setItemsPerView] = useState(5)
   
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
+    const updateItemsPerView = () => {
+      if (window.innerWidth <= 768) {
+        setItemsPerView(3)
+      } else if (window.innerWidth <= 1024) {
+        setItemsPerView(4)
+      } else {
+        setItemsPerView(5)
+      }
     }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+    updateItemsPerView()
+    window.addEventListener('resize', updateItemsPerView)
+    return () => window.removeEventListener('resize', updateItemsPerView)
   }, [])
   
   // Cargar productos estrella (más pedidos)
@@ -66,7 +72,6 @@ export default function Home() {
   // Carrusel auto-deslizante de productos estrella
   useEffect(() => {
     if (starProducts.length === 0) return
-    const itemsPerView = isMobile ? 1 : 3
     const interval = setInterval(() => {
       setStarProductIndex((prev) => {
         const maxIndex = Math.max(0, starProducts.length - itemsPerView)
@@ -74,7 +79,7 @@ export default function Home() {
       })
     }, 3000)
     return () => clearInterval(interval)
-  }, [starProducts.length, isMobile])
+  }, [starProducts.length, itemsPerView])
   
   const loadStarProducts = async () => {
     try {
@@ -381,7 +386,7 @@ export default function Home() {
             objectFit: 'cover'
           }}
         >
-          <source src="https://videos.pexels.com/video-files/3195394/3195394-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4" type="video/mp4" />
         </video>
         <div style={{
           position: 'absolute',
@@ -510,14 +515,10 @@ export default function Home() {
                 className="star-products-carousel"
                 style={{
                   display: 'flex',
-                  gap: '20px',
+                  gap: '12px',
                   transition: 'transform 0.5s ease',
-                  width: isMobile 
-                    ? `${starProducts.length * 100}%` 
-                    : `${Math.ceil(starProducts.length / 3) * 100}%`,
-                  transform: `translateX(-${isMobile 
-                    ? starProductIndex * 100 
-                    : starProductIndex * (100 / 3)}%)`
+                  width: `${Math.ceil(starProducts.length / itemsPerView) * 100}%`,
+                  transform: `translateX(-${starProductIndex * (100 / itemsPerView)}%)`
                 }}
               >
                 {starProducts.map((product, idx) => (
@@ -526,41 +527,36 @@ export default function Home() {
                     to="/catalogo"
                     className="star-product-item"
                     style={{
-                      flex: `0 0 ${isMobile ? '100%' : 'calc(33.333% - 14px)'}`,
+                      flex: `0 0 calc(${100 / itemsPerView}% - ${(itemsPerView - 1) * 12 / itemsPerView}px)`,
                       textDecoration: 'none',
                       minWidth: 0
                     }}
                   >
-                    <div className="card" style={{ padding: 0, overflow: 'hidden', height: '100%' }}>
+                    <div className="catalog-product-card" style={{ padding: '12px', height: '100%' }}>
                       {product.photo_url && (
-                        <div style={{
-                          width: '100%',
-                          paddingTop: '75%',
-                          position: 'relative',
-                          background: '#f5f5f5'
-                        }}>
+                        <div className="catalog-image-container">
                           <img
                             src={getImageUrl(product.photo_url)}
                             alt={product.name}
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover'
-                            }}
                           />
                         </div>
                       )}
-                      <div style={{ padding: '16px' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px', color: 'var(--kivi-text-dark)' }}>
-                          {product.name}
-                        </h3>
+                      <div className="catalog-product-info">
+                        <div className="catalog-product-name">{product.name}</div>
                         {product.sale_price && (
-                          <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--kivi-green)', margin: 0 }}>
-                            ${product.sale_price.toLocaleString('es-CL')} / {product.unit}
-                          </p>
+                          <div className="catalog-price">
+                            <div style={{ 
+                              fontSize: '16px', 
+                              fontWeight: 800, 
+                              color: 'var(--kivi-green)',
+                              textAlign: 'center'
+                            }}>
+                              ${product.sale_price.toLocaleString('es-CL')}
+                              <span className="catalog-price-unit-small">
+                                / {product.unit === 'kg' ? 'kg' : 'unidad'}
+                              </span>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -585,6 +581,94 @@ export default function Home() {
       
       {/* Footer */}
       <Footer />
+      
+      <style>{`
+        .catalog-product-card {
+          background: #fff;
+          border: 1px solid #eee;
+          border-radius: var(--radius-sm);
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          min-width: 0;
+        }
+        
+        .catalog-image-container {
+          width: 100%;
+          padding-top: 70%;
+          position: relative;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          background: #ffffff;
+        }
+        
+        .catalog-image-container img {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
+        }
+        
+        .catalog-product-info {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        
+        .catalog-product-name {
+          font-size: 14px;
+          font-weight: 700;
+          text-align: center;
+          line-height: 1.2;
+          min-height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .catalog-price {
+          font-size: 16px;
+          font-weight: 800;
+          color: var(--kivi-green);
+          text-align: center;
+          height: auto;
+          min-height: 36px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          max-width: 100%;
+          box-sizing: border-box;
+          overflow: hidden;
+        }
+        
+        .catalog-price-unit-small {
+          font-size: 11px;
+          font-weight: 400;
+          color: #666;
+          margin-left: 4px;
+        }
+        
+        @media (max-width: 768px) {
+          .catalog-image-container {
+            padding-top: 50% !important;
+          }
+          .catalog-product-name {
+            font-size: 12px !important;
+            min-height: 32px !important;
+          }
+          .catalog-price {
+            font-size: 14px !important;
+            height: 28px !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
