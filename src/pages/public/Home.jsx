@@ -103,29 +103,6 @@ export default function Home() {
     }
   }
   
-  const testimonials = [
-    {
-      name: 'Cora Giugliano',
-      text: 'Se nota el tremendo trabajo que hay detrás, está todo exquisito y en perfecta calidad!! Se pasaron!!',
-      rating: 5
-    },
-    {
-      name: 'Viviana Werth',
-      text: 'Los encuentro realmente espectaculares, productos, presentación, calidad, rapidez y lo eficiente del despacho',
-      rating: 5
-    },
-    {
-      name: 'Barbara Valdés',
-      text: 'Hola!! Quería escribirles porque ayer recibí mi primera compra con ustedes y estoy feliz. SE PASARON!!! Dan ganas de comer frutas y verduras, están todos deliciosos!!',
-      rating: 5
-    },
-    {
-      name: 'Dante Parodi',
-      text: 'Todo fantástico, tuve problemas con el pago y al día siguiente se comunicaron conmigo y me dieron opciones para solucionarlo en el momento.',
-      rating: 5
-    }
-  ]
-  
   return (
     <div style={{ minHeight: '100vh', background: 'var(--kivi-cream)' }}>
       <PublicNavbar />
