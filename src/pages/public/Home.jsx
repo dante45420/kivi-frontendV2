@@ -1,5 +1,5 @@
 /**
- * Página Pública: Home / Landing
+* pagina * Página Pública: Home / Landing
  */
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
