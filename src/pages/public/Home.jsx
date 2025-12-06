@@ -74,7 +74,7 @@ export default function Home() {
     if (starProducts.length === 0) return
     const interval = setInterval(() => {
       setStarProductIndex((prev) => {
-        const maxIndex = Math.max(0, starProducts.length - itemsPerView)
+        const maxIndex = Math.max(0, Math.ceil(starProducts.length / itemsPerView) - 1)
         return prev >= maxIndex ? 0 : prev + 1
       })
     }, 3000)
@@ -496,67 +496,58 @@ export default function Home() {
               overflow: 'hidden',
               width: '100%',
               maxWidth: '1400px',
-              margin: '0 auto',
-              display: 'flex',
-              justifyContent: 'center'
+              margin: '0 auto'
             }}>
-              <div style={{
-                width: '100%',
-                overflow: 'hidden',
-                position: 'relative'
-              }}>
-                <div 
-                  className="star-products-carousel"
-                  style={{
-                    display: 'flex',
-                    gap: '12px',
-                    transition: 'transform 0.5s ease',
-                    width: `${Math.ceil(starProducts.length / itemsPerView) * 100}%`,
-                    transform: `translateX(-${starProductIndex * (100 / itemsPerView)}%)`
-                  }}
-                >
-                  {starProducts.map((product, idx) => (
-                    <Link
-                      key={product.id}
-                      to="/catalogo"
-                      className="star-product-item"
-                      style={{
-                        flex: `0 0 calc(${100 / itemsPerView}% - ${(itemsPerView - 1) * 12 / itemsPerView}px)`,
-                        textDecoration: 'none',
-                        minWidth: 0
-                      }}
-                    >
-                      <div className="catalog-product-card" style={{ padding: '12px', height: '100%' }}>
-                        {product.photo_url && (
-                          <div className="catalog-image-container">
-                            <img
-                              src={getImageUrl(product.photo_url)}
-                              alt={product.name}
-                            />
+              <div 
+                className="star-products-carousel"
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  transition: 'transform 0.5s ease',
+                  transform: `translateX(-${starProductIndex * (100 / itemsPerView)}%)`
+                }}
+              >
+                {starProducts.map((product, idx) => (
+                  <Link
+                    key={product.id}
+                    to="/catalogo"
+                    className="star-product-item"
+                    style={{
+                      flex: `0 0 calc(${100 / itemsPerView}% - ${12 * (itemsPerView - 1) / itemsPerView}px)`,
+                      textDecoration: 'none',
+                      minWidth: 0
+                    }}
+                  >
+                    <div className="catalog-product-card" style={{ padding: '12px', height: '100%' }}>
+                      {product.photo_url && (
+                        <div className="catalog-image-container">
+                          <img
+                            src={getImageUrl(product.photo_url)}
+                            alt={product.name}
+                          />
+                        </div>
+                      )}
+                      <div className="catalog-product-info">
+                        <div className="catalog-product-name">{product.name}</div>
+                        {product.sale_price && (
+                          <div className="catalog-price">
+                            <div style={{ 
+                              fontSize: '16px', 
+                              fontWeight: 800, 
+                              color: 'var(--kivi-green)',
+                              textAlign: 'center'
+                            }}>
+                              ${product.sale_price.toLocaleString('es-CL')}
+                              <span className="catalog-price-unit-small">
+                                / {product.unit === 'kg' ? 'kg' : 'unidad'}
+                              </span>
+                            </div>
                           </div>
                         )}
-                        <div className="catalog-product-info">
-                          <div className="catalog-product-name">{product.name}</div>
-                          {product.sale_price && (
-                            <div className="catalog-price">
-                              <div style={{ 
-                                fontSize: '16px', 
-                                fontWeight: 800, 
-                                color: 'var(--kivi-green)',
-                                textAlign: 'center'
-                              }}>
-                                ${product.sale_price.toLocaleString('es-CL')}
-                                <span className="catalog-price-unit-small">
-                                  / {product.unit === 'kg' ? 'kg' : 'unidad'}
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
                       </div>
-                    </Link>
-                  ))}
-                </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           ) : (

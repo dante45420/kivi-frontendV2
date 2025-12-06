@@ -4,7 +4,6 @@ import { getToken, verifyToken, clearToken } from './api/auth'
 
 // Layout
 import Navbar from './components/Navbar'
-import KiviHelper from './components/KiviHelper'
 
 // Páginas admin
 import Dashboard from './pages/Dashboard'
@@ -119,9 +118,6 @@ export default function App() {
           <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />} />
         </Routes>
       </main>
-      
-      {/* Kivi Helper - solo para usuarios logueados */}
-      {isAuthenticated && <KiviHelper />}
     </div>
   )
 }
