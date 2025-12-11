@@ -4,6 +4,7 @@
  */
 import { useState, useEffect } from 'react'
 import Loader from '../components/Loader'
+import { createWeeklyCost } from '../api/weeklyCosts'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
@@ -23,9 +24,20 @@ export default function KPIs() {
   const [editingCost, setEditingCost] = useState(null) // { itemId, orderIdx, itemIdx, currentCost }
   const [newCostValue, setNewCostValue] = useState('')
   const [savingCost, setSavingCost] = useState(false)
+  const [utilityByWeek, setUtilityByWeek] = useState(null)
+  const [loadingUtilityByWeek, setLoadingUtilityByWeek] = useState(false)
+  const [showCreateCostModal, setShowCreateCostModal] = useState(false)
+  const [newCostForm, setNewCostForm] = useState({
+    week_start: '',
+    category: '',
+    amount: '',
+    description: ''
+  })
+  const [creatingCost, setCreatingCost] = useState(false)
   
   useEffect(() => {
     loadKPIs()
+    loadUtilityByWeek()
   }, [])
   
   const loadKPIs = async () => {
@@ -56,6 +68,70 @@ export default function KPIs() {
   
   const formatPercent = (value) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+  }
+  
+  const getWeekStart = (date) => {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Ajustar para que lunes sea 0
+    return new Date(d.setDate(diff))
+  }
+  
+  const formatWeekRange = (weekStart) => {
+    const start = new Date(weekStart)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 6)
+    return `${start.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  }
+  
+  const loadUtilityByWeek = async () => {
+    setLoadingUtilityByWeek(true)
+    try {
+      const response = await fetch(`${API_URL}/api/kpis/utility-by-week`)
+      if (!response.ok) {
+        throw new Error('Error cargando utilidad por semana')
+      }
+      const data = await response.json()
+      setUtilityByWeek(data)
+    } catch (error) {
+      console.error('Error cargando utilidad por semana:', error)
+      alert('Error cargando utilidad por semana: ' + error.message)
+    } finally {
+      setLoadingUtilityByWeek(false)
+    }
+  }
+  
+  const handleCreateCost = async () => {
+    if (!newCostForm.week_start || !newCostForm.category || !newCostForm.amount) {
+      alert('⚠️ Completa todos los campos requeridos')
+      return
+    }
+    
+    const amount = parseInt(newCostForm.amount)
+    if (isNaN(amount) || amount <= 0) {
+      alert('⚠️ El monto debe ser un número positivo')
+      return
+    }
+    
+    setCreatingCost(true)
+    try {
+      await createWeeklyCost({
+        week_start: newCostForm.week_start,
+        category: newCostForm.category,
+        amount: amount,
+        description: newCostForm.description || null
+      })
+      
+      alert('✅ Costo creado exitosamente')
+      setShowCreateCostModal(false)
+      setNewCostForm({ week_start: '', category: '', amount: '', description: '' })
+      await loadUtilityByWeek()
+    } catch (error) {
+      console.error('Error creando costo:', error)
+      alert('Error: ' + error.message)
+    } finally {
+      setCreatingCost(false)
+    }
   }
   
   const loadUtilityDetails = async () => {
@@ -281,12 +357,276 @@ export default function KPIs() {
         borderRadius: 'var(--radius)',
         fontSize: '14px',
         color: '#666',
-        lineHeight: 1.6
+        lineHeight: 1.6,
+        marginBottom: '32px'
       }}>
         <strong>📝 Nota:</strong> Los KPIs se calculan usando los datos registrados en el sistema. 
         La utilidad promedio solo considera pedidos que tienen el costo registrado en los items 
         (pedidos registrados después de implementar esta funcionalidad).
       </div>
+      
+      {/* Utilidad por Semana */}
+      <div style={{ marginTop: '32px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>
+            📅 Utilidad por Semana
+          </h2>
+          <button
+            onClick={() => {
+              // Por defecto, usar la última semana registrada o la semana actual
+              const defaultWeek = utilityByWeek?.last_week?.week_start || 
+                new Date().toISOString().split('T')[0]
+              setNewCostForm({
+                week_start: defaultWeek,
+                category: '',
+                amount: '',
+                description: ''
+              })
+              setShowCreateCostModal(true)
+            }}
+            className="button"
+          >
+            ➕ Crear Costo
+          </button>
+        </div>
+        
+        {loadingUtilityByWeek ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Loader />
+          </div>
+        ) : utilityByWeek && utilityByWeek.weeks && utilityByWeek.weeks.length > 0 ? (
+          <div style={{ 
+            background: '#fff', 
+            borderRadius: '12px', 
+            border: '1px solid #e1e7e1',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '150px 1fr 1fr 1fr 1fr 1fr',
+              gap: '12px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderBottom: '2px solid #e1e7e1',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#666',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Semana</div>
+              <div style={{ textAlign: 'right' }}>Utilidad Pedidos</div>
+              <div style={{ textAlign: 'right' }}>Costos</div>
+              <div style={{ textAlign: 'right' }}>Resultado Final</div>
+              <div style={{ textAlign: 'center' }}>Pedidos</div>
+              <div style={{ textAlign: 'center' }}>Detalles</div>
+            </div>
+            
+            {utilityByWeek.weeks.map((week, idx) => {
+              const isLastWeek = idx === utilityByWeek.weeks.length - 1
+              const weekStartDate = new Date(week.week_start)
+              const weekEndDate = new Date(weekStartDate)
+              weekEndDate.setDate(weekEndDate.getDate() + 6)
+              
+              return (
+                <div 
+                  key={idx}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '150px 1fr 1fr 1fr 1fr 1fr',
+                    gap: '12px',
+                    padding: '16px 20px',
+                    borderBottom: idx < utilityByWeek.weeks.length - 1 ? '1px solid #f0f0f0' : 'none',
+                    background: isLastWeek ? '#f0f7ff' : '#fff',
+                    alignItems: 'center'
+                  }}
+                >
+                  <div style={{ fontSize: '14px', fontWeight: 600 }}>
+                    {formatWeekRange(week.week_start)}
+                    {isLastWeek && <span style={{ fontSize: '11px', color: '#4caf50', marginLeft: '6px' }}>(Última)</span>}
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '16px', fontWeight: 700, color: 'var(--kivi-green)', fontFamily: 'monospace' }}>
+                    {formatCurrency(week.orders_utility)}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'monospace', color: '#f44336' }}>
+                      {formatCurrency(week.weekly_costs_total)}
+                    </div>
+                    {Object.keys(week.weekly_costs).length > 0 && (
+                      <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+                        {Object.entries(week.weekly_costs).map(([cat, data]) => (
+                          <div key={cat}>
+                            {cat}: {formatCurrency(data.amount)} ({data.count}x)
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: '18px', fontWeight: 800, fontFamily: 'monospace', color: week.final_result >= 0 ? 'var(--kivi-green)' : '#f44336' }}>
+                    {formatCurrency(week.final_result)}
+                  </div>
+                  <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                    {week.orders_count}
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <button
+                      onClick={() => {
+                        setNewCostForm({
+                          week_start: week.week_start,
+                          category: '',
+                          amount: '',
+                          description: ''
+                        })
+                        setShowCreateCostModal(true)
+                      }}
+                      className="button button-sm"
+                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                    >
+                      ➕ Costo
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            No hay datos de utilidad por semana
+          </div>
+        )}
+      </div>
+      
+      {/* Modal Crear Costo */}
+      {showCreateCostModal && (
+        <>
+          <div 
+            onClick={() => setShowCreateCostModal(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 999
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '95%',
+            zIndex: 1000,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 700 }}>
+              ➕ Crear Costo Semanal
+            </h2>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Semana (Lunes) *
+                </label>
+                <input
+                  type="date"
+                  className="input"
+                  value={newCostForm.week_start}
+                  onChange={(e) => {
+                    const date = new Date(e.target.value)
+                    // Ajustar al lunes de esa semana
+                    const day = date.getDay()
+                    const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+                    const monday = new Date(date.setDate(diff))
+                    setNewCostForm({ ...newCostForm, week_start: monday.toISOString().split('T')[0] })
+                  }}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Categoría *
+                </label>
+                <select
+                  className="input"
+                  value={newCostForm.category}
+                  onChange={(e) => setNewCostForm({ ...newCostForm, category: e.target.value })}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Envíos">Envíos</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Afiliados">Afiliados</option>
+                  <option value="Cajas Envíos">Cajas Envíos</option>
+                  <option value="Cajas Fruta">Cajas Fruta</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Monto *
+                </label>
+                <input
+                  type="number"
+                  className="input"
+                  value={newCostForm.amount}
+                  onChange={(e) => setNewCostForm({ ...newCostForm, amount: e.target.value })}
+                  placeholder="15000"
+                  min="1"
+                  step="1"
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                />
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Descripción (opcional)
+                </label>
+                <textarea
+                  className="input"
+                  value={newCostForm.description}
+                  onChange={(e) => setNewCostForm({ ...newCostForm, description: e.target.value })}
+                  placeholder="Descripción del costo..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', marginTop: '24px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowCreateCostModal(false)
+                  setNewCostForm({ week_start: '', category: '', amount: '', description: '' })
+                }}
+                className="button ghost"
+                style={{ minWidth: '100px' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateCost}
+                className="button"
+                style={{ minWidth: '120px' }}
+                disabled={creatingCost}
+              >
+                {creatingCost ? 'Guardando...' : '💾 Guardar'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
       
       {/* Modal de Detalles de Utilidad */}
       {showUtilityDetails && (

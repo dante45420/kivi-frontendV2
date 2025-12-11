@@ -35,7 +35,7 @@ export default function Accounting() {
   
   // Modal Edit Item
   const [editingItem, setEditingItem] = useState(null)
-  const [editForm, setEditForm] = useState({ qty: 0, unit_price: 0 })
+  const [editForm, setEditForm] = useState({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null })
   
   // Modal Add Item
   const [addingItemTo, setAddingItemTo] = useState(null)
@@ -586,10 +586,20 @@ export default function Accounting() {
     try {
       // Usar item_id si existe, sino usar id
       const itemId = editingItem.item_id || editingItem.id
-      await updateOrderItem(itemId, {
+      const updateData = {
         qty: parseFloat(editForm.qty),
         unit_price: parseFloat(editForm.unit_price)
-      })
+      }
+      
+      // Solo incluir conversión si se especificó
+      if (editForm.charged_qty !== null && editForm.charged_qty !== undefined) {
+        updateData.charged_qty = parseFloat(editForm.charged_qty)
+      }
+      if (editForm.charged_unit !== null && editForm.charged_unit !== undefined) {
+        updateData.charged_unit = editForm.charged_unit
+      }
+      
+      await updateOrderItem(itemId, updateData)
       
       // Recargar datos
       await loadAccountingData()
@@ -602,7 +612,7 @@ export default function Accounting() {
       
       // Cerrar modal
       setEditingItem(null)
-      setEditForm({ qty: 0, unit_price: 0 })
+      setEditForm({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null })
       
       alert('✅ Item actualizado')
     } catch (error) {
@@ -1169,8 +1179,10 @@ export default function Accounting() {
                                           const qtyToEdit = hasRealConversion ? item.charged_qty : item.qty
                                           
                                           setEditForm({
-                                            qty: qtyToEdit,
-                                            unit_price: item.unit_price || 0
+                                            qty: item.qty,
+                                            unit_price: item.unit_price || 0,
+                                            charged_qty: item.charged_qty || null,
+                                            charged_unit: item.charged_unit || null
                                           })
                                         }}
                                         style={{ padding:'4px 8px', fontSize:12 }}
@@ -2102,7 +2114,7 @@ export default function Accounting() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                    Cantidad
+                    Cantidad ({editingItem.unit || 'kg'})
                   </label>
                   <input
                     type="number"
@@ -2131,6 +2143,67 @@ export default function Accounting() {
                 </div>
               </div>
               
+              {/* Campos de conversión (solo si hay conversión o si el producto tiene avg_units_per_kg) */}
+              {(() => {
+                const hasConversion = editingItem.charged_unit && editingItem.unit !== editingItem.charged_unit
+                const product = editingItem.product || products[editingItem.product_id]
+                const canHaveConversion = product && (
+                  (editingItem.unit === 'unit' && product.unit === 'kg') ||
+                  (editingItem.unit === 'kg' && product.unit === 'unit')
+                )
+                
+                if (hasConversion || canHaveConversion) {
+                  return (
+                    <div style={{ 
+                      padding: '12px', 
+                      background: '#fff3e0', 
+                      borderRadius: '8px',
+                      border: '1px solid #ff9800'
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#ff6b00' }}>
+                        ⚠️ Conversión de Unidades
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div>
+                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                            Cantidad a Cobrar
+                          </label>
+                          <input
+                            type="number"
+                            className="input"
+                            value={editForm.charged_qty || ''}
+                            onChange={(e) => setEditForm(v => ({ ...v, charged_qty: e.target.value ? parseFloat(e.target.value) : null }))}
+                            min="0.01"
+                            step="0.01"
+                            style={{ width: '100%', padding: '8px', fontSize: '13px' }}
+                            placeholder="Auto"
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                            Unidad de Cobro
+                          </label>
+                          <select
+                            className="input"
+                            value={editForm.charged_unit || ''}
+                            onChange={(e) => setEditForm(v => ({ ...v, charged_unit: e.target.value || null }))}
+                            style={{ width: '100%', padding: '8px', fontSize: '13px' }}
+                          >
+                            <option value="">Sin conversión</option>
+                            <option value="kg">kg</option>
+                            <option value="unit">unid</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#666', marginTop: '6px' }}>
+                        {editingItem.unit} → {editForm.charged_unit || editingItem.unit}
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              })()}
+              
               <div style={{ 
                 padding: '12px', 
                 background: '#f5f5f5', 
@@ -2141,7 +2214,7 @@ export default function Accounting() {
               }}>
                 <span style={{ fontSize: '14px', fontWeight: 600 }}>Total:</span>
                 <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--kivi-green)' }}>
-                  ${Math.round(editForm.qty * editForm.unit_price).toLocaleString('es-CL')}
+                  ${Math.round((editForm.charged_qty || editForm.qty) * editForm.unit_price).toLocaleString('es-CL')}
                 </span>
               </div>
             </div>
@@ -2150,7 +2223,7 @@ export default function Accounting() {
               <button
                 onClick={() => {
                   setEditingItem(null)
-                  setEditForm({ qty: 0, unit_price: 0 })
+                  setEditForm({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null })
                 }}
                 className="button ghost"
                 style={{ minWidth: '100px' }}
@@ -2468,11 +2541,11 @@ export default function Accounting() {
                                 className="button button-sm"
                                 onClick={() => {
                                   setEditingItem(item)
-                                  const hasRealConversion = item.charged_unit && item.unit !== item.charged_unit && item.charged_qty !== item.qty
-                                  const qtyToEdit = hasRealConversion ? item.charged_qty : item.qty
                                   setEditForm({
-                                    qty: qtyToEdit,
-                                    unit_price: item.unit_price || 0
+                                    qty: item.qty,
+                                    unit_price: item.unit_price || 0,
+                                    charged_qty: item.charged_qty || null,
+                                    charged_unit: item.charged_unit || null
                                   })
                                 }}
                                 style={{ padding: '8px 16px', fontSize: '14px' }}

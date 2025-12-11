@@ -137,11 +137,32 @@ export default function Shopping() {
       if (!updated[key]) updated[key] = {}
       updated[key][field] = value
       
+      const needsConversion = item.unit !== item.product_default_unit
+      const hasConversion = updated[key].conversion_qty && updated[key].conversion_unit
+      
       // Auto-calcular el otro campo de precio
       if (field === 'price_total' && item && value) {
-        updated[key].price_per_unit = (parseFloat(value) / item.total_qty).toFixed(0)
-      } else if (field === 'price_per_unit' && item && value) {
+        const priceTotal = parseFloat(value)
+        if (needsConversion && hasConversion) {
+          // Si hay conversión, calcular precio por unidad de cobro usando la conversión
+          const conversionQty = parseFloat(updated[key].conversion_qty)
+          updated[key].price_per_charged_unit = (priceTotal / conversionQty).toFixed(0)
+          // Precio por unidad de compra (en la unidad que se compró)
+          updated[key].price_per_unit = (priceTotal / item.total_qty).toFixed(0)
+        } else {
+          // Sin conversión, calcular normalmente
+          updated[key].price_per_unit = (priceTotal / item.total_qty).toFixed(0)
+        }
+      } else if (field === 'price_per_unit' && item && value && !needsConversion) {
+        // Solo permitir editar precio por unidad si NO hay conversión
         updated[key].price_total = (parseFloat(value) * item.total_qty).toFixed(0)
+      } else if (field === 'price_per_charged_unit' && item && value && needsConversion && hasConversion) {
+        // Si se edita el precio por unidad de cobro, calcular el total usando la conversión
+        const pricePerChargedUnit = parseFloat(value)
+        const conversionQty = parseFloat(updated[key].conversion_qty)
+        updated[key].price_total = (pricePerChargedUnit * conversionQty).toFixed(0)
+        // También actualizar precio por unidad de compra
+        updated[key].price_per_unit = (parseFloat(updated[key].price_total) / item.total_qty).toFixed(0)
       }
       
       // Si se ingresa conversion_qty y no hay conversion_unit válido, usar el default del producto
@@ -149,6 +170,19 @@ export default function Shopping() {
         if (!updated[key].conversion_unit || updated[key].conversion_unit === 'undefined') {
           updated[key].conversion_unit = item.product_default_unit
         }
+        // Recalcular precios si ya hay price_total
+        if (updated[key].price_total) {
+          const priceTotal = parseFloat(updated[key].price_total)
+          const conversionQty = parseFloat(value)
+          updated[key].price_per_charged_unit = (priceTotal / conversionQty).toFixed(0)
+        }
+      }
+      
+      // Si se cambia conversion_unit, recalcular si hay datos
+      if (field === 'conversion_unit' && updated[key].conversion_qty && updated[key].price_total) {
+        const priceTotal = parseFloat(updated[key].price_total)
+        const conversionQty = parseFloat(updated[key].conversion_qty)
+        updated[key].price_per_charged_unit = (priceTotal / conversionQty).toFixed(0)
       }
       
       return updated
@@ -690,19 +724,21 @@ export default function Shopping() {
                         />
                       </div>
                       
-                      <div style={{ flex: 1, minWidth: '120px' }}>
-                        <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '4px' }}>
-                          Por {item.unit} $
-                        </label>
-                        <input
-                          type="number"
-                          className="input"
-                          value={data.price_per_unit || ''}
-                          onChange={e => handlePriceChange(key, 'price_per_unit', e.target.value)}
-                          placeholder="1500"
-                          style={{ width: '100%', padding: '8px', fontSize: '14px' }}
-                        />
-                      </div>
+                      {!needsConversion && (
+                        <div style={{ flex: 1, minWidth: '120px' }}>
+                          <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '4px' }}>
+                            Por {item.unit} $
+                          </label>
+                          <input
+                            type="number"
+                            className="input"
+                            value={data.price_per_unit || ''}
+                            onChange={e => handlePriceChange(key, 'price_per_unit', e.target.value)}
+                            placeholder="1500"
+                            style={{ width: '100%', padding: '8px', fontSize: '14px' }}
+                          />
+                        </div>
+                      )}
                       
                       {needsConversion && (
                         <>
