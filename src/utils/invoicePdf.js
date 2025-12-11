@@ -1,10 +1,33 @@
 /**
  * Generador de PDF para Nota de Cobro
- * Genera un PDF bonito y ordenado con la información del cliente y sus items pendientes
+ * Genera un PDF bonito y ordenado similar al catálogo
  */
 import { jsPDF } from 'jspdf'
 
-export function generateInvoicePDF(invoiceData) {
+// Función para cargar imagen como base64
+function loadImageAsBase64(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0)
+      try {
+        const base64 = canvas.toDataURL('image/png')
+        resolve({ base64, width: img.width, height: img.height })
+      } catch (e) {
+        reject(e)
+      }
+    }
+    img.onerror = reject
+    img.src = url
+  })
+}
+
+export async function generateInvoicePDF(invoiceData) {
   const doc = new jsPDF()
   
   const pageWidth = doc.internal.pageSize.width
@@ -12,107 +35,116 @@ export function generateInvoicePDF(invoiceData) {
   const margin = 20
   const contentWidth = pageWidth - (2 * margin)
   
-  let y = 25
+  let y = 20
   
   // ======== ENCABEZADO ========
-  // Título KIVI (sin emoji)
-  doc.setFontSize(28)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(76, 175, 80) // Verde Kivi
-  doc.text('KIVI', margin, y)
+  // Fondo crema como el catálogo
+  doc.setFillColor(255, 249, 240)
+  doc.rect(0, 0, pageWidth, 50, 'F')
   
-  y += 8
+  // Intentar cargar logo
+  try {
+    const logoUrl = '/Logo_kivi.png'
+    const logoData = await loadImageAsBase64(logoUrl)
+    
+    // Calcular dimensiones manteniendo proporción
+    const maxWidth = 50
+    const aspectRatio = logoData.width / logoData.height
+    const logoWidth = maxWidth
+    const logoHeight = maxWidth / aspectRatio
+    
+    // Logo a la izquierda
+    doc.addImage(logoData.base64, 'PNG', margin, 10, logoWidth, logoHeight)
+  } catch (e) {
+    // Si falla, usar texto como fallback
+    console.warn('No se pudo cargar el logo, usando texto:', e)
+    doc.setFontSize(28)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(76, 175, 80)
+    doc.text('KIVI', margin, 22)
+  }
+  
+  // Fecha de emisión (derecha)
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
   doc.setFont('helvetica', 'normal')
-  doc.text('Frutas y Verduras Frescas', margin, y)
-  
-  // Fecha de emisión (derecha)
-  doc.setFontSize(9)
-  doc.setTextColor(120, 120, 120)
-  const dateText = `Fecha: ${new Date().toLocaleDateString('es-CL')}`
+  const dateText = new Date().toLocaleDateString('es-CL', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  })
   const dateWidth = doc.getTextWidth(dateText)
   doc.text(dateText, pageWidth - margin - dateWidth, 25)
   
-  y += 15
+  y = 58
   
-  // Línea separadora
-  doc.setDrawColor(230, 230, 230)
-  doc.setLineWidth(0.5)
-  doc.line(margin, y, pageWidth - margin, y)
+  // ======== TÍTULO ========
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0) // Negro
+  const titleText = invoiceData.order_id ? `NOTA DE COBRO - PEDIDO #${invoiceData.order_id}` : 'NOTA DE COBRO'
+  doc.text(titleText, margin, y)
   
   y += 12
   
-  // ======== TÍTULO ========
-  doc.setFontSize(20)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(50, 50, 50)
-  const titleText = invoiceData.order_id ? `NOTA DE COBRO - PEDIDO #${invoiceData.order_id}` : 'NOTA DE COBRO'
-  const titleWidth = doc.getTextWidth(titleText)
-  doc.text(titleText, (pageWidth - titleWidth) / 2, y)
-  
-  y += 15
-  
   // ======== INFORMACIÓN DEL CLIENTE ========
-  doc.setFillColor(248, 249, 250)
-  doc.roundedRect(margin, y, contentWidth, 25, 3, 3, 'F')
-  
-  y += 8
-  
-  doc.setFontSize(11)
+  doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(70, 70, 70)
-  doc.text('Cliente:', margin + 5, y)
+  doc.setTextColor(0, 0, 0) // Negro
+  doc.text('Cliente:', margin, y)
   
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(12)
-  doc.setTextColor(40, 40, 40)
-  doc.text(invoiceData.customer.name, margin + 25, y)
-  
-  y += 7
-  
-  if (invoiceData.customer.phone) {
-    doc.setFontSize(10)
-    doc.setTextColor(100, 100, 100)
-    doc.text(`Tel: ${invoiceData.customer.phone}`, margin + 5, y)
-  }
+  doc.setFontSize(11)
+  doc.setTextColor(0, 0, 0) // Negro
+  doc.text(invoiceData.customer.name, margin + 20, y)
   
   y += 6
   
-  if (invoiceData.customer.address) {
+  if (invoiceData.customer.phone) {
     doc.setFontSize(10)
-    doc.setTextColor(100, 100, 100)
-    doc.text(`Dir: ${invoiceData.customer.address}`, margin + 5, y)
+    doc.setTextColor(0, 0, 0) // Negro
+    doc.text(`Tel: ${invoiceData.customer.phone}`, margin, y)
+    y += 5
   }
   
-  y += 18
+  if (invoiceData.customer.address) {
+    doc.setFontSize(10)
+    doc.setTextColor(0, 0, 0) // Negro
+    doc.text(`Dir: ${invoiceData.customer.address}`, margin, y)
+    y += 5
+  }
+  
+  y += 8
   
   // ======== DETALLE DE ITEMS ========
   doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(50, 50, 50)
+  doc.setTextColor(0, 0, 0) // Negro
   doc.text('DETALLE DE PRODUCTOS', margin, y)
-  
-  y += 8
-  
-  // Encabezado de tabla
-  doc.setFillColor(40, 40, 40)  // Negro
-  doc.roundedRect(margin, y, contentWidth, 9, 1, 1, 'F')
-  
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(255, 255, 255)
-  
-  // Centrar verticalmente el texto (y + altura/2 + offset para centrado)
-  doc.text('PRODUCTO', margin + 3, y + 6)
-  doc.text('CANTIDAD', pageWidth - margin - 70, y + 6)
-  doc.text('SUBTOTAL', pageWidth - margin - 30, y + 6)
   
   y += 10
   
-  // Items
+  // Encabezado de tabla - más simple, sin fondo negro
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0) // Negro
+  
+  doc.text('PRODUCTO', margin, y)
+  doc.text('CANTIDAD', pageWidth - margin - 70, y)
+  doc.text('SUBTOTAL', pageWidth - margin - 30, y)
+  
+  y += 2
+  // Línea sutil debajo del encabezado
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, pageWidth - margin, y)
+  
+  y += 6
+  
+  // Items - diseño más limpio
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(40, 40, 40)
+  doc.setTextColor(0, 0, 0) // Negro
   
   invoiceData.items.forEach((item, index) => {
     // Verificar si necesitamos nueva página
@@ -121,24 +153,11 @@ export function generateInvoicePDF(invoiceData) {
       y = 20
     }
     
-    // Fondo alternado para mejor legibilidad
-    if (index % 2 === 0) {
-      doc.setFillColor(250, 250, 250)
-      doc.rect(margin, y - 5, contentWidth, 16, 'F')
-    }
-    
     // Nombre del producto
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
     const productName = item.product_name || item.product?.name || 'Producto'
-    doc.text(productName.substring(0, 30), margin + 3, y)
-    
-    y += 5
-    
-    // Cantidad y precio unitario
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
+    doc.text(productName, margin, y)
     
     // Usar total o calculated_total, y asegurar que qty y unit existan
     const itemTotal = item.total || item.calculated_total || 0
@@ -147,75 +166,63 @@ export function generateInvoicePDF(invoiceData) {
     
     // Calcular precio unitario de forma segura
     const unitPrice = itemQty > 0 ? Math.round(itemTotal / itemQty) : (item.unit_price || 0)
-    const qtyText = `${itemQty} ${itemUnit} × $${unitPrice.toLocaleString('es-CL')}`
-    doc.text(qtyText, margin + 3, y)
     
     // Cantidad (derecha)
-    doc.setTextColor(40, 40, 40)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
     const quantityText = `${itemQty} ${itemUnit}`
-    doc.text(quantityText, pageWidth - margin - 70, y - 5)
+    doc.text(quantityText, pageWidth - margin - 70, y)
     
     // Subtotal (derecha)
     doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
     const subtotalText = `$${itemTotal.toLocaleString('es-CL')}`
     const subtotalWidth = doc.getTextWidth(subtotalText)
-    doc.text(subtotalText, pageWidth - margin - subtotalWidth - 3, y - 5)
+    doc.text(subtotalText, pageWidth - margin - subtotalWidth, y)
     
-    // Información de conversión si aplica
+    // Información de conversión si aplica (más sutil)
     if (item.charged_qty && item.charged_qty !== itemQty && item.charged_unit) {
       y += 4
       doc.setFontSize(8)
-      doc.setFont('helvetica', 'italic')
-      doc.setTextColor(120, 120, 120)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
       
-      const conversionText = `${itemQty} ${itemUnit} → ${item.charged_qty} ${item.charged_unit} (conversión aplicada)`
-      doc.text(conversionText, margin + 3, y)
+      const conversionText = `${itemQty} ${itemUnit} → ${item.charged_qty} ${item.charged_unit}`
+      doc.text(conversionText, margin, y)
+      y += 3
     }
     
-    y += 10
-    doc.setTextColor(40, 40, 40)
+    y += 8
+    doc.setTextColor(0, 0, 0) // Negro
   })
   
   y += 5
   
-  // Línea separadora antes del total
-  doc.setDrawColor(200, 200, 200)
-  doc.setLineWidth(0.5)
-  doc.line(margin, y, pageWidth - margin, y)
-  
-  y += 10
-  
   // ======== SUBTOTAL Y ENVÍO/DESCUENTO ========
-  doc.setFillColor(250, 250, 250)
-  doc.roundedRect(margin, y, contentWidth, 30, 2, 2, 'F')
-  
+  // Línea sutil antes de totales
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, pageWidth - margin, y)
   y += 8
   
   // Subtotal
-  doc.setFontSize(11)
+  doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  doc.setTextColor(80, 80, 80)
-  doc.text('Subtotal:', margin + 5, y)
+  doc.setTextColor(0, 0, 0) // Negro
+  doc.text('Subtotal:', margin, y)
   
   const subtotal = invoiceData.subtotal || invoiceData.items.reduce((sum, item) => sum + (item.total || item.calculated_total || 0), 0)
   const subtotalText = `$${subtotal.toLocaleString('es-CL')}`
   const subtotalWidth = doc.getTextWidth(subtotalText)
-  doc.text(subtotalText, pageWidth - margin - subtotalWidth - 5, y)
+  doc.text(subtotalText, pageWidth - margin - subtotalWidth, y)
   
-  y += 8
+  y += 7
   
   // Envío o descuento
-  // Mostrar siempre el tipo de envío, incluso si es 0 (normal)
   if (invoiceData.shipping_amount !== undefined && invoiceData.shipping_amount !== null) {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
-    if (invoiceData.shipping_amount > 0) {
-      doc.setTextColor(76, 175, 80)
-    } else if (invoiceData.shipping_amount < 0) {
-      doc.setTextColor(255, 152, 0)
-    } else {
-      doc.setTextColor(100, 100, 100)
-    }
+    doc.setTextColor(0, 0, 0) // Negro
     
     // Determinar la etiqueta según el monto
     let shippingLabel = 'Envío normal:'
@@ -224,42 +231,36 @@ export function generateInvoicePDF(invoiceData) {
     } else if (invoiceData.shipping_amount < 0) {
       shippingLabel = 'Envío económico:'
     }
-    doc.text(shippingLabel, margin + 5, y)
+    doc.text(shippingLabel, margin, y)
     
     if (invoiceData.shipping_amount !== 0) {
       const shippingText = `${invoiceData.shipping_amount > 0 ? '+' : ''}$${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}`
       const shippingWidth = doc.getTextWidth(shippingText)
-      doc.text(shippingText, pageWidth - margin - shippingWidth - 5, y)
+      doc.text(shippingText, pageWidth - margin - shippingWidth, y)
     } else {
       doc.text('Sin costo', pageWidth - margin - 50, y)
     }
     
-    y += 8
+    y += 7
   }
   
-  // Línea separadora antes del total
+  // Línea antes del total
   doc.setDrawColor(200, 200, 200)
   doc.setLineWidth(0.5)
   doc.line(margin, y, pageWidth - margin, y)
-  
   y += 8
   
   // ======== TOTAL ========
-  doc.setFillColor(240, 240, 240)
-  doc.roundedRect(margin, y, contentWidth, 15, 2, 2, 'F')
-  
-  y += 10
-  
-  doc.setFontSize(16)
+  doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(40, 40, 40) // Negro
-  doc.text('TOTAL A PAGAR:', margin + 5, y)
+  doc.setTextColor(0, 0, 0) // Negro
+  doc.text('TOTAL A PAGAR:', margin, y)
   
   const totalText = `$${invoiceData.total.toLocaleString('es-CL')}`
   const totalWidth = doc.getTextWidth(totalText)
-  doc.text(totalText, pageWidth - margin - totalWidth - 5, y)
+  doc.text(totalText, pageWidth - margin - totalWidth, y)
   
-  y += 20
+  y += 15
   
   // ======== INFORMACIÓN DE PAGO ========
   if (y > pageHeight - 50) {
@@ -267,28 +268,23 @@ export function generateInvoicePDF(invoiceData) {
     y = 20
   }
   
-  doc.setFillColor(240, 248, 255)
-  doc.roundedRect(margin, y, contentWidth, 25, 2, 2, 'F')
-  
-  y += 8
-  
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(50, 50, 50)
-  doc.text('Medios de Pago:', margin + 5, y)
+  doc.setTextColor(0, 0, 0) // Negro
+  doc.text('Medios de Pago:', margin, y)
   
   y += 6
   
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
-  doc.setTextColor(70, 70, 70)
-  doc.text('- Transferencia bancaria', margin + 5, y)
+  doc.setTextColor(0, 0, 0) // Negro
+  doc.text('• Transferencia bancaria', margin, y)
   
   y += 5
-  doc.text('- Efectivo', margin + 5, y)
+  doc.text('• Efectivo', margin, y)
   
   y += 5
-  doc.text('- Debito o Credito', margin + 5, y)
+  doc.text('• Débito o Crédito', margin, y)
   
   // ======== PIE DE PÁGINA ========
   const footerY = pageHeight - 15

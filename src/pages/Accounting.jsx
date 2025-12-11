@@ -225,11 +225,11 @@ export default function Accounting() {
     })
   }
 
-  function downloadInvoice() {
+  async function downloadInvoice() {
     if (!invoiceData) return
     
     try {
-      generateInvoicePDF(invoiceData)
+      await generateInvoicePDF(invoiceData)
     } catch (error) {
       console.error('Error generando PDF:', error)
       alert('Error al generar el PDF. Por favor intenta nuevamente.')
@@ -2671,12 +2671,12 @@ export default function Accounting() {
                       order_date: selectedOrderPopup.order.order_date
                     }
                     
-                    // Generar imagen en lugar de PDF
-                    await downloadInvoiceAsImage(invoiceData)
+                    // Generar PDF
+                    await generateInvoicePDF(invoiceData)
                   }}
                   style={{ flex: 1, minWidth: '150px', padding: '14px', fontSize: '16px', fontWeight: 700, background: 'var(--kivi-green)', color: '#fff' }}
                 >
-                  📷 Descargar Nota
+                  📄 Descargar Nota
                 </button>
               </div>
             </div>
