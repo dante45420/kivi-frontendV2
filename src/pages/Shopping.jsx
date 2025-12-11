@@ -75,6 +75,8 @@ export default function Shopping() {
             product_name: item.product_name || item.product?.name || 'Producto',
             unit: item.unit,
             product_default_unit: product?.unit || 'kg',
+            category_name: product?.category?.name || 'Sin categoría',
+            category_id: product?.category_id || 0,
             total_qty: 0,
             customers: [],
             purchased: false
@@ -89,10 +91,14 @@ export default function Shopping() {
         })
       })
       
-      // Convertir a array y ordenar
-      const list = Object.values(byProduct).sort((a, b) => 
-        (a.product_name || '').localeCompare(b.product_name || '')
-      )
+      // Convertir a array y ordenar por categoría, luego por nombre de producto
+      const list = Object.values(byProduct).sort((a, b) => {
+        // Primero por categoría
+        const categoryCompare = (a.category_name || 'Sin categoría').localeCompare(b.category_name || 'Sin categoría')
+        if (categoryCompare !== 0) return categoryCompare
+        // Si la categoría es igual, ordenar por nombre de producto
+        return (a.product_name || '').localeCompare(b.product_name || '')
+      })
       
       setConsolidatedList(list)
     } catch (err) {
@@ -103,10 +109,33 @@ export default function Shopping() {
   }
 
   function downloadList() {
-    const text = consolidatedList.map(item => {
-      const qty = item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)
-      return `${item.product_name}: ${qty} ${item.unit}`
-    }).join('\n')
+    // Agrupar por categoría
+    const byCategory = {}
+    consolidatedList.forEach(item => {
+      const category = item.category_name || 'Sin categoría'
+      if (!byCategory[category]) {
+        byCategory[category] = []
+      }
+      byCategory[category].push(item)
+    })
+    
+    // Generar texto agrupado por categoría
+    const lines = []
+    // Ordenar categorías alfabéticamente
+    const sortedCategories = Object.keys(byCategory).sort()
+    
+    sortedCategories.forEach(category => {
+      // Agregar encabezado de categoría
+      lines.push(`\n=== ${category.toUpperCase()} ===`)
+      
+      // Agregar productos de esta categoría
+      byCategory[category].forEach(item => {
+        const qty = item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)
+        lines.push(`${item.product_name}: ${qty} ${item.unit}`)
+      })
+    })
+    
+    const text = lines.join('\n')
     
     const blob = new Blob([text], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
