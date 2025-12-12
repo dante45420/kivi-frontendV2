@@ -796,19 +796,19 @@ export default function Shopping() {
                           </select>
                           <div style={{ flex: 1, minWidth: '120px' }}>
                             <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '4px' }}>
-                              Por {item.product_default_unit} $ (opcional)
+                              Precio por {item.product_default_unit} $ (opcional)
                             </label>
                             <input
                               type="number"
                               className="input"
                               value={data.price_per_charged_unit || ''}
                               onChange={e => handlePriceChange(key, 'price_per_charged_unit', e.target.value)}
-                              placeholder="Precio por unidad de cobro"
+                              placeholder="Ej: 4000"
                               step="0.01"
                               style={{ width: '100%', padding: '8px', fontSize: '14px' }}
                             />
                             <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>
-                              Si conoces el precio por {item.product_default_unit}
+                              ⚠️ Precio por {item.product_default_unit}, NO el total. Se calculará el total automáticamente.
                             </div>
                           </div>
                         </>

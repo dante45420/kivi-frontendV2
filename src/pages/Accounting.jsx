@@ -1151,9 +1151,9 @@ export default function Accounting() {
                                       </div>
                                       
                                       {/* Mostrar conversión si aplica (solo cuando el pedido está completed) */}
-                                      {(order.order_status === 'completed' || order.order_status === 'finalized') && item.charged_qty && item.charged_qty !== item.qty && (
+                                      {(order.order_status === 'completed' || order.order_status === 'finalized') && item.charged_qty && item.charged_qty !== item.qty && item.charged_unit && item.charged_unit !== item.unit && (
                                         <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                          {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit || item.unit} (conversión aplicada)
+                                          {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit} (conversión aplicada)
                                         </div>
                                       )}
                                       
@@ -2509,7 +2509,8 @@ export default function Accounting() {
                     const unit = (item.charged_unit) ? item.charged_unit : item.unit
                     const unitPrice = item.unit_price || 0
                     const total = qty * unitPrice
-                    const hasConversion = item.charged_qty && item.charged_qty !== item.qty && item.charged_unit
+                    // Solo mostrar conversión si charged_unit existe, es diferente de unit, y charged_qty es diferente de qty
+                    const hasConversion = item.charged_qty && item.charged_qty !== item.qty && item.charged_unit && item.charged_unit !== item.unit
                     
                     return (
                       <div key={idx} style={{
@@ -2523,7 +2524,7 @@ export default function Accounting() {
                             <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px', color: '#333' }}>
                               {item.product_name || item.product?.name}
                             </div>
-                            {hasConversion && (
+                            {hasConversion && item.charged_unit && item.charged_unit !== item.unit && (
                               <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
                                 {item.qty} {item.unit} → {item.charged_qty} {item.charged_unit} (conversión)
                               </div>
