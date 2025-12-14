@@ -5,6 +5,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { parseOrderText, createOrder, fetchOrders, fetchOrder, emitOrder, addOrderItem, updateOrderItem, deleteOrderItem } from '../api/orders'
 import { fetchCustomers, createCustomer } from '../api/customers'
+import { fetchSellers, createSeller } from '../api/sellers'
 import { fetchCategories } from '../api/categories'
 import { fetchProducts } from '../api/products'
 import ProductResolvePanel from '../components/ProductResolvePanel'
@@ -15,6 +16,7 @@ export default function Orders() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
   const [customers, setCustomers] = useState([])
+  const [sellers, setSellers] = useState([])
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   
@@ -39,6 +41,9 @@ export default function Orders() {
   const [allName, setAllName] = useState('')
   const [clientsAssigned, setClientsAssigned] = useState(false)
   
+  // Vendedor assignment
+  const [selectedSellerId, setSelectedSellerId] = useState('')
+  
   // Tipo de envío
   const [shippingType, setShippingType] = useState('fastest')
   
@@ -47,9 +52,13 @@ export default function Orders() {
   const [newCustOpen, setNewCustOpen] = useState(false)
   const [newCust, setNewCust] = useState({ name:'', phone:'', address:'' })
   const [newCustError, setNewCustError] = useState('')
+  const [newSellerOpen, setNewSellerOpen] = useState(false)
+  const [newSeller, setNewSeller] = useState({ name:'', phone:'', address:'' })
+  const [newSellerError, setNewSellerError] = useState('')
 
   useEffect(() => { 
     fetchCustomers().then(setCustomers).catch(() => {})
+    fetchSellers().then(setSellers).catch(() => {})
     fetchCategories().then(setCategories).catch(() => {})
     fetchProducts().then(setProducts).catch(() => {})
     loadOrders()
@@ -227,13 +236,15 @@ export default function Orders() {
       await createOrder({ 
         items, 
         source: 'whatsapp',
-        shipping_type: shippingType
+        shipping_type: shippingType,
+        seller_id: selectedSellerId ? parseInt(selectedSellerId) : null
       })
       
       setRows([])
       setText('')
       setClientsAssigned(false)
       setAllName('')
+      setSelectedSellerId('')
       setShippingType('fastest')
       await loadOrders()
       alert('✅ Pedido guardado en borrador')
@@ -301,6 +312,25 @@ export default function Orders() {
       setNewCustOpen(false)
     }catch{ 
       setNewCustError('No se pudo crear el cliente') 
+    }
+  }
+
+  async function handleCreateSeller() {
+    if(!(newSeller.name||'').trim()){ 
+      setNewSellerError('El nombre es obligatorio')
+      return 
+    }
+    
+    try{
+      const created = await createSeller(newSeller)
+      const list = await fetchSellers()
+      setSellers(list)
+      setSelectedSellerId(created.id.toString())
+      setNewSellerOpen(false)
+      setNewSeller({ name:'', phone:'', address:'' })
+      setNewSellerError('')
+    }catch(err){ 
+      setNewSellerError('No se pudo crear el vendedor: ' + (err.message || 'Error desconocido'))
     }
   }
 
@@ -396,6 +426,38 @@ export default function Orders() {
                 {clientsAssigned && allRowsHaveCustomer && (
                   <div style={{ marginTop:8, padding:8, background:'#d4edda', borderRadius:8, textAlign:'center', fontSize:14 }}>
                     ✓ Cliente asignado a todos los items
+                  </div>
+                )}
+              </div>
+
+              {/* Asignar vendedor */}
+              <div className="card" style={{ padding:16, marginBottom:12 }}>
+                <h3 style={{ margin:'0 0 12px 0', fontSize:16 }}>👔 Asignar Vendedor (Opcional)</h3>
+                <select 
+                  className="input" 
+                  value={selectedSellerId} 
+                  onChange={e=>setSelectedSellerId(e.target.value)} 
+                  style={{ width:'100%', marginBottom:8 }}
+                >
+                  <option value="">Seleccionar vendedor…</option>
+                  {sellers.map(s=> (<option key={s.id} value={s.id}>{s.name}</option>))}
+                </select>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button 
+                    className="button ghost" 
+                    onClick={()=>{ 
+                      setNewSellerOpen(true)
+                      setNewSeller({ name:'', phone:'', address:'' })
+                      setNewSellerError('') 
+                    }}
+                    style={{ flex:1 }}
+                  >
+                    + Nuevo Vendedor
+                  </button>
+                </div>
+                {selectedSellerId && (
+                  <div style={{ marginTop:8, padding:8, background:'#e3f2fd', borderRadius:8, textAlign:'center', fontSize:14 }}>
+                    ✓ Vendedor asignado al pedido
                   </div>
                 )}
               </div>
@@ -749,6 +811,29 @@ export default function Orders() {
               <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
                 <button className="button ghost" onClick={()=>setNewCustOpen(false)}>Cancelar</button>
                 <button className="button" onClick={handleCreateCustomer}>Crear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Nuevo vendedor */}
+      {newSellerOpen && (
+        <div className="modal-backdrop">
+          <div className="modal" style={{ maxWidth: 520 }}>
+            <h3 style={{ marginTop: 0 }}>Nuevo vendedor</h3>
+            <div style={{ display:'grid', gap:8 }}>
+              <label>Nombre completo<input className="input" value={newSeller.name} onChange={e=>setNewSeller(v=>({ ...v, name:e.target.value }))} /></label>
+              <label>Teléfono (opcional)<input className="input" value={newSeller.phone} onChange={e=>setNewSeller(v=>({ ...v, phone:e.target.value }))} /></label>
+              <label>Dirección (opcional)<input className="input" value={newSeller.address} onChange={e=>setNewSeller(v=>({ ...v, address:e.target.value }))} /></label>
+              {newSellerError ? <div style={{ color:'#b02a37', fontSize:12, textAlign:'center' }}>{newSellerError}</div> : null}
+              <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+                <button className="button ghost" onClick={()=>{
+                  setNewSellerOpen(false)
+                  setNewSeller({ name:'', phone:'', address:'' })
+                  setNewSellerError('')
+                }}>Cancelar</button>
+                <button className="button" onClick={handleCreateSeller}>Crear</button>
               </div>
             </div>
           </div>
