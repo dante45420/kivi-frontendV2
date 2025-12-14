@@ -32,6 +32,7 @@ export default function KPIs() {
   })
   const [bestProducts, setBestProducts] = useState([])
   const [bestProductsFilter, setBestProductsFilter] = useState('historical')
+  const [showAllProducts, setShowAllProducts] = useState(false)
   const [loadingBestProducts, setLoadingBestProducts] = useState(false)
   const [showUtilityDetails, setShowUtilityDetails] = useState(false)
   const [utilityDetails, setUtilityDetails] = useState(null)
@@ -83,6 +84,7 @@ export default function KPIs() {
       const data = await response.json()
       setBestProducts(data.products || [])
       setBestProductsFilter(filter)
+      setShowAllProducts(false) // Resetear a mostrar solo 10 al cambiar filtro
     } catch (error) {
       console.error('Error cargando mejores productos:', error)
       alert('Error cargando mejores productos: ' + error.message)
@@ -90,6 +92,9 @@ export default function KPIs() {
       setLoadingBestProducts(false)
     }
   }
+  
+  // Filtrar productos para mostrar solo los primeros 10 o todos
+  const displayedProducts = showAllProducts ? bestProducts : bestProducts.slice(0, 10)
   
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('es-CL', { 
@@ -528,22 +533,24 @@ export default function KPIs() {
       
       {/* Mejores Productos */}
       <div style={{ marginBottom: '40px' }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           marginBottom: '20px',
           paddingBottom: '12px',
-          borderBottom: '2px solid #e1e7e1'
+          borderBottom: '2px solid #e1e7e1',
+          flexWrap: 'wrap',
+          gap: '12px'
         }}>
-          <h2 style={{ 
-            fontSize: '24px', 
-            fontWeight: 800, 
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: 800,
             margin: 0
           }}>
             🏆 Mejores Productos
           </h2>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
               onClick={() => loadBestProducts('last_week')}
               className={`button ${bestProductsFilter === 'last_week' ? '' : 'ghost'}`}
@@ -558,6 +565,15 @@ export default function KPIs() {
             >
               Histórico
             </button>
+            {bestProducts.length > 10 && (
+              <button
+                onClick={() => setShowAllProducts(!showAllProducts)}
+                className="button ghost"
+                style={{ padding: '8px 16px', fontSize: '14px' }}
+              >
+                {showAllProducts ? `Mostrar primeros 10` : `Mostrar todos (${bestProducts.length})`}
+              </button>
+            )}
           </div>
         </div>
         
@@ -570,9 +586,9 @@ export default function KPIs() {
             No hay productos para mostrar
           </div>
         ) : (
-          <div style={{ 
-            background: '#fff', 
-            borderRadius: '12px', 
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
             border: '1px solid #e1e7e1',
             overflow: 'hidden'
           }}>
@@ -595,15 +611,15 @@ export default function KPIs() {
               <div style={{ textAlign: 'center' }}>Pedidos</div>
             </div>
             
-            {bestProducts.map((product, idx) => (
-              <div 
+            {displayedProducts.map((product, idx) => (
+              <div
                 key={product.product_id}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '1fr 120px 120px 100px',
                   gap: '12px',
                   padding: '16px 20px',
-                  borderBottom: idx < bestProducts.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  borderBottom: idx < displayedProducts.length - 1 ? '1px solid #f0f0f0' : 'none',
                   alignItems: 'center'
                 }}
               >
@@ -621,6 +637,19 @@ export default function KPIs() {
                 </div>
               </div>
             ))}
+            
+            {bestProducts.length > 10 && !showAllProducts && (
+              <div style={{
+                padding: '12px 20px',
+                textAlign: 'center',
+                background: '#f8f9fa',
+                borderTop: '1px solid #e1e7e1',
+                fontSize: '14px',
+                color: '#666'
+              }}>
+                Mostrando 10 de {bestProducts.length} productos
+              </div>
+            )}
           </div>
         )}
       </div>

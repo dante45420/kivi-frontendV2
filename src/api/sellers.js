@@ -28,6 +28,39 @@ export async function fetchSellersSummary() {
   return get('/api/sellers/summary')
 }
 
-export async function createSellerCosts(defaultAmount = 0) {
-  return post('/api/sellers/create-costs', { default_amount: defaultAmount })
+export async function fetchSellersSummaryWeek() {
+  return get('/api/sellers/summary/week')
+}
+
+export async function createSellerCosts() {
+  return post('/api/sellers/create-costs', {})
+}
+
+export async function getSellerConfig() {
+  return get('/api/sellers/config')
+}
+
+export async function updateSellerConfig(commissionPercent) {
+  return put('/api/sellers/config', { commission_percent: commissionPercent })
+}
+
+export async function getSellerDebt(id) {
+  return get(`/api/sellers/${id}/debt`)
+}
+
+export async function getSellerPayments(id) {
+  return get(`/api/sellers/${id}/payments`)
+}
+
+export async function createSellerPayment(id, paymentData) {
+  return post(`/api/sellers/${id}/payments`, paymentData)
+}
+
+export async function assignWeeklyBonus(data) {
+  return post('/api/sellers/bonus/assign', data)
+}
+
+export async function getSellerBonuses(weekStart = null) {
+  const params = weekStart ? `?week_start=${weekStart}` : ''
+  return get(`/api/sellers/bonus${params}`)
 }

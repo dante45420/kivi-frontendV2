@@ -6,10 +6,18 @@ import { useState, useEffect } from 'react'
 import {
   fetchSellers,
   fetchSellersSummary,
+  fetchSellersSummaryWeek,
   createSeller,
   updateSeller,
   deleteSeller,
-  createSellerCosts
+  createSellerCosts,
+  getSellerConfig,
+  updateSellerConfig,
+  getSellerDebt,
+  getSellerPayments,
+  createSellerPayment,
+  assignWeeklyBonus,
+  getSellerBonuses
 } from '../api/sellers'
 import Modal from '../components/Modal'
 import Loader from '../components/Loader'
@@ -26,10 +34,16 @@ const formatCurrency = (value) => {
 export default function Sellers() {
   const [loading, setLoading] = useState(true)
   const [sellersSummary, setSellersSummary] = useState([])
+  const [sellersSummaryWeek, setSellersSummaryWeek] = useState([])
   const [sellers, setSellers] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [showAllSellers, setShowAllSellers] = useState(false)
   const [loadingSummary, setLoadingSummary] = useState(false)
+  
+  // Configuración de comisión
+  const [commissionPercent, setCommissionPercent] = useState(10)
+  const [loadingConfig, setLoadingConfig] = useState(false)
+  const [showConfigModal, setShowConfigModal] = useState(false)
   
   // Modal crear/editar
   const [showModal, setShowModal] = useState(false)
@@ -46,8 +60,34 @@ export default function Sellers() {
   
   // Modal crear costos
   const [showCostModal, setShowCostModal] = useState(false)
-  const [defaultAmount, setDefaultAmount] = useState('')
   const [creatingCosts, setCreatingCosts] = useState(false)
+  
+  // Sistema de pagos (similar a contabilidad)
+  const [selectedSellerForPayment, setSelectedSellerForPayment] = useState(null)
+  const [sellerDebtData, setSellerDebtData] = useState(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentForm, setPaymentForm] = useState({
+    amount: '',
+    method: 'transferencia',
+    reference: '',
+    notes: '',
+    date: new Date().toISOString().split('T')[0]
+  })
+  const [creatingPayment, setCreatingPayment] = useState(false)
+  const [expandedSellers, setExpandedSellers] = useState(new Set())
+  const [showPaymentsForSeller, setShowPaymentsForSeller] = useState(null)
+  const [sellerPayments, setSellerPayments] = useState({}) // { sellerId: [payments] }
+  
+  // Sistema de bonos
+  const [showBonusModal, setShowBonusModal] = useState(false)
+  const [bonusForm, setBonusForm] = useState({
+    orders_target: '',
+    bonus_percent: '',
+    week_start: new Date().toISOString().split('T')[0]
+  })
+  const [assigningBonus, setAssigningBonus] = useState(false)
+  const [bonusResults, setBonusResults] = useState(null)
+  const [showBonusResults, setShowBonusResults] = useState(false)
   
   useEffect(() => {
     loadData()
@@ -63,11 +103,22 @@ export default function Sellers() {
     setLoading(true)
     try {
       await Promise.all([
+        loadConfig(),
         loadSummary(),
+        loadSummaryWeek(),
         loadSellers()
       ])
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const loadConfig = async () => {
+    try {
+      const config = await getSellerConfig()
+      setCommissionPercent(config.commission_percent || 10)
+    } catch (error) {
+      console.error('Error cargando configuración:', error)
     }
   }
   
@@ -84,12 +135,149 @@ export default function Sellers() {
     }
   }
   
+  const loadSummaryWeek = async () => {
+    try {
+      const data = await fetchSellersSummaryWeek()
+      setSellersSummaryWeek(data.sellers || [])
+    } catch (error) {
+      console.error('Error cargando resumen semanal:', error)
+    }
+  }
+  
   const loadSellers = async () => {
     try {
       const data = await fetchSellers(searchQuery)
       setSellers(data)
     } catch (error) {
       console.error('Error cargando vendedores:', error)
+    }
+  }
+  
+  const toggleSeller = (sellerId) => {
+    setExpandedSellers(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sellerId)) {
+        newSet.delete(sellerId)
+      } else {
+        newSet.add(sellerId)
+      }
+      return newSet
+    })
+  }
+  
+  const loadSellerDebt = async (sellerId) => {
+    try {
+      const data = await getSellerDebt(sellerId)
+      setSellerDebtData(data)
+      // Cargar pagos del vendedor
+      const payments = await getSellerPayments(sellerId)
+      setSellerPayments(prev => ({ ...prev, [sellerId]: payments }))
+      return data
+    } catch (error) {
+      console.error('Error cargando deuda:', error)
+      alert('Error cargando deuda: ' + error.message)
+      return null
+    }
+  }
+  
+  const openPaymentModal = async (seller) => {
+    setSelectedSellerForPayment(seller)
+    const debtData = await loadSellerDebt(seller.id)
+    if (debtData) {
+      setPaymentForm({
+        amount: '',
+        method: 'transferencia',
+        reference: '',
+        notes: '',
+        date: new Date().toISOString().split('T')[0]
+      })
+      setShowPaymentModal(true)
+    }
+  }
+  
+  const handleCreatePayment = async () => {
+    if (!selectedSellerForPayment) return
+    
+    const amount = parseFloat(paymentForm.amount)
+    if (isNaN(amount) || amount <= 0) {
+      alert('Ingresa un monto válido mayor a 0')
+      return
+    }
+    
+    setCreatingPayment(true)
+    try {
+      await createSellerPayment(selectedSellerForPayment.id, paymentForm)
+      alert('✅ Pago registrado')
+      setShowPaymentModal(false)
+      setPaymentForm({
+        amount: '',
+        method: 'transferencia',
+        reference: '',
+        notes: '',
+        date: new Date().toISOString().split('T')[0]
+      })
+      // Recargar deuda del vendedor
+      await loadSellerDebt(selectedSellerForPayment.id)
+      loadSummary()
+      // Recargar pagos
+      const payments = await getSellerPayments(selectedSellerForPayment.id)
+      setSellerPayments(prev => ({ ...prev, [selectedSellerForPayment.id]: payments }))
+    } catch (error) {
+      alert('Error registrando pago: ' + error.message)
+    } finally {
+      setCreatingPayment(false)
+    }
+  }
+  
+  const handleUpdateConfig = async () => {
+    const percent = parseFloat(commissionPercent)
+    if (isNaN(percent) || percent < 0 || percent > 100) {
+      alert('El porcentaje debe estar entre 0 y 100')
+      return
+    }
+    
+    setLoadingConfig(true)
+    try {
+      await updateSellerConfig(percent)
+      alert('✅ Configuración actualizada')
+      setShowConfigModal(false)
+    } catch (error) {
+      alert('Error actualizando configuración: ' + error.message)
+    } finally {
+      setLoadingConfig(false)
+    }
+  }
+  
+  const handleAssignBonus = async () => {
+    const ordersTarget = parseInt(bonusForm.orders_target)
+    const bonusPercent = parseFloat(bonusForm.bonus_percent)
+    
+    if (isNaN(ordersTarget) || ordersTarget <= 0) {
+      alert('La meta de pedidos debe ser mayor a 0')
+      return
+    }
+    
+    if (isNaN(bonusPercent) || bonusPercent < 0) {
+      alert('El porcentaje de bono debe ser mayor o igual a 0')
+      return
+    }
+    
+    setAssigningBonus(true)
+    try {
+      const result = await assignWeeklyBonus({
+        orders_target: ordersTarget,
+        bonus_percent: bonusPercent,
+        week_start: bonusForm.week_start
+      })
+      setBonusResults(result)
+      setShowBonusResults(true)
+      setShowBonusModal(false)
+      loadSummary()
+      loadSummaryWeek()
+    } catch (error) {
+      alert('Error asignando bonos: ' + error.message)
+    } finally {
+      setAssigningBonus(false)
     }
   }
   
@@ -156,19 +344,13 @@ export default function Sellers() {
   }
   
   const handleCreateCosts = async () => {
-    const amount = parseFloat(defaultAmount)
-    if (isNaN(amount) || amount <= 0) {
-      alert('Ingresa un monto válido mayor a 0')
-      return
-    }
-    
     setCreatingCosts(true)
     try {
-      const result = await createSellerCosts(amount)
-      alert(`✅ Se crearon ${result.created} costos. ${result.skipped > 0 ? `${result.skipped} pedidos ya tenían costo.` : ''}`)
+      const result = await createSellerCosts()
+      alert(`✅ Se crearon ${result.created} costos usando ${result.commission_percent}% de comisión. ${result.skipped > 0 ? `${result.skipped} pedidos ya tenían costo.` : ''}`)
       setShowCostModal(false)
-      setDefaultAmount('')
       loadSummary()
+      loadSummaryWeek()
     } catch (error) {
       alert('Error creando costos: ' + error.message)
     } finally {
@@ -214,7 +396,20 @@ export default function Sellers() {
           👔 Vendedores
         </h1>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setShowConfigModal(true)} 
+            className="button ghost"
+          >
+            ⚙️ Config (% {commissionPercent})
+          </button>
+          <button 
+            onClick={() => setShowBonusModal(true)} 
+            className="button"
+            style={{ background: '#ff9800' }}
+          >
+            🎁 Asignar Bonos
+          </button>
           <button 
             onClick={() => setShowCostModal(true)} 
             className="button"
@@ -515,6 +710,368 @@ export default function Sellers() {
         </div>
       </Modal>
       
+      {/* Sección 3: Mejores Vendedores de la Semana Actual */}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: 700,
+          marginBottom: '20px'
+        }}>
+          📅 Mejores Vendedores de la Semana Actual
+        </h2>
+        
+        {sellersSummaryWeek.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📅</div>
+            <p style={{ color: 'var(--kivi-text)', margin: 0 }}>
+              No hay vendedores con pedidos completados esta semana
+            </p>
+          </div>
+        ) : (
+          <div style={{ 
+            background: '#fff', 
+            borderRadius: '12px', 
+            border: '1px solid #e1e7e1',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '2fr 150px 120px',
+              gap: '12px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderBottom: '2px solid #e1e7e1',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#666',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Vendedor</div>
+              <div style={{ textAlign: 'right' }}>Monto Facturado</div>
+              <div style={{ textAlign: 'center' }}>Pedidos Completados</div>
+            </div>
+            
+            {sellersSummaryWeek.map((item, idx) => (
+              <div 
+                key={item.seller.id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 150px 120px',
+                  gap: '12px',
+                  padding: '16px 20px',
+                  borderBottom: idx < sellersSummaryWeek.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  alignItems: 'center'
+                }}
+              >
+                <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                  {item.seller.name}
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '16px', fontWeight: 700, color: 'var(--kivi-green)', fontFamily: 'monospace' }}>
+                  {formatCurrency(item.total_revenue)}
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '16px', fontWeight: 600 }}>
+                  {item.completed_orders_count}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
+      {/* Sección 4: Contabilidad de Vendedores */}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{
+          fontSize: '20px',
+          fontWeight: 700,
+          marginBottom: '20px'
+        }}>
+          💰 Contabilidad de Vendedores
+        </h2>
+        
+        {sellersSummary.length === 0 ? (
+          <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <p style={{ color: 'var(--kivi-text)', margin: 0 }}>
+              No hay vendedores con costos registrados
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {sellersSummary.map((item) => {
+              const seller = item.seller
+              const isExpanded = expandedSellers.has(seller.id)
+              
+              return (
+                <div key={seller.id} className="card" style={{ padding: '16px' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    toggleSeller(seller.id)
+                    if (!isExpanded) {
+                      loadSellerDebt(seller.id)
+                    }
+                  }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>
+                        {seller.name}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#666' }}>
+                        {item.completed_orders_count} pedidos completados
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', marginRight: '16px' }}>
+                      <div style={{ fontSize: '14px', color: '#999', marginBottom: '4px' }}>
+                        Monto Facturado
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--kivi-green)', fontFamily: 'monospace' }}>
+                        {formatCurrency(item.total_revenue)}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '24px', color: '#999' }}>
+                      {isExpanded ? '▼' : '▶'}
+                    </div>
+                  </div>
+                  
+                  {isExpanded && sellerDebtData && sellerDebtData.seller.id === seller.id && (
+                    <div style={{
+                      marginTop: '16px',
+                      paddingTop: '16px',
+                      borderTop: '2px solid #e1e7e1'
+                    }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr 1fr',
+                        gap: '16px',
+                        marginBottom: '16px'
+                      }}>
+                        <div className="card" style={{ padding: '12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                            Total Costos
+                          </div>
+                          <div style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'monospace' }}>
+                            {formatCurrency(sellerDebtData.total_costs)}
+                          </div>
+                        </div>
+                        <div className="card" style={{ padding: '12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                            Total Pagado
+                          </div>
+                          <div style={{ fontSize: '20px', fontWeight: 700, color: '#4caf50', fontFamily: 'monospace' }}>
+                            {formatCurrency(sellerDebtData.total_paid)}
+                          </div>
+                        </div>
+                        <div className="card" style={{ padding: '12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                            Deuda Pendiente
+                          </div>
+                          <div style={{ 
+                            fontSize: '20px', 
+                            fontWeight: 700, 
+                            color: sellerDebtData.pending_debt > 0 ? '#f44336' : '#4caf50',
+                            fontFamily: 'monospace' 
+                          }}>
+                            {formatCurrency(sellerDebtData.pending_debt)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Costos */}
+                      {sellerDebtData.costs && sellerDebtData.costs.length > 0 && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <h4 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>
+                            Costos Registrados ({sellerDebtData.costs.length})
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {sellerDebtData.costs.map((cost, idx) => (
+                              <div key={idx} style={{
+                                padding: '12px',
+                                background: '#f8f9fa',
+                                borderRadius: '8px',
+                                fontSize: '14px'
+                              }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <div style={{ fontWeight: 600 }}>
+                                      Pedido #{cost.order_id}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                      {cost.order_date ? new Date(cost.order_date).toLocaleDateString('es-CL') : 'Sin fecha'}
+                                    </div>
+                                    {cost.commission_percent && (
+                                      <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
+                                        Comisión: {cost.commission_percent}%
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'monospace' }}>
+                                      {formatCurrency(cost.cost_amount)}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#666' }}>
+                                      Venta: {formatCurrency(cost.order_total)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Botones de acción */}
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                        {sellerDebtData.pending_debt > 0 && (
+                          <button
+                            onClick={() => openPaymentModal(seller)}
+                            className="button"
+                            style={{ flex: 1, background: 'var(--kivi-green)' }}
+                          >
+                            💵 Registrar Pago
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            if (showPaymentsForSeller === seller.id) {
+                              setShowPaymentsForSeller(null)
+                            } else {
+                              setShowPaymentsForSeller(seller.id)
+                            }
+                          }}
+                          className="button"
+                          disabled={sellerDebtData.total_paid === 0}
+                          style={{ 
+                            flex: 1,
+                            background: showPaymentsForSeller === seller.id ? '#4caf50' : '#2196F3',
+                            opacity: sellerDebtData.total_paid === 0 ? 0.5 : 1
+                          }}
+                        >
+                          {showPaymentsForSeller === seller.id ? '👁️ Ocultar Pagos' : '👁️ Ver Pagos'}
+                        </button>
+                      </div>
+                      
+                      {/* Pagos del vendedor */}
+                      {showPaymentsForSeller === seller.id && (
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #e1e7e1' }}>
+                          <h4 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+                            💵 Pagos Registrados
+                          </h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {sellerPayments[seller.id] && sellerPayments[seller.id].length > 0 ? (
+                              sellerPayments[seller.id].map((payment) => (
+                                <div key={payment.id} style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  padding: '12px',
+                                  background: '#f8f9fa',
+                                  borderRadius: '8px'
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: '14px', fontWeight: 600 }}>
+                                      {formatCurrency(payment.amount)}
+                                    </div>
+                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                                      {payment.method && `Método: ${payment.method}`}
+                                      {payment.date && ` • ${new Date(payment.date).toLocaleDateString('es-CL')}`}
+                                    </div>
+                                    {payment.reference && (
+                                      <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
+                                        Ref: {payment.reference}
+                                      </div>
+                                    )}
+                                    {payment.notes && (
+                                      <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>
+                                        {payment.notes}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
+                                No hay pagos registrados
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+      
+      {/* Modal Configuración */}
+      <Modal
+        isOpen={showConfigModal}
+        onClose={() => setShowConfigModal(false)}
+        title="⚙️ Configurar Porcentaje de Comisión"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{
+            padding: '12px',
+            background: '#e3f2fd',
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#666'
+          }}>
+            <strong>ℹ️ Nota:</strong> Este porcentaje se aplicará a todos los vendedores al calcular costos automáticamente.
+            El cálculo usa el monto total de la nota de cobro (subtotal + envío).
+          </div>
+          
+          <div className="form-group">
+            <label className="label">Porcentaje de Comisión (%) *</label>
+            <input
+              type="number"
+              className="input"
+              value={commissionPercent}
+              onChange={(e) => setCommissionPercent(e.target.value)}
+              min="0"
+              max="100"
+              step="0.1"
+            />
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+              Porcentaje que se calculará sobre el total de cada pedido
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setShowConfigModal(false)}
+              className="button ghost"
+              disabled={loadingConfig}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleUpdateConfig}
+              className="button"
+              disabled={loadingConfig}
+            >
+              {loadingConfig ? (
+                <>
+                  <div className="loading"></div>
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <span>💾</span>
+                  <span>Guardar</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+      
       {/* Modal Crear Costos */}
       <Modal
         isOpen={showCostModal}
@@ -529,32 +1086,14 @@ export default function Sellers() {
             fontSize: '14px',
             color: '#666'
           }}>
-            <strong>⚠️ Nota:</strong> Se crearán costos para todos los pedidos completados con vendedor que no tengan costo asociado. 
+            <strong>⚠️ Nota:</strong> Se crearán costos automáticamente para todos los pedidos completados con vendedor que no tengan costo asociado. 
+            El costo se calculará como <strong>{commissionPercent}%</strong> del monto total de la nota de cobro (subtotal + envío).
             Solo se creará un costo por pedido.
-          </div>
-          
-          <div className="form-group">
-            <label className="label">Monto por Defecto *</label>
-            <input
-              type="number"
-              className="input"
-              value={defaultAmount}
-              onChange={(e) => setDefaultAmount(e.target.value)}
-              placeholder="15000"
-              min="1"
-              step="1"
-            />
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-              Este monto se aplicará a todos los pedidos sin costo
-            </div>
           </div>
           
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
             <button
-              onClick={() => {
-                setShowCostModal(false)
-                setDefaultAmount('')
-              }}
+              onClick={() => setShowCostModal(false)}
               className="button ghost"
               disabled={creatingCosts}
             >
@@ -581,6 +1120,355 @@ export default function Sellers() {
           </div>
         </div>
       </Modal>
+      
+      {/* Modal Registrar Pago */}
+      <Modal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        title={`💵 Registrar Pago - ${selectedSellerForPayment?.name || ''}`}
+      >
+        {sellerDebtData && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              padding: '12px',
+              background: '#f8f9fa',
+              borderRadius: '8px',
+              fontSize: '14px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>Total Costos:</span>
+                <strong>{formatCurrency(sellerDebtData.total_costs)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span>Total Pagado:</span>
+                <strong style={{ color: '#4caf50' }}>{formatCurrency(sellerDebtData.total_paid)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid #e1e7e1' }}>
+                <span style={{ fontWeight: 700 }}>Deuda Pendiente:</span>
+                <strong style={{ 
+                  color: sellerDebtData.pending_debt > 0 ? '#f44336' : '#4caf50',
+                  fontSize: '18px'
+                }}>
+                  {formatCurrency(sellerDebtData.pending_debt)}
+                </strong>
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Monto *</label>
+              <input
+                type="number"
+                className="input"
+                value={paymentForm.amount}
+                onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                placeholder={sellerDebtData.pending_debt.toString()}
+                min="1"
+                step="1"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Método de Pago</label>
+              <select
+                className="input"
+                value={paymentForm.method}
+                onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}
+              >
+                <option value="transferencia">Transferencia</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="cheque">Cheque</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Referencia</label>
+              <input
+                type="text"
+                className="input"
+                value={paymentForm.reference}
+                onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
+                placeholder="Número de transferencia, etc."
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Fecha</label>
+              <input
+                type="date"
+                className="input"
+                value={paymentForm.date}
+                onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label className="label">Notas</label>
+              <textarea
+                className="input"
+                value={paymentForm.notes}
+                onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                rows={2}
+                placeholder="Notas adicionales..."
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="button ghost"
+                disabled={creatingPayment}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreatePayment}
+                className="button"
+                disabled={creatingPayment}
+                style={{ background: 'var(--kivi-green)' }}
+              >
+                {creatingPayment ? (
+                  <>
+                    <div className="loading"></div>
+                    <span>Registrando...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💵</span>
+                    <span>Registrar Pago</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+      
+      {/* Modal Asignar Bonos */}
+      <Modal
+        isOpen={showBonusModal}
+        onClose={() => setShowBonusModal(false)}
+        title="🎁 Asignar Bonos Semanales"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{
+            padding: '12px',
+            background: '#fff3e0',
+            borderRadius: '8px',
+            fontSize: '14px',
+            color: '#666'
+          }}>
+            <strong>⚠️ Importante:</strong> Solo se consideran pedidos completados de la semana especificada.
+            Si un vendedor alcanza la meta, se actualizará el porcentaje de comisión para los pedidos de esa semana.
+          </div>
+          
+          <div className="form-group">
+            <label className="label">Semana (Lunes) *</label>
+            <input
+              type="date"
+              className="input"
+              value={bonusForm.week_start}
+              onChange={(e) => {
+                const date = new Date(e.target.value)
+                const day = date.getDay()
+                const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+                const monday = new Date(date.setDate(diff))
+                setBonusForm({ ...bonusForm, week_start: monday.toISOString().split('T')[0] })
+              }}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label className="label">Meta de Pedidos *</label>
+            <input
+              type="number"
+              className="input"
+              value={bonusForm.orders_target}
+              onChange={(e) => setBonusForm({ ...bonusForm, orders_target: e.target.value })}
+              placeholder="5"
+              min="1"
+              step="1"
+            />
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+              Cantidad mínima de pedidos completados en esa semana para obtener el bono
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label className="label">Porcentaje de Bono (%) *</label>
+            <input
+              type="number"
+              className="input"
+              value={bonusForm.bonus_percent}
+              onChange={(e) => setBonusForm({ ...bonusForm, bonus_percent: e.target.value })}
+              placeholder="5"
+              min="0"
+              step="0.1"
+            />
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+              Porcentaje adicional que se sumará al porcentaje base ({commissionPercent}%)
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setShowBonusModal(false)}
+              className="button ghost"
+              disabled={assigningBonus}
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleAssignBonus}
+              className="button"
+              disabled={assigningBonus}
+              style={{ background: '#ff9800' }}
+            >
+              {assigningBonus ? (
+                <>
+                  <div className="loading"></div>
+                  <span>Asignando...</span>
+                </>
+              ) : (
+                <>
+                  <span>🎁</span>
+                  <span>Asignar Bonos</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+      
+      {/* Modal Resultados de Bonos */}
+      {showBonusResults && bonusResults && (
+        <Modal
+          isOpen={showBonusResults}
+          onClose={() => {
+            setShowBonusResults(false)
+            setBonusResults(null)
+          }}
+          title="🎁 Resultados de Bonos Asignados"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              padding: '12px',
+              background: '#e8f5e9',
+              borderRadius: '8px',
+              fontSize: '14px'
+            }}>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Semana:</strong> {bonusResults.week_start ? new Date(bonusResults.week_start).toLocaleDateString('es-CL') : 'N/A'}
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Meta:</strong> {bonusResults.orders_target} pedidos
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>Porcentaje Base:</strong> {bonusResults.base_commission_percent}%
+              </div>
+              <div>
+                <strong>Porcentaje Final:</strong> {bonusResults.final_commission_percent}% (base + {bonusResults.bonus_percent}% bono)
+              </div>
+            </div>
+            
+            {bonusResults.recipients && bonusResults.recipients.length > 0 ? (
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
+                  Vendedores que Obtuvieron Bono ({bonusResults.count})
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
+                  {bonusResults.recipients.map((recipient, idx) => (
+                    <div key={idx} style={{
+                      padding: '16px',
+                      background: '#f8f9fa',
+                      borderRadius: '8px',
+                      border: '1px solid #e1e7e1'
+                    }}>
+                      <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '12px' }}>
+                        {recipient.seller.name}
+                      </div>
+                      
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '8px',
+                        marginBottom: '12px',
+                        fontSize: '14px'
+                      }}>
+                        <div>
+                          <strong>Pedidos Alcanzados:</strong> {recipient.orders_achieved} / {recipient.orders_target}
+                        </div>
+                        <div>
+                          <strong>Monto Facturado:</strong> {formatCurrency(recipient.week_revenue)}
+                        </div>
+                        <div>
+                          <strong>Comisión Base:</strong> {formatCurrency(recipient.base_commission)}
+                        </div>
+                        <div>
+                          <strong>Bono:</strong> {formatCurrency(recipient.bonus_amount)}
+                        </div>
+                        <div>
+                          <strong>Comisión Final:</strong> {formatCurrency(recipient.final_commission)}
+                        </div>
+                        <div>
+                          <strong>% Comisión:</strong> {recipient.commission_percent}%
+                        </div>
+                      </div>
+                      
+                      {recipient.updated_costs && recipient.updated_costs.length > 0 && (
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e1e7e1' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+                            Costos Actualizados ({recipient.updated_costs.length} pedidos):
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+                            {recipient.updated_costs.map((cost, costIdx) => (
+                              <div key={costIdx} style={{ padding: '6px', background: '#fff', borderRadius: '4px' }}>
+                                Pedido #{cost.order_id}: {formatCurrency(cost.old_amount)} → {formatCurrency(cost.new_amount)}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {recipient.orders && recipient.orders.length > 0 && (
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e1e7e1' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+                            Pedidos de la Semana:
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px' }}>
+                            {recipient.orders.map((order, orderIdx) => (
+                              <div key={orderIdx} style={{ padding: '6px', background: '#fff', borderRadius: '4px' }}>
+                                Pedido #{order.order_id}: {formatCurrency(order.order_total)}
+                                {order.order_date && ` (${new Date(order.order_date).toLocaleDateString('es-CL')})`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                No hay vendedores que hayan alcanzado la meta
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <button
+                onClick={() => {
+                  setShowBonusResults(false)
+                  setBonusResults(null)
+                }}
+                className="button"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
