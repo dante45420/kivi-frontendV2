@@ -12,6 +12,7 @@ import Categories from './pages/Categories'
 import Orders from './pages/Orders'
 import Shopping from './pages/Shopping'
 import Customers from './pages/Customers'
+import Sellers from './pages/Sellers'
 import Accounting from './pages/Accounting'
 import KPIs from './pages/KPIs'
 import WeeklyOffers from './pages/WeeklyOffers'
@@ -90,6 +91,7 @@ export default function App() {
       <Route path="/pedidos" element={<Orders />} />
       <Route path="/compras" element={<Shopping />} />
       <Route path="/clientes" element={<Customers />} />
+      <Route path="/vendedores" element={<Sellers />} />
       <Route path="/contabilidad" element={<Accounting />} />
       <Route path="/kpis" element={<KPIs />} />
       <Route path="/ofertas" element={<WeeklyOffers />} />

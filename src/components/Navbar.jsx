@@ -16,6 +16,7 @@ export default function Navbar() {
     { path: '/pedidos', label: 'Pedidos', emoji: '📦' },
     { path: '/compras', label: 'Compras', emoji: '🛒' },
     { path: '/clientes', label: 'Clientes', emoji: '👥' },
+    { path: '/vendedores', label: 'Vendedores', emoji: '👔' },
     { path: '/contabilidad', label: 'Contabilidad', emoji: '💰' },
     { path: '/kpis', label: 'KPIs', emoji: '📈' },
     { path: '/kivi-tips', label: 'Tips Kivi', emoji: '🐕' },

@@ -7,6 +7,7 @@ import { fetchOrders } from '../api/orders'
 import { fetchProducts } from '../api/products'
 import { fetchPurchases } from '../api/purchases'
 import Loader from '../components/Loader'
+import { generatePurchasesListPDF } from '../utils/purchasesPdf'
 
 export default function Shopping() {
   const [consolidatedList, setConsolidatedList] = useState([])
@@ -108,42 +109,13 @@ export default function Shopping() {
     }
   }
 
-  function downloadList() {
-    // Agrupar por categoría
-    const byCategory = {}
-    consolidatedList.forEach(item => {
-      const category = item.category_name || 'Sin categoría'
-      if (!byCategory[category]) {
-        byCategory[category] = []
-      }
-      byCategory[category].push(item)
-    })
-    
-    // Generar texto agrupado por categoría
-    const lines = []
-    // Ordenar categorías alfabéticamente
-    const sortedCategories = Object.keys(byCategory).sort()
-    
-    sortedCategories.forEach(category => {
-      // Agregar encabezado de categoría
-      lines.push(`\n=== ${category.toUpperCase()} ===`)
-      
-      // Agregar productos de esta categoría
-      byCategory[category].forEach(item => {
-        const qty = item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)
-        lines.push(`${item.product_name}: ${qty} ${item.unit}`)
-      })
-    })
-    
-    const text = lines.join('\n')
-    
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `lista-compras-${new Date().toISOString().split('T')[0]}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+  async function downloadList() {
+    try {
+      await generatePurchasesListPDF(consolidatedList)
+    } catch (error) {
+      console.error('Error generando PDF:', error)
+      alert('Error al generar el PDF. Por favor intenta nuevamente.')
+    }
   }
 
   function toggleExpanded(key) {

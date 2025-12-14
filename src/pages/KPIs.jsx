@@ -11,13 +11,28 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 export default function KPIs() {
   const [loading, setLoading] = useState(true)
   const [kpis, setKpis] = useState({
-    avg_order_value: 0,
-    total_customers: 0,
-    total_orders: 0,
-    avg_utility_percent: 0,
-    avg_utility_amount: 0,
-    avg_orders_per_week: 0
+    last_week: {
+      avg_order_value: 0,
+      new_customers: 0,
+      total_orders: 0,
+      avg_utility_percent: 0,
+      avg_utility_amount: 0,
+      total_revenue: 0,
+      completed_orders_by_seller: {}
+    },
+    historical: {
+      avg_order_value: 0,
+      total_customers: 0,
+      total_orders: 0,
+      avg_utility_percent: 0,
+      avg_utility_amount: 0,
+      total_revenue: 0,
+      completed_orders_by_seller: {}
+    }
   })
+  const [bestProducts, setBestProducts] = useState([])
+  const [bestProductsFilter, setBestProductsFilter] = useState('historical')
+  const [loadingBestProducts, setLoadingBestProducts] = useState(false)
   const [showUtilityDetails, setShowUtilityDetails] = useState(false)
   const [utilityDetails, setUtilityDetails] = useState(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
@@ -38,6 +53,7 @@ export default function KPIs() {
   useEffect(() => {
     loadKPIs()
     loadUtilityByWeek()
+    loadBestProducts()
   }, [])
   
   const loadKPIs = async () => {
@@ -54,6 +70,24 @@ export default function KPIs() {
       alert('Error cargando KPIs: ' + error.message)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const loadBestProducts = async (filter = 'historical') => {
+    setLoadingBestProducts(true)
+    try {
+      const response = await fetch(`${API_URL}/api/kpis/best-products?filter=${filter}`)
+      if (!response.ok) {
+        throw new Error('Error cargando mejores productos')
+      }
+      const data = await response.json()
+      setBestProducts(data.products || [])
+      setBestProductsFilter(filter)
+    } catch (error) {
+      console.error('Error cargando mejores productos:', error)
+      alert('Error cargando mejores productos: ' + error.message)
+    } finally {
+      setLoadingBestProducts(false)
     }
   }
   
@@ -256,98 +290,339 @@ export default function KPIs() {
         </button>
       </div>
       
-      {/* Main KPIs Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '16px',
-        marginBottom: '32px'
-      }}>
-        {/* Promedio de tamaño de pedido */}
-        <div className="card">
-          <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
-            Promedio de Tamaño de Pedido
+      {/* KPIs Última Semana */}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{ 
+          fontSize: '24px', 
+          fontWeight: 800, 
+          marginBottom: '20px',
+          paddingBottom: '12px',
+          borderBottom: '2px solid #e1e7e1'
+        }}>
+          📅 Última Semana (Lunes - Domingo)
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '16px',
+          marginBottom: '32px'
+        }}>
+          {/* Promedio de tamaño de pedido */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Promedio de Tamaño de Pedido
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {formatCurrency(kpis.last_week?.avg_order_value || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Promedio por pedido (con conversiones)
+            </div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
-            {formatCurrency(kpis.avg_order_value)}
+          
+          {/* Nuevos Clientes */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Nuevos Clientes
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {kpis.last_week?.new_customers || 0}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Clientes nuevos esta semana
+            </div>
           </div>
-          <div style={{ fontSize: '13px', color: '#999' }}>
-            Promedio por pedido (con conversiones)
+          
+          {/* Total Pedidos */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Total Pedidos
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {kpis.last_week?.total_orders || 0}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Pedidos con monto facturado &gt; 0
+            </div>
+          </div>
+          
+          {/* Monto Total Facturado */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Monto Total Facturado
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
+              {formatCurrency(kpis.last_week?.total_revenue || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Total facturado esta semana
+            </div>
+          </div>
+          
+          {/* Utilidad Promedio por Pedido */}
+          <div 
+            className="card" 
+            onClick={loadUtilityDetails}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Utilidad Promedio por Pedido
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
+              {formatPercent(kpis.last_week?.avg_utility_percent || 0)}
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--kivi-green)', marginTop: '8px' }}>
+              {formatCurrency(kpis.last_week?.avg_utility_amount || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999', marginTop: '4px' }}>
+              Solo pedidos con costo registrado
+            </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
+          </div>
+          
+          {/* Pedidos Completados por Vendedores */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Pedidos Completados por Vendedores
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {Object.values(kpis.last_week?.completed_orders_by_seller || {}).reduce((a, b) => a + b, 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Pedidos completados con vendedor
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* KPIs Históricos */}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{ 
+          fontSize: '24px', 
+          fontWeight: 800, 
+          marginBottom: '20px',
+          paddingBottom: '12px',
+          borderBottom: '2px solid #e1e7e1'
+        }}>
+          📊 Históricos (Todos los Tiempos)
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '16px',
+          marginBottom: '32px'
+        }}>
+          {/* Promedio de tamaño de pedido */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Promedio de Tamaño de Pedido
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {formatCurrency(kpis.historical?.avg_order_value || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Promedio por pedido (con conversiones)
+            </div>
+          </div>
+          
+          {/* Total Clientes */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Total Clientes
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {kpis.historical?.total_customers || 0}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Clientes registrados
+            </div>
+          </div>
+          
+          {/* Total Pedidos */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Total Pedidos
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {kpis.historical?.total_orders || 0}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Pedidos con monto facturado &gt; 0
+            </div>
+          </div>
+          
+          {/* Monto Total Facturado */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Monto Total Facturado
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
+              {formatCurrency(kpis.historical?.total_revenue || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Total facturado histórico
+            </div>
+          </div>
+          
+          {/* Utilidad Promedio por Pedido */}
+          <div 
+            className="card" 
+            onClick={loadUtilityDetails}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Utilidad Promedio por Pedido
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
+              {formatPercent(kpis.historical?.avg_utility_percent || 0)}
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--kivi-green)', marginTop: '8px' }}>
+              {formatCurrency(kpis.historical?.avg_utility_amount || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999', marginTop: '4px' }}>
+              Solo pedidos con costo registrado
+            </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
+          </div>
+          
+          {/* Pedidos Completados por Vendedores */}
+          <div className="card">
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Pedidos Completados por Vendedores
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
+              {Object.values(kpis.historical?.completed_orders_by_seller || {}).reduce((a, b) => a + b, 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Pedidos completados con vendedor
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Mejores Productos */}
+      <div style={{ marginBottom: '40px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '20px',
+          paddingBottom: '12px',
+          borderBottom: '2px solid #e1e7e1'
+        }}>
+          <h2 style={{ 
+            fontSize: '24px', 
+            fontWeight: 800, 
+            margin: 0
+          }}>
+            🏆 Mejores Productos
+          </h2>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => loadBestProducts('last_week')}
+              className={`button ${bestProductsFilter === 'last_week' ? '' : 'ghost'}`}
+              style={{ padding: '8px 16px', fontSize: '14px' }}
+            >
+              Última Semana
+            </button>
+            <button
+              onClick={() => loadBestProducts('historical')}
+              className={`button ${bestProductsFilter === 'historical' ? '' : 'ghost'}`}
+              style={{ padding: '8px 16px', fontSize: '14px' }}
+            >
+              Histórico
+            </button>
           </div>
         </div>
         
-        {/* Total Clientes */}
-        <div className="card">
-          <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
-            Total Clientes
+        {loadingBestProducts ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Loader />
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
-            {kpis.total_customers}
+        ) : bestProducts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+            No hay productos para mostrar
           </div>
-          <div style={{ fontSize: '13px', color: '#999' }}>
-            Clientes registrados
+        ) : (
+          <div style={{ 
+            background: '#fff', 
+            borderRadius: '12px', 
+            border: '1px solid #e1e7e1',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 120px 120px 100px',
+              gap: '12px',
+              padding: '16px 20px',
+              background: '#f8f9fa',
+              borderBottom: '2px solid #e1e7e1',
+              fontWeight: 700,
+              fontSize: '13px',
+              color: '#666',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              <div>Producto</div>
+              <div style={{ textAlign: 'right' }}>Monto Facturado</div>
+              <div style={{ textAlign: 'right' }}>Cantidad</div>
+              <div style={{ textAlign: 'center' }}>Pedidos</div>
+            </div>
+            
+            {bestProducts.map((product, idx) => (
+              <div 
+                key={product.product_id}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 120px 120px 100px',
+                  gap: '12px',
+                  padding: '16px 20px',
+                  borderBottom: idx < bestProducts.length - 1 ? '1px solid #f0f0f0' : 'none',
+                  alignItems: 'center'
+                }}
+              >
+                <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                  {product.product_name}
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '16px', fontWeight: 700, color: 'var(--kivi-green)', fontFamily: 'monospace' }}>
+                  {formatCurrency(product.revenue)}
+                </div>
+                <div style={{ textAlign: 'right', fontSize: '14px', fontFamily: 'monospace' }}>
+                  {product.qty}
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
+                  {product.orders_count}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-        
-        {/* Total Pedidos */}
-        <div className="card">
-          <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
-            Total Pedidos
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
-            {kpis.total_orders}
-          </div>
-          <div style={{ fontSize: '13px', color: '#999' }}>
-            Pedidos con monto facturado &gt; 0
-          </div>
-        </div>
-        
-        {/* Utilidad Promedio por Pedido - Porcentaje */}
-        <div 
-          className="card" 
-          onClick={loadUtilityDetails}
-          style={{ 
-            cursor: 'pointer',
-            transition: 'transform 0.2s, box-shadow 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = ''
-          }}
-        >
-          <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
-            Utilidad Promedio por Pedido
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
-            {formatPercent(kpis.avg_utility_percent)}
-          </div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--kivi-green)', marginTop: '8px' }}>
-            {formatCurrency(kpis.avg_utility_amount)}
-          </div>
-          <div style={{ fontSize: '13px', color: '#999', marginTop: '4px' }}>
-            Solo pedidos con costo registrado
-          </div>
-          <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
-            👆 Click para ver detalles
-          </div>
-        </div>
-        
-        {/* Promedio de Pedidos por Semana */}
-        <div className="card">
-          <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
-            Pedidos Promedio por Semana
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px' }}>
-            {kpis.avg_orders_per_week.toFixed(1)}
-          </div>
-          <div style={{ fontSize: '13px', color: '#999' }}>
-            Últimos 30 días / 4 semanas
-          </div>
-        </div>
+        )}
       </div>
       
       {/* Info Note */}

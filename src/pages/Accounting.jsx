@@ -591,12 +591,19 @@ export default function Accounting() {
         unit_price: parseFloat(editForm.unit_price)
       }
       
-      // Solo incluir conversión si se especificó
-      if (editForm.charged_qty !== null && editForm.charged_qty !== undefined) {
+      // Determinar si hay conversión real (unidad diferente)
+      const hasRealConversion = editForm.charged_unit && 
+                                 editForm.charged_unit !== '' && 
+                                 editForm.charged_unit !== editingItem.unit
+      
+      // Si hay conversión, incluir charged_qty y charged_unit
+      if (hasRealConversion && editForm.charged_qty !== null && editForm.charged_qty !== undefined) {
         updateData.charged_qty = parseFloat(editForm.charged_qty)
-      }
-      if (editForm.charged_unit !== null && editForm.charged_unit !== undefined) {
         updateData.charged_unit = editForm.charged_unit
+      } else {
+        // Si NO hay conversión, resetear explícitamente para que el backend limpie valores incorrectos
+        updateData.charged_qty = null
+        updateData.charged_unit = null
       }
       
       await updateOrderItem(itemId, updateData)
