@@ -89,7 +89,7 @@ export default function Navbar() {
           {menuGroups.map((group, idx) => (
             <div
               key={idx}
-              style={{ position: 'relative' }}
+              style={{ position: 'relative', display: 'inline-block' }}
               onMouseEnter={() => setOpenDropdown(idx)}
               onMouseLeave={() => setOpenDropdown(null)}
             >
@@ -104,53 +104,59 @@ export default function Navbar() {
               >
                 <span>{group.emoji}</span>
                 <span>{group.label}</span>
-                <span style={{ marginLeft: '4px' }}>▼</span>
               </button>
               
               {openDropdown === idx && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  marginTop: '4px',
-                  background: '#fff',
-                  border: '1px solid #e1e7e1',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  minWidth: '180px',
-                  zIndex: 1000,
-                  overflow: 'hidden'
-                }}>
-                  {group.items.map(item => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setOpenDropdown(null)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 16px',
-                        textDecoration: 'none',
-                        color: isActive(item.path) ? '#fff' : 'var(--kivi-text)',
-                        background: isActive(item.path) ? 'var(--kivi-green)' : 'transparent',
-                        transition: 'background 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isActive(item.path)) {
-                          e.currentTarget.style.background = '#f8f9fa'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isActive(item.path)) {
-                          e.currentTarget.style.background = 'transparent'
-                        }
-                      }}
-                    >
-                      <span>{item.emoji}</span>
-                      <span>{item.label}</span>
-                    </Link>
-                  ))}
+                <div 
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    paddingTop: '2px',
+                    zIndex: 1000
+                  }}
+                  onMouseEnter={() => setOpenDropdown(idx)}
+                  onMouseLeave={() => setOpenDropdown(null)}
+                >
+                  <div style={{
+                    background: '#fff',
+                    border: '1px solid #e1e7e1',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    minWidth: '180px',
+                    overflow: 'hidden'
+                  }}>
+                    {group.items.map(item => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setOpenDropdown(null)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '10px 16px',
+                          textDecoration: 'none',
+                          color: isActive(item.path) ? '#fff' : 'var(--kivi-text)',
+                          background: isActive(item.path) ? 'var(--kivi-green)' : 'transparent',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive(item.path)) {
+                            e.currentTarget.style.background = '#f8f9fa'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive(item.path)) {
+                            e.currentTarget.style.background = 'transparent'
+                          }
+                        }}
+                      >
+                        <span>{item.emoji}</span>
+                        <span>{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -217,17 +223,14 @@ export default function Navbar() {
                 onClick={() => setOpenDropdown(openDropdown === idx ? null : idx)}
                 style={{
                   width: '100%',
-                  justifyContent: 'space-between',
+                  justifyContent: 'flex-start',
                   background: isDropdownActive(group.items) ? 'var(--kivi-green)' : 'transparent',
                   color: isDropdownActive(group.items) ? '#fff' : 'var(--kivi-text)',
                   border: isDropdownActive(group.items) ? 'none' : '1px solid #e1e7e1'
                 }}
               >
-                <span>
-                  <span>{group.emoji}</span>
-                  <span style={{ marginLeft: '8px' }}>{group.label}</span>
-                </span>
-                <span>{openDropdown === idx ? '▲' : '▼'}</span>
+                <span>{group.emoji}</span>
+                <span style={{ marginLeft: '8px' }}>{group.label}</span>
               </button>
               
               {openDropdown === idx && (
