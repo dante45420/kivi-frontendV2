@@ -6,7 +6,6 @@ import { getToken, verifyToken, clearToken } from './api/auth'
 import Navbar from './components/Navbar'
 
 // Páginas admin
-import Dashboard from './pages/Dashboard'
 import Products from './pages/Products'
 import Categories from './pages/Categories'
 import Orders from './pages/Orders'
@@ -16,7 +15,6 @@ import Sellers from './pages/Sellers'
 import Accounting from './pages/Accounting'
 import KPIs from './pages/KPIs'
 import WeeklyOffers from './pages/WeeklyOffers'
-import KiviTips from './pages/KiviTips'
 import Login from './pages/Login'
 
 // Páginas públicas
@@ -85,7 +83,6 @@ export default function App() {
   // Rutas admin
   const adminRoutes = (
     <>
-      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/productos" element={<Products />} />
       <Route path="/categorias" element={<Categories />} />
       <Route path="/pedidos" element={<Orders />} />
@@ -95,7 +92,6 @@ export default function App() {
       <Route path="/contabilidad" element={<Accounting />} />
       <Route path="/kpis" element={<KPIs />} />
       <Route path="/ofertas" element={<WeeklyOffers />} />
-      <Route path="/kivi-tips" element={<KiviTips />} />
     </>
   )
   
@@ -113,11 +109,11 @@ export default function App() {
           
           {/* Login */}
           <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLogin} />
+            isAuthenticated ? <Navigate to="/kpis" replace /> : <Login onLogin={handleLogin} />
           } />
           
           {/* Redirect por defecto */}
-          <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />} />
+          <Route path="*" element={<Navigate to={isAuthenticated ? "/kpis" : "/"} replace />} />
         </Routes>
       </main>
     </div>

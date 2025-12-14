@@ -5,21 +5,45 @@ import { logout } from '../api/auth'
 export default function Navbar() {
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState(null)
   
   const isActive = (path) => location.pathname === path
   
-  const navItems = [
-    { path: '/dashboard', label: 'Dashboard', emoji: '📊' },
-    { path: '/productos', label: 'Productos', emoji: '🥬' },
-    { path: '/categorias', label: 'Categorías', emoji: '🏷️' },
-    { path: '/ofertas', label: 'Ofertas', emoji: '🎯' },
-    { path: '/pedidos', label: 'Pedidos', emoji: '📦' },
-    { path: '/compras', label: 'Compras', emoji: '🛒' },
-    { path: '/clientes', label: 'Clientes', emoji: '👥' },
-    { path: '/vendedores', label: 'Vendedores', emoji: '👔' },
+  const isDropdownActive = (items) => {
+    return items.some(item => isActive(item.path))
+  }
+  
+  const menuGroups = [
+    {
+      label: 'Productos',
+      emoji: '🥬',
+      items: [
+        { path: '/productos', label: 'Productos', emoji: '🥬' },
+        { path: '/categorias', label: 'Categorías', emoji: '🏷️' },
+        { path: '/ofertas', label: 'Ofertas', emoji: '🎯' },
+      ]
+    },
+    {
+      label: 'Pedidos',
+      emoji: '📦',
+      items: [
+        { path: '/pedidos', label: 'Pedidos', emoji: '📦' },
+        { path: '/compras', label: 'Compras', emoji: '🛒' },
+      ]
+    },
+    {
+      label: 'Clientes',
+      emoji: '👥',
+      items: [
+        { path: '/clientes', label: 'Clientes', emoji: '👥' },
+        { path: '/vendedores', label: 'Vendedores', emoji: '👔' },
+      ]
+    },
+  ]
+  
+  const singleItems = [
     { path: '/contabilidad', label: 'Contabilidad', emoji: '💰' },
     { path: '/kpis', label: 'KPIs', emoji: '📈' },
-    { path: '/kivi-tips', label: 'Tips Kivi', emoji: '🐕' },
   ]
   
   return (
@@ -41,7 +65,7 @@ export default function Navbar() {
         gap: '20px'
       }}>
         {/* Logo */}
-        <Link to="/dashboard" style={{
+        <Link to="/kpis" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -58,9 +82,82 @@ export default function Navbar() {
         <div className="hide-mobile" style={{
           display: 'flex',
           gap: '8px',
-          alignItems: 'center'
+          alignItems: 'center',
+          position: 'relative'
         }}>
-          {navItems.map(item => (
+          {/* Menús desplegables */}
+          {menuGroups.map((group, idx) => (
+            <div
+              key={idx}
+              style={{ position: 'relative' }}
+              onMouseEnter={() => setOpenDropdown(idx)}
+              onMouseLeave={() => setOpenDropdown(null)}
+            >
+              <button
+                className="button button-sm"
+                style={{
+                  background: isDropdownActive(group.items) ? 'var(--kivi-green)' : 'transparent',
+                  color: isDropdownActive(group.items) ? '#fff' : 'var(--kivi-text)',
+                  border: isDropdownActive(group.items) ? 'none' : '1px solid #e1e7e1',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>{group.emoji}</span>
+                <span>{group.label}</span>
+                <span style={{ marginLeft: '4px' }}>▼</span>
+              </button>
+              
+              {openDropdown === idx && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: '4px',
+                  background: '#fff',
+                  border: '1px solid #e1e7e1',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  minWidth: '180px',
+                  zIndex: 1000,
+                  overflow: 'hidden'
+                }}>
+                  {group.items.map(item => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setOpenDropdown(null)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 16px',
+                        textDecoration: 'none',
+                        color: isActive(item.path) ? '#fff' : 'var(--kivi-text)',
+                        background: isActive(item.path) ? 'var(--kivi-green)' : 'transparent',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive(item.path)) {
+                          e.currentTarget.style.background = '#f8f9fa'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive(item.path)) {
+                          e.currentTarget.style.background = 'transparent'
+                        }
+                      }}
+                    >
+                      <span>{item.emoji}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {/* Items individuales */}
+          {singleItems.map(item => (
             <Link
               key={item.path}
               to={item.path}
@@ -108,9 +205,66 @@ export default function Navbar() {
           padding: '12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px'
+          gap: '8px',
+          maxHeight: 'calc(100vh - 80px)',
+          overflowY: 'auto'
         }}>
-          {navItems.map(item => (
+          {/* Menús desplegables móviles */}
+          {menuGroups.map((group, idx) => (
+            <div key={idx}>
+              <button
+                className="button"
+                onClick={() => setOpenDropdown(openDropdown === idx ? null : idx)}
+                style={{
+                  width: '100%',
+                  justifyContent: 'space-between',
+                  background: isDropdownActive(group.items) ? 'var(--kivi-green)' : 'transparent',
+                  color: isDropdownActive(group.items) ? '#fff' : 'var(--kivi-text)',
+                  border: isDropdownActive(group.items) ? 'none' : '1px solid #e1e7e1'
+                }}
+              >
+                <span>
+                  <span>{group.emoji}</span>
+                  <span style={{ marginLeft: '8px' }}>{group.label}</span>
+                </span>
+                <span>{openDropdown === idx ? '▲' : '▼'}</span>
+              </button>
+              
+              {openDropdown === idx && (
+                <div style={{
+                  paddingLeft: '16px',
+                  marginTop: '4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  {group.items.map(item => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className="button ghost"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        setOpenDropdown(null)
+                      }}
+                      style={{
+                        justifyContent: 'flex-start',
+                        background: isActive(item.path) ? 'var(--kivi-green)' : 'transparent',
+                        color: isActive(item.path) ? '#fff' : 'var(--kivi-text)',
+                        border: isActive(item.path) ? 'none' : '1px solid #e1e7e1'
+                      }}
+                    >
+                      <span>{item.emoji}</span>
+                      <span style={{ marginLeft: '8px' }}>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          
+          {/* Items individuales móviles */}
+          {singleItems.map(item => (
             <Link
               key={item.path}
               to={item.path}
@@ -124,9 +278,10 @@ export default function Navbar() {
               }}
             >
               <span>{item.emoji}</span>
-              <span>{item.label}</span>
+              <span style={{ marginLeft: '8px' }}>{item.label}</span>
             </Link>
           ))}
+          
           <button onClick={logout} className="button ghost">
             Salir
           </button>
