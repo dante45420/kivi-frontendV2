@@ -682,13 +682,25 @@ export default function Accounting() {
           background: #999;
         }
         
+        @media (max-width: 1600px) {
+          .accounting-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+        }
+        
         @media (max-width: 1200px) {
+          .accounting-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+        }
+        
+        @media (max-width: 900px) {
           .accounting-grid {
             grid-template-columns: repeat(2, 1fr) !important;
           }
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 600px) {
           .accounting-grid {
             grid-template-columns: 1fr !important;
           }
@@ -762,29 +774,30 @@ export default function Accounting() {
         ) : (
           <div className="accounting-grid" style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '16px'
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: '12px'
           }}>
             {filteredAccountingData.map((data, idx) => {
-              const debtColor = data.total_debt === 0 ? '#666' : '#f44336' // No usar verde
+              const debtColor = data.total_debt === 0 ? '#4caf50' : '#f44336' // Verde cuando es 0
               
               // Ordenar pedidos por número (más reciente primero)
               const sortedOrders = [...data.orders].sort((a, b) => (b.order_id || 0) - (a.order_id || 0))
-              const recentOrders = sortedOrders.slice(0, 3) // Últimos 3 pedidos
-              const hasMoreOrders = sortedOrders.length > 3
+              // Mostrar TODOS los pedidos para que el scroll funcione
+              const allOrders = sortedOrders
               
               return (
                 <div key={idx} style={{
                   background: '#fff',
                   borderRadius: '12px',
                   border: '1px solid #e1e7e1',
-                  padding: '16px',
+                  padding: '12px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '10px',
                   minHeight: '400px',
                   maxHeight: '500px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  width: '100%'
                 }}>
                   {/* Header del cliente - Compacto */}
                   <div style={{ textAlign: 'center', marginBottom: '4px' }}>
@@ -802,39 +815,64 @@ export default function Accounting() {
                     </div>
                   </div>
                   
-                  {/* Deuda Pendiente - Inline */}
+                  {/* Deuda Pendiente - Inline con Monto Facturado */}
                   <div style={{ 
-                    padding: '12px',
+                    padding: '10px',
                     background: '#f8f9fa',
                     borderRadius: '8px',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
+                    flexDirection: 'column',
+                    gap: '6px'
                   }}>
-                    <span style={{ fontSize: '13px', color: '#666', fontWeight: 600 }}>
-                      Deuda Pendiente:
-                    </span>
-                    <span style={{
-                      fontSize: '18px',
-                      fontWeight: 700,
-                      color: debtColor,
-                      fontFamily: 'monospace'
+                    <div style={{ 
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
                     }}>
-                      ${data.total_debt.toLocaleString('es-CL')}
-                    </span>
+                      <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>
+                        Deuda Pendiente:
+                      </span>
+                      <span style={{
+                        fontSize: '16px',
+                        fontWeight: 700,
+                        color: debtColor,
+                        fontFamily: 'monospace'
+                      }}>
+                        ${data.total_debt.toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                    <div style={{ 
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      paddingTop: '4px',
+                      borderTop: '1px solid #e0e0e0'
+                    }}>
+                      <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>
+                        Total Facturado:
+                      </span>
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#333',
+                        fontFamily: 'monospace'
+                      }}>
+                        ${data.total_billed.toLocaleString('es-CL')}
+                      </span>
+                    </div>
                   </div>
                   
-                  {/* Últimos 3 pedidos - Compacto con scroll mejorado */}
+                  {/* Todos los pedidos - Compacto con scroll mejorado */}
                   <div style={{ 
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px',
+                    gap: '8px',
                     overflowY: 'auto',
                     overflowX: 'hidden',
-                    minHeight: '180px',
-                    maxHeight: '280px',
-                    paddingRight: '8px',
+                    minHeight: '200px',
+                    maxHeight: '320px',
+                    paddingRight: '6px',
                     paddingBottom: '4px',
                     scrollbarWidth: 'thin',
                     scrollbarColor: '#ccc #f0f0f0'
@@ -846,7 +884,7 @@ export default function Accounting() {
                     element.scrollTop += e.deltaY
                   }}
                   >
-                    {recentOrders.length > 0 ? recentOrders.map((order, oidx) => {
+                    {allOrders.length > 0 ? allOrders.map((order, oidx) => {
                       const orderTotal = order.total || 0
                       return (
                         <div
@@ -924,20 +962,6 @@ export default function Accounting() {
                         fontSize: '16px'
                       }}>
                         No hay pedidos
-                      </div>
-                    )}
-                    
-                    {hasMoreOrders && (
-                      <div style={{ 
-                        textAlign: 'center', 
-                        padding: '12px',
-                        fontSize: '14px',
-                        color: '#999',
-                        fontStyle: 'italic'
-                      }}>
-                        +{sortedOrders.length - 3} pedido{sortedOrders.length - 3 !== 1 ? 's' : ''} más
-                        <br />
-                        <span style={{ fontSize: '12px' }}>Haz scroll para ver más</span>
                       </div>
                     )}
                   </div>
