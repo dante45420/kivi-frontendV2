@@ -130,20 +130,40 @@ export default function Shopping() {
     })
   }
 
+  // Función para formatear número en formato contabilidad chilena
+  function formatChileanNumber(value) {
+    if (!value && value !== 0) return ''
+    // Remover todos los puntos (separadores de miles)
+    const numericValue = String(value).replace(/\./g, '')
+    // Formatear con puntos como separadores de miles
+    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+
+  // Función para parsear número desde formato chileno
+  function parseChileanNumber(formattedValue) {
+    if (!formattedValue) return ''
+    // Remover puntos y convertir a número
+    return formattedValue.replace(/\./g, '')
+  }
+
   function handlePriceChange(key, field, value) {
+    // Si es un campo de precio, parsear el valor formateado
+    const numericValue = (field === 'price_total' || field === 'price_per_unit' || field === 'price_per_charged_unit')
+      ? parseChileanNumber(value)
+      : value
     setPurchaseData(prev => {
       const item = consolidatedList.find(i => `${i.product_id}_${i.unit}` === key)
       const updated = { ...prev }
       
       if (!updated[key]) updated[key] = {}
-      updated[key][field] = value
+      updated[key][field] = numericValue
       
       const needsConversion = item.unit !== item.product_default_unit
       const hasConversion = updated[key].conversion_qty && updated[key].conversion_unit
       
       // Auto-calcular el otro campo de precio
-      if (field === 'price_total' && item && value) {
-        const priceTotal = parseFloat(value)
+      if (field === 'price_total' && item && numericValue) {
+        const priceTotal = parseFloat(numericValue)
         if (needsConversion && hasConversion) {
           // Si hay conversión, calcular precio por unidad de cobro usando la conversión
           const conversionQty = parseFloat(updated[key].conversion_qty)
@@ -154,12 +174,12 @@ export default function Shopping() {
           // Sin conversión, calcular normalmente
           updated[key].price_per_unit = (priceTotal / item.total_qty).toFixed(0)
         }
-      } else if (field === 'price_per_unit' && item && value && !needsConversion) {
+      } else if (field === 'price_per_unit' && item && numericValue && !needsConversion) {
         // Solo permitir editar precio por unidad si NO hay conversión
-        updated[key].price_total = (parseFloat(value) * item.total_qty).toFixed(0)
-      } else if (field === 'price_per_charged_unit' && item && value && needsConversion && hasConversion) {
+        updated[key].price_total = (parseFloat(numericValue) * item.total_qty).toFixed(0)
+      } else if (field === 'price_per_charged_unit' && item && numericValue && needsConversion && hasConversion) {
         // Si se edita el precio por unidad de cobro, calcular el total usando la conversión
-        const pricePerChargedUnit = parseFloat(value)
+        const pricePerChargedUnit = parseFloat(numericValue)
         const conversionQty = parseFloat(updated[key].conversion_qty)
         updated[key].price_total = (pricePerChargedUnit * conversionQty).toFixed(0)
         // También actualizar precio por unidad de compra
@@ -716,11 +736,16 @@ export default function Shopping() {
                           Total $
                         </label>
                         <input
-                          type="number"
+                          type="text"
                           className="input"
-                          value={data.price_total || ''}
-                          onChange={e => handlePriceChange(key, 'price_total', e.target.value)}
-                          placeholder="15000"
+                          value={data.price_total ? formatChileanNumber(data.price_total) : ''}
+                          onChange={e => {
+                            const parsed = parseChileanNumber(e.target.value)
+                            if (!isNaN(parsed) || parsed === '') {
+                              handlePriceChange(key, 'price_total', parsed)
+                            }
+                          }}
+                          placeholder="15.000"
                           style={{ width: '100%', padding: '8px', fontSize: '14px' }}
                         />
                       </div>
@@ -731,11 +756,16 @@ export default function Shopping() {
                             Por {item.unit} $
                           </label>
                           <input
-                            type="number"
+                            type="text"
                             className="input"
-                            value={data.price_per_unit || ''}
-                            onChange={e => handlePriceChange(key, 'price_per_unit', e.target.value)}
-                            placeholder="1500"
+                            value={data.price_per_unit ? formatChileanNumber(data.price_per_unit) : ''}
+                            onChange={e => {
+                              const parsed = parseChileanNumber(e.target.value)
+                              if (!isNaN(parsed) || parsed === '') {
+                                handlePriceChange(key, 'price_per_unit', parsed)
+                              }
+                            }}
+                            placeholder="1.500"
                             style={{ width: '100%', padding: '8px', fontSize: '14px' }}
                           />
                         </div>
@@ -771,12 +801,16 @@ export default function Shopping() {
                               Precio por {item.product_default_unit} $ (opcional)
                             </label>
                             <input
-                              type="number"
+                              type="text"
                               className="input"
-                              value={data.price_per_charged_unit || ''}
-                              onChange={e => handlePriceChange(key, 'price_per_charged_unit', e.target.value)}
-                              placeholder="Ej: 4000"
-                              step="0.01"
+                              value={data.price_per_charged_unit ? formatChileanNumber(data.price_per_charged_unit) : ''}
+                              onChange={e => {
+                                const parsed = parseChileanNumber(e.target.value)
+                                if (!isNaN(parsed) || parsed === '') {
+                                  handlePriceChange(key, 'price_per_charged_unit', parsed)
+                                }
+                              }}
+                              placeholder="Ej: 4.000"
                               style={{ width: '100%', padding: '8px', fontSize: '14px' }}
                             />
                             <div style={{ fontSize: '10px', color: '#999', marginTop: '2px' }}>

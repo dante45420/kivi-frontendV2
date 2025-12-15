@@ -74,10 +74,18 @@ export default function Accounting() {
   const [customerPayments, setCustomerPayments] = useState([])
   const [loadingPayments, setLoadingPayments] = useState(false)
   const [editingFromViewModal, setEditingFromViewModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     loadAccountingData()
   }, [])
+  
+  // Filtrar clientes por búsqueda
+  const filteredAccountingData = accountingData.filter(data => 
+    !searchQuery || 
+    data.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (data.customer.phone && data.customer.phone.includes(searchQuery))
+  )
 
   async function loadAccountingData() {
     setLoading(true)
@@ -650,14 +658,29 @@ export default function Accounting() {
     </div>
   )
 
-  const totalGlobalBilled = accountingData.reduce((sum, d) => sum + d.total_billed, 0)
-  const totalGlobalDebt = accountingData.reduce((sum, d) => sum + d.total_debt, 0)
+  const totalGlobalBilled = filteredAccountingData.reduce((sum, d) => sum + d.total_billed, 0)
+  const totalGlobalDebt = filteredAccountingData.reduce((sum, d) => sum + d.total_debt, 0)
 
   return (
     <>
       <style>{`
         details summary::-webkit-details-marker { display: none; }
         details summary::marker { display: none; }
+        
+        .accounting-grid > div::-webkit-scrollbar {
+          width: 8px;
+        }
+        .accounting-grid > div::-webkit-scrollbar-track {
+          background: #f0f0f0;
+          border-radius: 4px;
+        }
+        .accounting-grid > div::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 4px;
+        }
+        .accounting-grid > div::-webkit-scrollbar-thumb:hover {
+          background: #999;
+        }
         
         @media (max-width: 1200px) {
           .accounting-grid {
@@ -672,26 +695,36 @@ export default function Accounting() {
         }
       `}</style>
       
-      <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ padding: '12px', maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header con totales globales */}
-        <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ margin: '0 0 16px 0', fontSize: '24px', fontWeight: 800 }}>💰 Contabilidad</h2>
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>💰 Contabilidad</h2>
+            <input
+              type="text"
+              className="input"
+              placeholder="🔍 Buscar por nombre..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '250px', padding: '8px 12px', fontSize: '14px' }}
+            />
+          </div>
           
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{
               flex: 1,
               minWidth: '200px',
-              padding: '20px',
+              padding: '12px 16px',
               background: '#fff',
-              borderRadius: '12px',
-              border: '2px solid #e1e7e1'
+              borderRadius: '8px',
+              border: '1px solid #e1e7e1'
             }}>
-              <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
                 Total Facturado
               </div>
               <div style={{
-                fontSize: '28px',
-                fontWeight: 800,
+                fontSize: '22px',
+                fontWeight: 700,
                 color: '#333',
                 fontFamily: 'monospace'
               }}>
@@ -702,18 +735,18 @@ export default function Accounting() {
             <div style={{
               flex: 1,
               minWidth: '200px',
-              padding: '20px',
-              background: totalGlobalDebt === 0 ? '#e8f5e9' : '#ffebee',
-              borderRadius: '12px',
-              border: `2px solid ${totalGlobalDebt === 0 ? '#4caf50' : '#f44336'}`
+              padding: '12px 16px',
+              background: totalGlobalDebt === 0 ? '#f5f5f5' : '#ffebee',
+              borderRadius: '8px',
+              border: `1px solid ${totalGlobalDebt === 0 ? '#ccc' : '#f44336'}`
             }}>
-              <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
                 Deuda Pendiente
               </div>
               <div style={{
-                fontSize: '28px',
-                fontWeight: 800,
-                color: totalGlobalDebt === 0 ? '#4caf50' : '#f44336',
+                fontSize: '22px',
+                fontWeight: 700,
+                color: totalGlobalDebt === 0 ? '#666' : '#f44336', // No usar verde
                 fontFamily: 'monospace'
               }}>
                 ${totalGlobalDebt.toLocaleString('es-CL')}
@@ -722,18 +755,18 @@ export default function Accounting() {
           </div>
         </div>
 
-        {accountingData.length === 0 ? (
+        {filteredAccountingData.length === 0 ? (
           <div className="card" style={{ padding: '60px 20px', textAlign: 'center', opacity: 0.5 }}>
-            No hay pedidos finalizados
+            {searchQuery ? 'No se encontraron clientes' : 'No hay pedidos finalizados'}
           </div>
         ) : (
           <div className="accounting-grid" style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '32px'
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '16px'
           }}>
-            {accountingData.map((data, idx) => {
-              const debtColor = data.total_debt === 0 ? '#4caf50' : '#f44336'
+            {filteredAccountingData.map((data, idx) => {
+              const debtColor = data.total_debt === 0 ? '#666' : '#f44336' // No usar verde
               
               // Ordenar pedidos por número (más reciente primero)
               const sortedOrders = [...data.orders].sort((a, b) => (b.order_id || 0) - (a.order_id || 0))
@@ -743,67 +776,79 @@ export default function Accounting() {
               return (
                 <div key={idx} style={{
                   background: '#fff',
-                  borderRadius: '16px',
-                  border: '2px solid #e1e7e1',
-                  padding: '48px',
+                  borderRadius: '12px',
+                  border: '1px solid #e1e7e1',
+                  padding: '16px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '40px',
-                  minHeight: '600px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                  gap: '12px',
+                  minHeight: '400px',
+                  maxHeight: '500px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}>
-                  {/* Header del cliente - Minimalista */}
-                  <div style={{ textAlign: 'center' }}>
+                  {/* Header del cliente - Compacto */}
+                  <div style={{ textAlign: 'center', marginBottom: '4px' }}>
                     <h3 style={{ 
-                      margin: '0 0 12px 0', 
-                      fontSize: '28px', 
-                      fontWeight: 800,
+                      margin: '0 0 4px 0', 
+                      fontSize: '18px', 
+                      fontWeight: 700,
                       color: '#333',
                       lineHeight: '1.2'
                     }}>
                       {data.customer.name}
                     </h3>
-                    <div style={{ fontSize: '16px', color: '#666' }}>
+                    <div style={{ fontSize: '12px', color: '#666' }}>
                       {data.orders.length} pedido{data.orders.length !== 1 ? 's' : ''}
                     </div>
                   </div>
                   
-                  {/* Totales - Minimalista */}
+                  {/* Deuda Pendiente - Inline */}
                   <div style={{ 
-                    padding: '24px',
+                    padding: '12px',
                     background: '#f8f9fa',
-                    borderRadius: '12px',
-                    textAlign: 'center'
+                    borderRadius: '8px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}>
-                    <div style={{ fontSize: '16px', color: '#666', marginBottom: '12px' }}>
-                      Deuda Pendiente
-                    </div>
-                    <div style={{
-                      fontSize: '24px',
-                      fontWeight: 800,
+                    <span style={{ fontSize: '13px', color: '#666', fontWeight: 600 }}>
+                      Deuda Pendiente:
+                    </span>
+                    <span style={{
+                      fontSize: '18px',
+                      fontWeight: 700,
                       color: debtColor,
-                      fontFamily: 'monospace',
-                      marginBottom: '12px'
+                      fontFamily: 'monospace'
                     }}>
                       ${data.total_debt.toLocaleString('es-CL')}
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#999' }}>
-                      Facturado: ${data.total_billed.toLocaleString('es-CL')}
-                    </div>
+                    </span>
                   </div>
                   
-                  {/* Últimos 3 pedidos - Minimalista */}
+                  {/* Últimos 3 pedidos - Compacto con scroll mejorado */}
                   <div style={{ 
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '20px',
+                    gap: '10px',
                     overflowY: 'auto',
-                    minHeight: '250px',
-                    maxHeight: '450px',
-                    paddingRight: '12px'
-                  }}>
-                    {recentOrders.length > 0 ? recentOrders.map((order, oidx) => (
+                    overflowX: 'hidden',
+                    minHeight: '180px',
+                    maxHeight: '280px',
+                    paddingRight: '8px',
+                    paddingBottom: '4px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#ccc #f0f0f0'
+                  }}
+                  onWheel={(e) => {
+                    e.stopPropagation()
+                    // Permitir scroll suave
+                    const element = e.currentTarget
+                    element.scrollTop += e.deltaY
+                  }}
+                  >
+                    {recentOrders.length > 0 ? recentOrders.map((order, oidx) => {
+                      const orderTotal = order.total || 0
+                      return (
                       <div
                         key={oidx}
                         onClick={async () => {
@@ -819,19 +864,22 @@ export default function Accounting() {
                           }
                         }}
                         style={{
-                          padding: '24px',
+                          padding: '12px',
                           background: '#f8f9fa',
-                          borderRadius: '12px',
+                          borderRadius: '8px',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
-                          border: '2px solid #e0e0e0',
-                          minHeight: '120px'
+                          border: '1px solid #e0e0e0',
+                          minHeight: '60px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
                         }}
                         onMouseEnter={e => {
-                          e.currentTarget.style.background = '#e8f5e9'
-                          e.currentTarget.style.borderColor = 'var(--kivi-green)'
-                          e.currentTarget.style.transform = 'translateY(-2px)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+                          e.currentTarget.style.background = '#f0f0f0'
+                          e.currentTarget.style.borderColor = '#ccc'
+                          e.currentTarget.style.transform = 'translateY(-1px)'
+                          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'
                         }}
                         onMouseLeave={e => {
                           e.currentTarget.style.background = '#f8f9fa'
@@ -841,29 +889,34 @@ export default function Accounting() {
                         }}
                       >
                         <div style={{ 
-                          fontSize: '20px', 
-                          fontWeight: 700, 
-                          marginBottom: '12px',
-                          color: '#333'
+                          fontSize: '14px', 
+                          fontWeight: 600, 
+                          color: '#333',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
                         }}>
-                          Pedido #{order.order_id}
+                          <span>Pedido #{order.order_id}</span>
+                          <span style={{ 
+                            fontSize: '14px',
+                            fontWeight: 700,
+                            color: '#333',
+                            fontFamily: 'monospace'
+                          }}>
+                            ${orderTotal.toLocaleString('es-CL')}
+                          </span>
                         </div>
-                        <div style={{ 
-                          fontSize: '16px', 
-                          color: '#666', 
-                          marginBottom: '12px' 
-                        }}>
-                          {order.order_date ? new Date(order.order_date).toLocaleDateString('es-CL') : 'Sin fecha'}
-                        </div>
-                        <div style={{ 
-                          fontSize: '24px', 
-                          fontWeight: 800, 
-                          color: 'var(--kivi-green)',
-                          fontFamily: 'monospace'
-                        }}>
-                          ${order.total.toLocaleString('es-CL')}
-                        </div>
+                        {order.order_date && (
+                          <div style={{ 
+                            fontSize: '11px', 
+                            color: '#999'
+                          }}>
+                            {new Date(order.order_date).toLocaleDateString('es-CL')}
+                          </div>
+                        )}
                       </div>
+                      )
+                    }) : (
                     )) : (
                       <div style={{ 
                         textAlign: 'center', 
@@ -890,23 +943,23 @@ export default function Accounting() {
                     )}
                   </div>
                   
-                  {/* Botones de acción */}
+                  {/* Botones de acción - Compactos */}
                   <div style={{ 
                     display: 'flex', 
-                    gap: '12px',
+                    gap: '8px',
                     marginTop: 'auto',
-                    paddingTop: '16px'
+                    paddingTop: '8px'
                   }}>
                     <button 
-                      className="button ghost" 
-                      style={{ flex: 1, padding: '16px', fontSize: '16px', fontWeight: 700 }}
+                      className="button ghost button-sm" 
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '13px', fontWeight: 600 }}
                       onClick={() => openViewPaymentsModal(data.customer)}
                     >
                       💵 Ver Pagos
                     </button>
                     <button 
-                      className="button" 
-                      style={{ flex: 1, padding: '16px', fontSize: '16px', fontWeight: 700 }}
+                      className="button button-sm" 
+                      style={{ flex: 1, padding: '8px 12px', fontSize: '13px', fontWeight: 600 }}
                       onClick={() => openPaymentModal(data.customer)}
                     >
                       💵 Pago

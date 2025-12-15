@@ -630,7 +630,7 @@ export default function KPIs() {
                   {formatCurrency(product.revenue)}
                 </div>
                 <div style={{ textAlign: 'right', fontSize: '14px', fontFamily: 'monospace' }}>
-                  {product.qty}
+                  {product.qty} {product.unit || 'kg'}
                 </div>
                 <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 600 }}>
                   {product.orders_count}

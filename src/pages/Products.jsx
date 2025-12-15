@@ -100,6 +100,9 @@ export default function Products() {
       return
     }
     
+    // Guardar posición de scroll antes de actualizar
+    const scrollPosition = window.scrollY || window.pageYOffset
+    
     setSaving(true)
     try {
       const data = {
@@ -120,7 +123,12 @@ export default function Products() {
       
       alert('✅ Producto guardado')
       setShowModal(false)
-      loadData()
+      await loadData()
+      
+      // Restaurar posición de scroll después de un breve delay para que el DOM se actualice
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition)
+      }, 100)
     } catch (error) {
       alert('Error guardando producto: ' + error.message)
     } finally {
@@ -284,24 +292,36 @@ export default function Products() {
       ) : (
         <div className="grid grid-4">
           {filteredProducts.map(product => {
-            // Calcular porcentaje de utilidad
-            const profitPercent = product.purchase_price && product.sale_price && product.purchase_price > 0
-              ? ((product.sale_price - product.purchase_price) / product.purchase_price) * 100
+            // Calcular porcentaje de utilidad: (precio_venta - costo) / precio_venta * 100
+            const profitPercent = product.purchase_price && product.sale_price && product.sale_price > 0
+              ? ((product.sale_price - product.purchase_price) / product.sale_price) * 100
               : null
+            
+            // Determinar color según porcentaje
+            let profitColor = '#999'
+            if (profitPercent !== null) {
+              if (profitPercent <= 0) {
+                profitColor = '#f44336' // Rojo
+              } else if (profitPercent <= 30) {
+                profitColor = '#ff9800' // Amarillo
+              } else {
+                profitColor = '#4caf50' // Verde
+              }
+            }
             
             return (
               <div key={product.id} className="card" style={{ padding: '12px', position: 'relative' }}>
-                {/* Etiquetas en esquinas superiores */}
+                {/* Etiquetas en esquinas superiores - MÁS GRANDES */}
                 {profitPercent !== null && (
                   <div style={{
                     position: 'absolute',
                     top: '8px',
                     left: '8px',
-                    background: 'var(--kivi-green)',
+                    background: profitColor,
                     color: '#fff',
-                    padding: '4px 10px',
+                    padding: '6px 12px',
                     borderRadius: '12px',
-                    fontSize: '11px',
+                    fontSize: '14px',
                     fontWeight: 700,
                     zIndex: 10,
                     boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
@@ -318,9 +338,9 @@ export default function Products() {
                     right: '8px',
                     background: 'var(--kivi-orange)',
                     color: '#fff',
-                    padding: '4px 10px',
+                    padding: '6px 12px',
                     borderRadius: '12px',
-                    fontSize: '11px',
+                    fontSize: '14px',
                     fontWeight: 700,
                     zIndex: 10,
                     boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
