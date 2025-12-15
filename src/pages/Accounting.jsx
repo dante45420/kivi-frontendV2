@@ -849,75 +849,74 @@ export default function Accounting() {
                     {recentOrders.length > 0 ? recentOrders.map((order, oidx) => {
                       const orderTotal = order.total || 0
                       return (
-                      <div
-                        key={oidx}
-                        onClick={async () => {
-                          try {
-                            const fullOrderData = await fetchOrder(order.order_id)
-                            setSelectedOrderPopup({ 
-                              order: { ...order, ...fullOrderData }, 
-                              customer: data.customer 
-                            })
-                          } catch (err) {
-                            console.error('Error cargando pedido:', err)
-                            setSelectedOrderPopup({ order, customer: data.customer })
-                          }
-                        }}
-                        style={{
-                          padding: '12px',
-                          background: '#f8f9fa',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          border: '1px solid #e0e0e0',
-                          minHeight: '60px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px'
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = '#f0f0f0'
-                          e.currentTarget.style.borderColor = '#ccc'
-                          e.currentTarget.style.transform = 'translateY(-1px)'
-                          e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = '#f8f9fa'
-                          e.currentTarget.style.borderColor = '#e0e0e0'
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = 'none'
-                        }}
-                      >
-                        <div style={{ 
-                          fontSize: '14px', 
-                          fontWeight: 600, 
-                          color: '#333',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}>
-                          <span>Pedido #{order.order_id}</span>
-                          <span style={{ 
-                            fontSize: '14px',
-                            fontWeight: 700,
-                            color: '#333',
-                            fontFamily: 'monospace'
-                          }}>
-                            ${orderTotal.toLocaleString('es-CL')}
-                          </span>
-                        </div>
-                        {order.order_date && (
+                        <div
+                          key={oidx}
+                          onClick={async () => {
+                            try {
+                              const fullOrderData = await fetchOrder(order.order_id)
+                              setSelectedOrderPopup({ 
+                                order: { ...order, ...fullOrderData }, 
+                                customer: data.customer 
+                              })
+                            } catch (err) {
+                              console.error('Error cargando pedido:', err)
+                              setSelectedOrderPopup({ order, customer: data.customer })
+                            }
+                          }}
+                          style={{
+                            padding: '12px',
+                            background: '#f8f9fa',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            border: '1px solid #e0e0e0',
+                            minHeight: '60px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = '#f0f0f0'
+                            e.currentTarget.style.borderColor = '#ccc'
+                            e.currentTarget.style.transform = 'translateY(-1px)'
+                            e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08)'
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = '#f8f9fa'
+                            e.currentTarget.style.borderColor = '#e0e0e0'
+                            e.currentTarget.style.transform = 'translateY(0)'
+                            e.currentTarget.style.boxShadow = 'none'
+                          }}
+                        >
                           <div style={{ 
-                            fontSize: '11px', 
-                            color: '#999'
+                            fontSize: '14px', 
+                            fontWeight: 600, 
+                            color: '#333',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
                           }}>
-                            {new Date(order.order_date).toLocaleDateString('es-CL')}
+                            <span>Pedido #{order.order_id}</span>
+                            <span style={{ 
+                              fontSize: '14px',
+                              fontWeight: 700,
+                              color: '#333',
+                              fontFamily: 'monospace'
+                            }}>
+                              ${orderTotal.toLocaleString('es-CL')}
+                            </span>
                           </div>
-                        )}
-                      </div>
+                          {order.order_date && (
+                            <div style={{ 
+                              fontSize: '11px', 
+                              color: '#999'
+                            }}>
+                              {new Date(order.order_date).toLocaleDateString('es-CL')}
+                            </div>
+                          )}
+                        </div>
                       )
                     }) : (
-                    )) : (
                       <div style={{ 
                         textAlign: 'center', 
                         padding: '40px 20px',
