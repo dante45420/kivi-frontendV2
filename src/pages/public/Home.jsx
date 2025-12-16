@@ -237,7 +237,7 @@ export default function Home() {
               justifyContent: 'center'
             }}>
               <img 
-                src="/cliente_cercano.HEIC" 
+                src="/cliente_cercano.jpg" 
                 alt="Atención personalizada"
                 style={{ 
                   width: '100%',

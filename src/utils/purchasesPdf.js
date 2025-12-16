@@ -158,23 +158,24 @@ export async function generatePurchasesListPDF(consolidatedList) {
         const hasBreakdown = breakdown.para_hoy > 0 || breakdown.para_4_5_dias > 0 || breakdown.sin_especificar > 0
         
         if (hasBreakdown) {
-          doc.setFontSize(9)
-          doc.setTextColor(100, 100, 100)
-          let breakdownText = ''
-          const parts = []
+          y += 4 // Espacio adicional antes del desglose
+          doc.setFontSize(11)
+          doc.setTextColor(60, 60, 60)
+          doc.setFont('helvetica', 'bold')
           
           if (breakdown.para_hoy > 0) {
-            parts.push(`Para hoy: ${breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`)
+            const text = `Para hoy: ${breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
+            doc.text(text, margin + 10, y)
+            y += 8 // Espacio más grande entre opciones
           }
           if (breakdown.para_4_5_dias > 0) {
-            parts.push(`Para 4-5 días: ${breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`)
+            const text = `Para 4-5 días: ${breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
+            doc.text(text, margin + 10, y)
+            y += 8 // Espacio más grande entre opciones
           }
           
-          if (parts.length > 0) {
-            breakdownText = parts.join(' | ')
-            doc.text(breakdownText, margin + 10, y)
-            y += 5
-          }
+          doc.setFont('helvetica', 'normal')
+          y += 2 // Espacio adicional después del desglose
         }
       }
       

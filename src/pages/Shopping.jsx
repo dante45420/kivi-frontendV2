@@ -16,6 +16,7 @@ export default function Shopping() {
   const [saving, setSaving] = useState(false) // Protección contra doble submit
   const [showModal, setShowModal] = useState(false)
   const [purchaseData, setPurchaseData] = useState({}) // { product_id_unit: { price_total, conversion_qty, ... } }
+  const [maturityData, setMaturityData] = useState({}) // { product_id_unit: 'para_hoy' | 'para_4_5_dias' | 'sin_especificar' }
   const [expandedProducts, setExpandedProducts] = useState(new Set())
   const [showHistory, setShowHistory] = useState(false)
   const [pastPurchases, setPastPurchases] = useState([])
@@ -159,6 +160,15 @@ export default function Shopping() {
       }
       return newSet
     })
+  }
+
+  // Función para obtener la maduración predominante
+  function getPredominantMaturity(breakdown) {
+    if (!breakdown) return 'sin_especificar'
+    const { para_hoy = 0, para_4_5_dias = 0, sin_especificar = 0 } = breakdown
+    if (para_hoy >= para_4_5_dias && para_hoy >= sin_especificar) return 'para_hoy'
+    if (para_4_5_dias >= sin_especificar) return 'para_4_5_dias'
+    return 'sin_especificar'
   }
 
   // Función para formatear número en formato contabilidad chilena
@@ -544,7 +554,7 @@ export default function Shopping() {
             {/* Header */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: '2fr 120px 80px',
+              gridTemplateColumns: '2fr 180px 80px',
               gap: '16px',
               padding: '16px 20px',
               background: '#f8f9fa',
@@ -556,7 +566,7 @@ export default function Shopping() {
               letterSpacing: '0.5px'
             }}>
               <div>Producto</div>
-              <div style={{ textAlign: 'right' }}>Cantidad</div>
+              <div style={{ textAlign: 'right' }}>Cantidad / Maduración</div>
               <div style={{ textAlign: 'center' }}>Estado</div>
             </div>
 
@@ -569,7 +579,7 @@ export default function Shopping() {
                 <div key={idx}>
                   <div style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: '2fr 120px 80px',
+                    gridTemplateColumns: '2fr 180px 80px',
                     gap: '16px',
                     padding: '16px 20px',
                     borderBottom: '1px solid #f0f0f0',
@@ -588,12 +598,38 @@ export default function Shopping() {
                     
                     <div style={{ 
                       textAlign: 'right', 
-                      fontSize: '20px', 
-                      fontWeight: 800,
-                      fontFamily: 'monospace',
-                      color: 'var(--kivi-green)'
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: '4px'
                     }}>
-                      {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
+                      <div style={{ 
+                        fontSize: '20px', 
+                        fontWeight: 800,
+                        fontFamily: 'monospace',
+                        color: 'var(--kivi-green)'
+                      }}>
+                        {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
+                      </div>
+                      <select
+                        value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
+                        onChange={(e) => {
+                          setMaturityData(prev => ({ ...prev, [key]: e.target.value }))
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          fontSize: '11px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          border: '1px solid #ddd',
+                          background: '#fff',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="para_hoy">Para hoy</option>
+                        <option value="para_4_5_dias">Para 4-5 días</option>
+                        <option value="sin_especificar">Sin especificar</option>
+                      </select>
                     </div>
                     
                     <div style={{ textAlign: 'center' }}>
@@ -735,14 +771,39 @@ export default function Shopping() {
                       <span style={{ fontSize: '15px', fontWeight: 700 }}>
                         {item.product_name}
                       </span>
-                      <span style={{ 
-                        fontSize: '16px', 
-                        fontWeight: 800,
-                        fontFamily: 'monospace',
-                        color: 'var(--kivi-green)'
+                      <div style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
                       }}>
-                        {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
-                      </span>
+                        <span style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 800,
+                          fontFamily: 'monospace',
+                          color: 'var(--kivi-green)'
+                        }}>
+                          {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
+                        </span>
+                        <select
+                          value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
+                          onChange={(e) => {
+                            setMaturityData(prev => ({ ...prev, [key]: e.target.value }))
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            fontSize: '11px',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #ddd',
+                            background: '#fff',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="para_hoy">Para hoy</option>
+                          <option value="para_4_5_dias">Para 4-5 días</option>
+                          <option value="sin_especificar">Sin especificar</option>
+                        </select>
+                      </div>
                     </div>
                     
                     {/* Alerta de conversión obligatoria */}
