@@ -12,47 +12,20 @@
 export function calculateShipping(shippingType, subtotal = 0) {
   const type = shippingType || 'normal'
   
-  switch (type) {
-    case 'fast':
-    case 'fastest':
-      // Rápido: mismo día antes de las 12, +10% al monto total
-      const fastAmount = Math.round(subtotal * 0.10)
-      return {
-        amount: fastAmount,
-        label: 'Envío rápido',
-        description: 'Envío el mismo día (solo antes de las 12:00)',
-        percentage: '+10%'
-      }
-    
-    case 'normal':
-    case 'standard':
-      // Normal: día siguiente, +0%
-      return {
-        amount: 0,
-        label: 'Envío normal',
-        description: 'Envío al día siguiente',
-        percentage: '+0%'
-      }
-    
-    case 'cheap':
-    case 'cheapest':
-    case 'economico':
-      // Económico: 1-3 días, -10%
-      const cheapAmount = -Math.round(subtotal * 0.10)
-      return {
-        amount: cheapAmount,
-        label: 'Envío económico',
-        description: 'Entrega en 1-3 días',
-        percentage: '-10%'
-      }
-    
-    default:
-      return {
-        amount: 0,
-        label: 'Envío normal',
-        description: 'Envío al día siguiente',
-        percentage: '+0%'
-      }
+  // Siempre usar 'normal' - el único método de envío disponible
+  // Normal: día siguiente
+  // Si el pedido es menor a 30.000, se cobra 3.000 de envío
+  // Si el pedido es >= 30.000, no se cobra envío (0)
+  const subtotalNum = parseFloat(subtotal) || 0
+  const shippingAmount = subtotalNum < 30000 ? 3000 : 0
+  
+  return {
+    amount: shippingAmount,
+    label: 'Envío normal',
+    description: subtotalNum < 30000 
+      ? 'Envío al día siguiente (+$3.000)' 
+      : 'Envío al día siguiente (sin costo adicional)',
+    percentage: subtotalNum < 30000 ? '+$3.000' : '+0%'
   }
 }
 

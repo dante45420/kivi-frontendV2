@@ -592,8 +592,30 @@ export default function Shopping() {
                   onMouseEnter={e => e.currentTarget.style.background = '#f8f9fa'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--kivi-text-dark)' }}>
-                      {item.product_name}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                      <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--kivi-text-dark)' }}>
+                        {item.product_name}
+                      </span>
+                      <select
+                        value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
+                        onChange={(e) => {
+                          setMaturityData(prev => ({ ...prev, [key]: e.target.value }))
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          fontSize: '11px',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ddd',
+                          background: '#fff',
+                          cursor: 'pointer',
+                          fontWeight: 500
+                        }}
+                      >
+                        <option value="para_hoy">Para hoy</option>
+                        <option value="para_4_5_dias">Para 4-5 días</option>
+                        <option value="sin_especificar">Sin especificar</option>
+                      </select>
                     </div>
                     
                     <div style={{ 
@@ -611,25 +633,6 @@ export default function Shopping() {
                       }}>
                         {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
                       </div>
-                      <select
-                        value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
-                        onChange={(e) => {
-                          setMaturityData(prev => ({ ...prev, [key]: e.target.value }))
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                          fontSize: '11px',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          border: '1px solid #ddd',
-                          background: '#fff',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <option value="para_hoy">Para hoy</option>
-                        <option value="para_4_5_dias">Para 4-5 días</option>
-                        <option value="sin_especificar">Sin especificar</option>
-                      </select>
                     </div>
                     
                     <div style={{ textAlign: 'center' }}>
@@ -768,21 +771,9 @@ export default function Shopping() {
                       alignItems: 'center',
                       marginBottom: '12px'
                     }}>
-                      <span style={{ fontSize: '15px', fontWeight: 700 }}>
-                        {item.product_name}
-                      </span>
-                      <div style={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}>
-                        <span style={{ 
-                          fontSize: '16px', 
-                          fontWeight: 800,
-                          fontFamily: 'monospace',
-                          color: 'var(--kivi-green)'
-                        }}>
-                          {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                        <span style={{ fontSize: '15px', fontWeight: 700 }}>
+                          {item.product_name}
                         </span>
                         <select
                           value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
@@ -796,13 +787,28 @@ export default function Shopping() {
                             borderRadius: '4px',
                             border: '1px solid #ddd',
                             background: '#fff',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            fontWeight: 500
                           }}
                         >
                           <option value="para_hoy">Para hoy</option>
                           <option value="para_4_5_dias">Para 4-5 días</option>
                           <option value="sin_especificar">Sin especificar</option>
                         </select>
+                      </div>
+                      <div style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <span style={{ 
+                          fontSize: '16px', 
+                          fontWeight: 800,
+                          fontFamily: 'monospace',
+                          color: 'var(--kivi-green)'
+                        }}>
+                          {item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} {item.unit}
+                        </span>
                       </div>
                     </div>
                     

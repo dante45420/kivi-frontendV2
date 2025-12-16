@@ -480,10 +480,10 @@ export default function Orders() {
                   color:'#666',
                   fontSize:14
                 }}>
-                  📦 Normal (día siguiente, sin costo adicional)
+                  📦 Normal (día siguiente)
                 </div>
                 <p style={{ fontSize:12, color:'#666', marginTop:8, marginBottom:0 }}>
-                  Envío al día siguiente. Sin costo adicional.
+                  Envío al día siguiente. Si el pedido es menor a $30.000, se cobra $3.000 de envío. Si es $30.000 o más, sin costo adicional.
                 </p>
               </div>
 
@@ -644,7 +644,7 @@ export default function Orders() {
                     
                     {/* Info básica */}
                     <div style={{ fontSize:14, color:'#666', marginBottom:8 }}>
-                    <div>🚚 {order.shipping_type === 'fastest' ? 'Envío rápido' : 'Envío económico'}</div>
+                    <div>🚚 Envío normal (0% de comisión)</div>
                     <div>📅 {new Date(order.created_at).toLocaleString('es-CL')}</div>
                     {order.notes && <div>📝 {order.notes}</div>}
                     </div>

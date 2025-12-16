@@ -328,10 +328,15 @@ export default function Accounting() {
           </div>
           ${shipping !== 0 ? `
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 16px;">
-              <span>${invoiceData.shipping_type === 'fast' ? 'Envío rápido (+10%)' : invoiceData.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 'Envío normal'}:</span>
-              <span style="font-weight: 700; font-family: monospace; color: ${shipping > 0 ? '#4caf50' : '#ff9800'};">
-                ${shipping > 0 ? '+' : ''}$${Math.abs(shipping).toLocaleString('es-CL')}
+              <span>Envío normal (0% de comisión):</span>
+              <span style="font-weight: 700; font-family: monospace; color: #4caf50;">
+                +$${shipping.toLocaleString('es-CL')}
               </span>
+            </div>
+          ` : subtotal >= 30000 ? `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; color: #666;">
+              <span>Envío normal (sin costo, pedido ≥ $30.000):</span>
+              <span style="font-family: monospace;">$0</span>
             </div>
           ` : ''}
           <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid #ddd; margin-top: 12px; font-size: 24px; font-weight: 800;">
@@ -1127,9 +1132,12 @@ export default function Accounting() {
                               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                                 {order.shipping_amount !== 0 && (
                                   <div style={{ fontSize: '11px', color: '#666' }}>
-                                    {order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
-                                     order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
-                                     'Envío normal'}: {order.shipping_amount > 0 ? '+' : ''}${order.shipping_amount.toLocaleString('es-CL')}
+                                    Envío normal: +${order.shipping_amount.toLocaleString('es-CL')}
+                                  </div>
+                                )}
+                                {order.shipping_amount === 0 && order.subtotal >= 30000 && (
+                                  <div style={{ fontSize: '11px', color: '#666' }}>
+                                    Envío normal (sin costo, pedido ≥ $30.000)
                                   </div>
                                 )}
                                 <div style={{
@@ -1165,15 +1173,23 @@ export default function Accounting() {
                                     {order.shipping_amount !== 0 && (
                                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                         <span style={{ color: '#666' }}>
-                                          {order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
-                                           order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
-                                           'Envío normal'}:
+                                          Envío normal:
                                         </span>
                                         <span style={{ 
                                           fontFamily: 'monospace',
-                                          color: order.shipping_amount > 0 ? '#4caf50' : '#ff9800'
+                                          color: '#4caf50'
                                         }}>
-                                          {order.shipping_amount > 0 ? '+' : ''}${order.shipping_amount.toLocaleString('es-CL')}
+                                          +${order.shipping_amount.toLocaleString('es-CL')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {order.shipping_amount === 0 && order.subtotal >= 30000 && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ color: '#666', fontSize: '11px' }}>
+                                          Envío normal (sin costo, pedido ≥ $30.000):
+                                        </span>
+                                        <span style={{ fontFamily: 'monospace', color: '#666' }}>
+                                          $0
                                         </span>
                                       </div>
                                     )}
@@ -1184,9 +1200,14 @@ export default function Accounting() {
                                     {order.shipping_amount !== 0 && (
                                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
                                         <span style={{ color: '#666', fontSize: '12px' }}>
-                                          {order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
-                                           order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
-                                           'Envío normal'}
+                                          Envío normal (0% de comisión)
+                                        </span>
+                                      </div>
+                                    )}
+                                    {order.shipping_amount === 0 && order.subtotal >= 30000 && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                                        <span style={{ color: '#666', fontSize: '12px' }}>
+                                          Envío normal (sin costo, pedido ≥ $30.000)
                                         </span>
                                       </div>
                                     )}
@@ -1547,26 +1568,18 @@ export default function Accounting() {
                 {invoiceData.shipping_amount !== undefined && invoiceData.shipping_amount !== null && (
                   <>
                     <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
-                      {invoiceData.shipping_amount > 0 
-                        ? 'Envío rápido:' 
-                        : invoiceData.shipping_amount < 0 
-                        ? 'Envío económico:' 
-                        : 'Envío normal:'}
+                      Envío normal (0% de comisión):
                     </div>
                     <div style={{
                       fontSize: '16px',
                       fontWeight: 700,
-                      color: invoiceData.shipping_amount > 0 
-                        ? 'var(--kivi-green)' 
-                        : invoiceData.shipping_amount < 0 
-                        ? 'var(--kivi-orange)' 
-                        : '#666',
+                      color: invoiceData.shipping_amount > 0 ? 'var(--kivi-green)' : '#666',
                       fontFamily: 'monospace',
                       marginBottom: '8px'
                     }}>
                       {invoiceData.shipping_amount !== 0 
-                        ? `${invoiceData.shipping_amount > 0 ? '+' : ''}$${Math.abs(invoiceData.shipping_amount).toLocaleString('es-CL')}`
-                        : 'Sin costo'}
+                        ? `+$${invoiceData.shipping_amount.toLocaleString('es-CL')}`
+                        : 'Sin costo (pedido ≥ $30.000)'}
                     </div>
                   </>
                 )}
@@ -2701,12 +2714,20 @@ export default function Accounting() {
                 {selectedOrderPopup.order.shipping_amount !== 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontSize: '16px', color: '#666' }}>
-                      {selectedOrderPopup.order.shipping_type === 'fast' ? 'Envío rápido (+10%)' : 
-                       selectedOrderPopup.order.shipping_type === 'cheap' ? 'Envío económico (-10%)' : 
-                       'Envío normal'}:
+                      Envío normal (0% de comisión):
                     </span>
-                    <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'monospace', color: selectedOrderPopup.order.shipping_amount > 0 ? '#4caf50' : '#ff9800' }}>
-                      {selectedOrderPopup.order.shipping_amount > 0 ? '+' : ''}${Math.abs(selectedOrderPopup.order.shipping_amount).toLocaleString('es-CL')}
+                    <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'monospace', color: '#4caf50' }}>
+                      +${selectedOrderPopup.order.shipping_amount.toLocaleString('es-CL')}
+                    </span>
+                  </div>
+                )}
+                {selectedOrderPopup.order.shipping_amount === 0 && (selectedOrderPopup.order.subtotal || 0) >= 30000 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '16px', color: '#666' }}>
+                      Envío normal (sin costo, pedido ≥ $30.000):
+                    </span>
+                    <span style={{ fontSize: '18px', fontWeight: 700, fontFamily: 'monospace', color: '#666' }}>
+                      $0
                     </span>
                   </div>
                 )}
