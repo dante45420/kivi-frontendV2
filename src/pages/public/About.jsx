@@ -13,7 +13,7 @@ export default function About() {
       {/* Contenido */}
       <div className="container" style={{ padding: '60px 20px', maxWidth: '800px' }}>
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <div style={{ fontSize: '80px', marginBottom: '20px' }}>🐕</div>
+          <div style={{ fontSize: '80px', marginBottom: '20px' }}>🌱</div>
           <h1 style={{
             fontSize: '40px',
             fontWeight: 800,
@@ -64,16 +64,16 @@ export default function About() {
           </h2>
           <ol style={{ color: 'var(--kivi-text)', lineHeight: 1.8, paddingLeft: '20px' }}>
             <li style={{ marginBottom: '12px' }}>
-              <strong>Explorá el catálogo</strong> y agregá productos al carrito
+              <strong>Explora el catálogo</strong> y agrega productos al carrito
             </li>
             <li style={{ marginBottom: '12px' }}>
-              <strong>Enviá tu pedido</strong> por WhatsApp con tus datos
+              <strong>Envía tu pedido</strong> por WhatsApp con tus datos
             </li>
             <li style={{ marginBottom: '12px' }}>
               <strong>Confirmamos</strong> tu pedido y coordinamos la entrega
             </li>
             <li>
-              <strong>Recibís</strong> tus productos frescos en tu casa
+              <strong>Recibes</strong> tus productos frescos en tu casa
             </li>
           </ol>
         </div>
@@ -83,7 +83,7 @@ export default function About() {
             📞 Contacto
           </h2>
           <p style={{ color: 'var(--kivi-text)', lineHeight: 1.8, marginBottom: '16px' }}>
-            ¿Tenés dudas o querés hacer un pedido especial? Escribinos por WhatsApp:
+            ¿Tienes dudas o quieres hacer un pedido especial? Escríbenos por WhatsApp:
           </p>
           <a
             href="https://wa.me/56912345678"

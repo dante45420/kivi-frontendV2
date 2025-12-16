@@ -215,83 +215,181 @@ export default function Home() {
           marginBottom: '60px',
           color: 'var(--kivi-text-dark)'
         }}>
-          Nuestros Valores
+          Por qué elegirnos
         </h2>
         
-        <div className="grid grid-3" style={{ gap: '32px', marginBottom: '60px' }}>
-          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+        <div className="values-grid" style={{ 
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '24px',
+          marginBottom: '40px'
+        }}>
+          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              fontSize: '64px',
-              marginBottom: '20px'
+              width: '100%',
+              height: '180px',
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              🤝
+              <img 
+                src="/cliente_cercano.HEIC" 
+                alt="Atención personalizada"
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+                onError={(e) => {
+                  const parent = e.target.parentElement
+                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">🤝</div>'
+                }}
+              />
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
-              Somos cercanos al cliente
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
+              Atención personalizada
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
               Atención personalizada y cercana. Estamos aquí para ti, siempre.
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              fontSize: '64px',
-              marginBottom: '20px'
+              width: '100%',
+              height: '180px',
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              🍎
+              <img 
+                src="/maduracion.png" 
+                alt="Maduración a elección"
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+                onError={(e) => {
+                  const parent = e.target.parentElement
+                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">🍎</div>'
+                }}
+              />
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
-              Compra con la maduración que te guste
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
+              Maduración a elección
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
               Elige el grado de maduración perfecto: para hoy o para 4-5 días. Tú decides.
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              fontSize: '64px',
-              marginBottom: '20px'
+              width: '100%',
+              height: '180px',
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              🏠
+              <img 
+                src="/envio.avif" 
+                alt="Envíos a domicilio"
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+                onError={(e) => {
+                  const parent = e.target.parentElement
+                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">🏠</div>'
+                }}
+              />
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
-              A la casa
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
+              Envíos a domicilio
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
               Delivery directo a tu puerta. Sin salir de casa, productos frescos en tu mesa.
             </p>
           </div>
-        </div>
-        
-        <div className="grid grid-2" style={{ gap: '32px', maxWidth: '900px', margin: '0 auto' }}>
-          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+          
+          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              fontSize: '64px',
-              marginBottom: '20px'
+              width: '100%',
+              height: '180px',
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              ♻️
+              <img 
+                src="/Reutilizar.jpg" 
+                alt="Reutilizamos todo"
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+                onError={(e) => {
+                  const parent = e.target.parentElement
+                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">♻️</div>'
+                }}
+              />
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
               Reutilizamos TODO
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
               Comprometidos con el planeta. Reutilizamos y reciclamos todo lo posible.
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              fontSize: '64px',
-              marginBottom: '20px'
+              width: '100%',
+              height: '180px',
+              marginBottom: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#f5f5f5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}>
-              ⭐
+              <img 
+                src="/Fruta de calidad.jpg" 
+                alt="Calidad primero"
+                style={{ 
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+                onError={(e) => {
+                  const parent = e.target.parentElement
+                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">⭐</div>'
+                }}
+              />
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
-              Producto de la mejor calidad
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
+              Calidad primero
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
               Seleccionamos solo lo mejor. Calidad premium directo del campo.
             </p>
           </div>
@@ -661,7 +759,16 @@ export default function Home() {
           margin-left: 4px;
         }
         
+        .values-grid {
+          display: grid;
+          grid-template-columns: repeat(5, 1fr);
+          gap: 24px;
+        }
+        
         @media (max-width: 768px) {
+          .values-grid {
+            grid-template-columns: 1fr;
+          }
           .catalog-image-container {
             padding-top: 50% !important;
           }

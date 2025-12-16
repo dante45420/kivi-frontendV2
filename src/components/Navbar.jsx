@@ -54,7 +54,7 @@ export default function Navbar() {
       right: 0,
       background: '#fff',
       borderBottom: '2px solid #eee',
-      padding: '12px 20px',
+      padding: '16px 20px',
       zIndex: 100,
       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
     }}>
@@ -77,7 +77,7 @@ export default function Navbar() {
           <img 
             src="/Logo_sin_slogan.png" 
             alt="Green Market" 
-            style={{ height: '32px' }} 
+            style={{ height: '70px' }} 
           />
         </Link>
         

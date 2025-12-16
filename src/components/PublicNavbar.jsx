@@ -14,7 +14,7 @@ export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
       right: 0,
       background: '#fff',
       borderBottom: '2px solid #eee',
-      padding: '12px 20px',
+      padding: '16px 20px',
       zIndex: 100,
       boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
     }}>
@@ -36,7 +36,7 @@ export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
           <img 
             src="/Logo_sin_slogan.png" 
             alt="Green Market" 
-            style={{ height: '44px' }} 
+            style={{ height: '70px' }} 
           />
         </Link>
         
