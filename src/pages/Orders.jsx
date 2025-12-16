@@ -44,8 +44,8 @@ export default function Orders() {
   // Vendedor assignment
   const [selectedSellerId, setSelectedSellerId] = useState('')
   
-  // Tipo de envío
-  const [shippingType, setShippingType] = useState('fastest')
+  // Tipo de envío (siempre normal sin costo adicional)
+  const [shippingType, setShippingType] = useState('normal')
   
   // Modals
   const [resolveOpen, setResolveOpen] = useState(false)
@@ -193,7 +193,12 @@ export default function Orders() {
       console.log('🔍 Parseando texto:', text)
       const parsed = await parseOrderText(text)
       console.log('✅ Resultado del parse:', parsed)
-      setRows(parsed.items || [])
+      // Asegurar que todos los items tengan maturity_note por defecto
+      const itemsWithMaturity = (parsed.items || []).map(item => ({
+        ...item,
+        maturity_note: item.maturity_note || "para_4_5_dias"
+      }))
+      setRows(itemsWithMaturity)
       setClientsAssigned(false)
       setAllName('')
     } catch (err) {
@@ -247,7 +252,7 @@ export default function Orders() {
       setClientsAssigned(false)
       setAllName('')
       setSelectedSellerId('')
-      setShippingType('fastest')
+      setShippingType('normal')
       await loadOrders()
       alert('✅ Pedido guardado en borrador')
     } catch (err) {
@@ -467,22 +472,18 @@ export default function Orders() {
               {/* Tipo de envío */}
               <div className="card" style={{ padding:16, marginBottom:12 }}>
                 <h3 style={{ margin:'0 0 12px 0', fontSize:16 }}>🚚 Tipo de Envío</h3>
-                <select 
-                  className="input" 
-                  value={shippingType} 
-                  onChange={e => setShippingType(e.target.value)}
-                  style={{ width:'100%' }}
-                >
-                  <option value="fast">⚡ Rápido (mismo día antes de las 12:00, +10%)</option>
-                  <option value="normal">📦 Normal (día siguiente, +0%)</option>
-                  <option value="cheap">💰 Económico (1-3 días, -10%)</option>
-                </select>
+                <div style={{ 
+                  padding:'12px', 
+                  background:'#f8f9fa', 
+                  borderRadius:8, 
+                  border:'1px solid #e1e7e1',
+                  color:'#666',
+                  fontSize:14
+                }}>
+                  📦 Normal (día siguiente, sin costo adicional)
+                </div>
                 <p style={{ fontSize:12, color:'#666', marginTop:8, marginBottom:0 }}>
-                  {shippingType === 'fast' || shippingType === 'fastest'
-                    ? 'Envío el mismo día para algunos productos (solo antes de las 12:00). +10% al monto total.' 
-                    : shippingType === 'cheap' || shippingType === 'cheapest'
-                    ? 'Entrega en 1-3 días. -10% descuento al monto total.'
-                    : 'Envío al día siguiente. Sin costo adicional.'}
+                  Envío al día siguiente. Sin costo adicional.
                 </p>
               </div>
 
@@ -503,7 +504,7 @@ export default function Orders() {
                         {statusBadge(r)}
                       </div>
                       
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 80px', gap:8, marginBottom:8 }}>
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 80px', gap:8, marginBottom:8 }}>
                         <input 
                           type="number" 
                           className="input" 
@@ -521,6 +522,16 @@ export default function Orders() {
                           <option value="kg">kg</option>
                           <option value="unit">unid</option>
                           <option value="g">g</option>
+                        </select>
+                        <select 
+                          className="input" 
+                          value={r.maturity_note || "para_4_5_dias"} 
+                          onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, maturity_note: e.target.value } : x))} 
+                          style={{ padding:'8px 12px', fontSize:'12px' }}
+                        >
+                          <option value="para_hoy">Para hoy</option>
+                          <option value="para_4_5_dias">Para 4-5 días</option>
+                          <option value="sin_especificar">Sin especificar</option>
                         </select>
                         <button 
                           className="button ghost" 
