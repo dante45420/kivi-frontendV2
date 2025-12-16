@@ -61,7 +61,7 @@ export async function generateInvoicePDF(invoiceData) {
     doc.setFontSize(28)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(76, 175, 80)
-    doc.text('KIVI', margin, 22)
+    doc.text('GREEN MARKET', margin, 22)
   }
   
   // Fecha de emisión (derecha)
@@ -293,13 +293,13 @@ export async function generateInvoicePDF(invoiceData) {
   doc.setTextColor(150, 150, 150)
   doc.setFont('helvetica', 'italic')
   
-  const footerText = 'Gracias por confiar en Kivi - Tu personal shopper de Lo Valledor'
+  const footerText = 'Gracias por confiar en Green Market - Tu personal shopper de Lo Valledor'
   const footerWidth = doc.getTextWidth(footerText)
   doc.text(footerText, (pageWidth - footerWidth) / 2, footerY)
   
   // Contacto
   doc.setFontSize(7)
-  const contactText = 'WhatsApp: +56969172764 | Instagram: @kivi.chile'
+  const contactText = 'WhatsApp: +56969172764 | Instagram: @greenmarket.chile'
   const contactWidth = doc.getTextWidth(contactText)
   doc.text(contactText, (pageWidth - contactWidth) / 2, footerY + 4)
   

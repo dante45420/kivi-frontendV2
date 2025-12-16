@@ -74,8 +74,11 @@ export default function Navbar() {
           fontSize: '18px',
           color: 'var(--kivi-text-dark)'
         }}>
-          <span style={{ fontSize: '24px' }}>🐕</span>
-          <span>Kivi</span>
+          <img 
+            src="/Logo_sin_slogan.png" 
+            alt="Green Market" 
+            style={{ height: '32px' }} 
+          />
         </Link>
         
         {/* Desktop Nav */}

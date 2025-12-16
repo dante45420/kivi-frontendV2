@@ -35,7 +35,7 @@ export default function Accounting() {
   
   // Modal Edit Item
   const [editingItem, setEditingItem] = useState(null)
-  const [editForm, setEditForm] = useState({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null })
+  const [editForm, setEditForm] = useState({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null, maturity_note: null })
   
   // Modal Add Item
   const [addingItemTo, setAddingItemTo] = useState(null)
@@ -627,7 +627,7 @@ export default function Accounting() {
       
       // Cerrar modal
       setEditingItem(null)
-      setEditForm({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null })
+      setEditForm({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null, maturity_note: "para_4_5_dias" })
       
       alert('✅ Item actualizado')
     } catch (error) {
@@ -1265,7 +1265,8 @@ export default function Accounting() {
                                             qty: item.qty,
                                             unit_price: item.unit_price || 0,
                                             charged_qty: item.charged_qty || null,
-                                            charged_unit: item.charged_unit || null
+                                            charged_unit: item.charged_unit || null,
+                                            maturity_note: item.maturity_note || "para_4_5_dias"
                                           })
                                         }}
                                         style={{ padding:'4px 8px', fontSize:12 }}
@@ -2287,6 +2288,23 @@ export default function Accounting() {
                 return null
               })()}
               
+              {/* Campo de Nota de Maduración */}
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Nota de Maduración
+                </label>
+                <select
+                  className="input"
+                  value={editForm.maturity_note || "para_4_5_dias"}
+                  onChange={(e) => setEditForm(v => ({ ...v, maturity_note: e.target.value || null }))}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="para_4_5_dias">Para 4-5 días</option>
+                  <option value="para_hoy">Para hoy</option>
+                  <option value="">Sin especificar</option>
+                </select>
+              </div>
+              
               <div style={{ 
                 padding: '12px', 
                 background: '#f5f5f5', 
@@ -2306,7 +2324,7 @@ export default function Accounting() {
               <button
                 onClick={() => {
                   setEditingItem(null)
-                  setEditForm({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null })
+                  setEditForm({ qty: 0, unit_price: 0, charged_qty: null, charged_unit: null, maturity_note: "para_4_5_dias" })
                 }}
                 className="button ghost"
                 style={{ minWidth: '100px' }}
@@ -2629,7 +2647,8 @@ export default function Accounting() {
                                     qty: item.qty,
                                     unit_price: item.unit_price || 0,
                                     charged_qty: item.charged_qty || null,
-                                    charged_unit: item.charged_unit || null
+                                    charged_unit: item.charged_unit || null,
+                                    maturity_note: item.maturity_note || null
                                   })
                                 }}
                                 style={{ padding: '8px 16px', fontSize: '14px' }}

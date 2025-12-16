@@ -64,11 +64,12 @@ export default function Shopping() {
       // Aplanar el array de arrays
       const allItems = ordersData.flat()
       
-      // Consolidar por producto + unidad
+      // Consolidar por producto + unidad + maturity_note
       const byProduct = {}
       
       allItems.forEach(item => {
-        const key = `${item.product_id}_${item.unit}`
+        const maturity_note = item.maturity_note || 'sin_especificar'
+        const key = `${item.product_id}_${item.unit}_${maturity_note}`
         if (!byProduct[key]) {
           const product = productsMap[item.product_id]
           byProduct[key] = {
@@ -78,6 +79,7 @@ export default function Shopping() {
             product_default_unit: product?.unit || 'kg',
             category_name: product?.category?.name || 'Sin categoría',
             category_id: product?.category_id || 0,
+            maturity_note: maturity_note,
             total_qty: 0,
             customers: [],
             purchased: false
@@ -92,13 +94,42 @@ export default function Shopping() {
         })
       })
       
-      // Convertir a array y ordenar por categoría, luego por nombre de producto
-      const list = Object.values(byProduct).sort((a, b) => {
+      // Re-consolidar por producto + unidad (agrupando todas las maturity_notes)
+      const byProductUnit = {}
+      Object.values(byProduct).forEach(item => {
+        const key = `${item.product_id}_${item.unit}`
+        if (!byProductUnit[key]) {
+          byProductUnit[key] = {
+            ...item,
+            maturity_breakdown: {
+              para_hoy: 0,
+              para_4_5_dias: 0,
+              sin_especificar: 0
+            }
+          }
+        }
+        // Sumar la cantidad según la nota de maduración
+        const maturityKey = item.maturity_note === 'para_hoy' ? 'para_hoy' : 
+                           item.maturity_note === 'para_4_5_dias' ? 'para_4_5_dias' : 
+                           'sin_especificar'
+        byProductUnit[key].maturity_breakdown[maturityKey] += item.total_qty
+      })
+      
+      // Convertir de vuelta a array
+      const list = Object.values(byProductUnit)
+      
+      // Ordenar: primero por categoría, luego por nombre de producto, luego kg antes que unidades
+      list.sort((a, b) => {
         // Primero por categoría
         const categoryCompare = (a.category_name || 'Sin categoría').localeCompare(b.category_name || 'Sin categoría')
         if (categoryCompare !== 0) return categoryCompare
-        // Si la categoría es igual, ordenar por nombre de producto
-        return (a.product_name || '').localeCompare(b.product_name || '')
+        // Si la categoría es igual, por nombre de producto
+        const nameCompare = (a.product_name || '').localeCompare(b.product_name || '')
+        if (nameCompare !== 0) return nameCompare
+        // Si el nombre es igual, kg antes que unidades
+        if (a.unit === 'kg' && b.unit !== 'kg') return -1
+        if (a.unit !== 'kg' && b.unit === 'kg') return 1
+        return 0
       })
       
       setConsolidatedList(list)

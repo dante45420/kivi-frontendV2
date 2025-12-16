@@ -207,72 +207,92 @@ export default function Home() {
       </div>
       
       {/* Features - Valores agregados */}
-      <div className="container" style={{ padding: '40px 20px' }}>
+      <div className="container" style={{ padding: '60px 20px' }}>
         <h2 style={{
-          fontSize: 'clamp(24px, 4vw, 36px)',
+          fontSize: 'clamp(28px, 5vw, 42px)',
           fontWeight: 800,
           textAlign: 'center',
-          marginBottom: '48px',
+          marginBottom: '60px',
           color: 'var(--kivi-text-dark)'
         }}>
-          ¿Por qué elegirnos?
+          Nuestros Valores
         </h2>
         
-        <div className="grid grid-3">
-          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+        <div className="grid grid-3" style={{ gap: '32px', marginBottom: '60px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              width: '100%', 
-              height: '200px', 
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              backgroundImage: 'url(https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=800&q=80)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }} />
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
-              Fruta fresca
+              fontSize: '64px',
+              marginBottom: '20px'
+            }}>
+              🤝
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+              Somos cercanos al cliente
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Productos frescos directo del campo, seleccionados cada día
+            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+              Atención personalizada y cercana. Estamos aquí para ti, siempre.
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              width: '100%', 
-              height: '200px', 
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              backgroundImage: 'url(https://images.unsplash.com/photo-1560493676-04071c5f467b?w=800&q=80)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }} />
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
-              Mejor precio-calidad
+              fontSize: '64px',
+              marginBottom: '20px'
+            }}>
+              🍎
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+              Compra con la maduración que te guste
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Sin intermediarios. La mejor relación precio-calidad del mercado
+            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+              Elige el grado de maduración perfecto: para hoy o para 4-5 días. Tú decides.
             </p>
           </div>
           
-          <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
             <div style={{ 
-              width: '100%', 
-              height: '200px', 
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              backgroundImage: 'url(https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }} />
-            <h3 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>
-              A domicilio
+              fontSize: '64px',
+              marginBottom: '20px'
+            }}>
+              🏠
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+              A la casa
             </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6 }}>
-              Pide exactamente lo que quieras, como quieras. Delivery a tu casa
+            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+              Delivery directo a tu puerta. Sin salir de casa, productos frescos en tu mesa.
+            </p>
+          </div>
+        </div>
+        
+        <div className="grid grid-2" style={{ gap: '32px', maxWidth: '900px', margin: '0 auto' }}>
+          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+            <div style={{ 
+              fontSize: '64px',
+              marginBottom: '20px'
+            }}>
+              ♻️
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+              Reutilizamos TODO
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+              Comprometidos con el planeta. Reutilizamos y reciclamos todo lo posible.
+            </p>
+          </div>
+          
+          <div className="card" style={{ textAlign: 'center', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+            <div style={{ 
+              fontSize: '64px',
+              marginBottom: '20px'
+            }}>
+              ⭐
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+              Producto de la mejor calidad
+            </h3>
+            <p style={{ color: 'var(--kivi-text)', fontSize: '16px', lineHeight: 1.7 }}>
+              Seleccionamos solo lo mejor. Calidad premium directo del campo.
             </p>
           </div>
         </div>

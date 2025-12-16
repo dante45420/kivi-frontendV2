@@ -153,7 +153,8 @@ export default function Orders() {
       await updateOrderItem(editingItem.id, {
         qty: parseFloat(editForm.qty),
         unit_price: parseFloat(editForm.unit_price),
-        notes: editForm.notes
+        notes: editForm.notes,
+        maturity_note: editForm.maturity_note || "para_4_5_dias"
       })
       
       // Recargar detalles del pedido
@@ -162,7 +163,7 @@ export default function Orders() {
       
       // Cerrar modal
       setEditingItem(null)
-      setEditForm({ qty: 0, unit_price: 0, notes: '' })
+      setEditForm({ qty: 0, unit_price: 0, notes: '', maturity_note: "para_4_5_dias" })
       
       alert('✅ Item actualizado')
     } catch (err) {
@@ -227,6 +228,7 @@ export default function Orders() {
         qty: r.qty,
         unit: r.unit,
         notes: r.notes || null,
+        maturity_note: r.maturity_note || "para_4_5_dias",
         sale_unit_price: r.sale_price || null,
         create_if_missing: !!r.create_if_missing,
         product_name: r.product_name || r.product,
@@ -736,7 +738,8 @@ export default function Orders() {
                                             setEditForm({
                                               qty: item.charged_qty || item.qty,
                                               unit_price: item.unit_price || item.product?.sale_price || 0,
-                                              notes: item.notes || ''
+                                              notes: item.notes || '',
+                                              maturity_note: item.maturity_note || ''
                                             })
                                           }}
                                           style={{ padding:'4px 8px', fontSize:12 }}
@@ -971,6 +974,19 @@ export default function Orders() {
                 />
               </label>
               
+              <label style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                <span style={{ fontSize:13, fontWeight:600 }}>Nota de Maduración</span>
+                <select 
+                  className="input" 
+                  value={editForm.maturity_note || "para_4_5_dias"} 
+                  onChange={e => setEditForm(v => ({ ...v, maturity_note: e.target.value || null }))}
+                >
+                  <option value="para_4_5_dias">Para 4-5 días</option>
+                  <option value="para_hoy">Para hoy</option>
+                  <option value="">Sin especificar</option>
+                </select>
+              </label>
+              
               <div style={{ 
                 padding:12, 
                 background:'#f5f5f5', 
@@ -990,7 +1006,7 @@ export default function Orders() {
                   className="button ghost" 
                   onClick={() => {
                     setEditingItem(null)
-                    setEditForm({ qty: 0, unit_price: 0, notes: '' })
+                    setEditForm({ qty: 0, unit_price: 0, notes: '', maturity_note: "para_4_5_dias" })
                   }}
                 >
                   Cancelar

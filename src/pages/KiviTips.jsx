@@ -1,6 +1,6 @@
 /**
- * Página: Gestión de Tips de Kivi
- * Crear, editar y gestionar los tips que Kivi muestra a los usuarios
+ * Página: Gestión de Tips de Green Market
+ * Crear, editar y gestionar los tips que Green Market muestra a los usuarios
  */
 import { useState, useEffect } from 'react'
 import { fetchTips, createTip, updateTip, deleteTip } from '../api/kivi'
@@ -10,7 +10,7 @@ const CATEGORIES = [
   { value: 'platform_usage', label: '📱 Uso de la Plataforma', emoji: '📱' },
   { value: 'product_info', label: '🥬 Información de Productos', emoji: '🥬' },
   { value: 'promotion', label: '🏷️ Promociones', emoji: '🏷️' },
-  { value: 'brand_info', label: '🐕 Información de Kivi', emoji: '🐕' }
+  { value: 'brand_info', label: '🌱 Información de Green Market', emoji: '🌱' }
 ]
 
 export default function KiviTips() {
@@ -143,10 +143,10 @@ export default function KiviTips() {
       }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>
-            🐕 Tips de Kivi
+            🌱 Tips de Green Market
           </h2>
           <p style={{ margin: '8px 0 0 0', color: '#666', fontSize: '14px' }}>
-            Gestiona los mensajes que Kivi muestra a los usuarios
+            Gestiona los mensajes que Green Market muestra a los usuarios
           </p>
         </div>
         <button
@@ -250,7 +250,7 @@ export default function KiviTips() {
             No hay tips
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
-            Crea el primer tip para Kivi
+            Crea el primer tip para Green Market
           </div>
         </div>
       )}
@@ -312,7 +312,7 @@ export default function KiviTips() {
                   className="input"
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Escribe el consejo o mensaje que Kivi mostrará a los usuarios..."
+                  placeholder="Escribe el consejo o mensaje que Green Market mostrará a los usuarios..."
                   rows={4}
                   required
                   style={{ resize: 'vertical' }}

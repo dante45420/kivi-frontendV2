@@ -57,7 +57,7 @@ export default function Dashboard() {
           color: 'var(--kivi-text-dark)',
           margin: '0 0 8px 0'
         }}>
-          🐕 Bienvenido a Kivi
+          🌱 Bienvenido a Green Market
         </h1>
         <p style={{
           fontSize: '16px',

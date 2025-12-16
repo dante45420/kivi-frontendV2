@@ -44,7 +44,7 @@ export async function generatePurchasesListPDF(consolidatedList) {
   
   // Intentar cargar logo
   try {
-    const logoUrl = '/Logo_kivi.png'
+    const logoUrl = '/Logo_con_slogan.png'
     const logoData = await loadImageAsBase64(logoUrl)
     
     // Calcular dimensiones manteniendo proporción
@@ -61,7 +61,7 @@ export async function generatePurchasesListPDF(consolidatedList) {
     doc.setFontSize(28)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(76, 175, 80)
-    doc.text('KIVI', margin, 22)
+    doc.text('GREEN MARKET', margin, 22)
   }
   
   // Fecha de emisión (derecha)
@@ -121,10 +121,19 @@ export async function generatePurchasesListPDF(consolidatedList) {
     doc.line(margin, y, pageWidth - margin, y)
     y += 6
     
-    // Items de esta categoría
-    byCategory[category].forEach((item, itemIdx) => {
+    // Items de esta categoría - ordenar kg antes que unidades
+    const sortedItems = [...byCategory[category]].sort((a, b) => {
+      // Si el nombre es igual, kg antes que unidades
+      if (a.product_name === b.product_name) {
+        if (a.unit === 'kg' && b.unit !== 'kg') return -1
+        if (a.unit !== 'kg' && b.unit === 'kg') return 1
+      }
+      return 0
+    })
+    
+    sortedItems.forEach((item, itemIdx) => {
       // Verificar si necesitamos una nueva página
-      if (y > pageHeight - 30) {
+      if (y > pageHeight - 40) {
         doc.addPage()
         y = 20
       }
@@ -135,13 +144,41 @@ export async function generatePurchasesListPDF(consolidatedList) {
       doc.setTextColor(0, 0, 0) // Negro
       doc.text(item.product_name, margin + 5, y)
       
-      // Cantidad (derecha)
+      // Cantidad total (derecha)
       const qtyText = `${item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
       const qtyWidth = doc.getTextWidth(qtyText)
       doc.setFont('helvetica', 'normal')
       doc.text(qtyText, pageWidth - margin - qtyWidth, y)
       
-      y += 7
+      y += 6
+      
+      // Mostrar desglose por maduración si existe
+      if (item.maturity_breakdown) {
+        const breakdown = item.maturity_breakdown
+        const hasBreakdown = breakdown.para_hoy > 0 || breakdown.para_4_5_dias > 0 || breakdown.sin_especificar > 0
+        
+        if (hasBreakdown) {
+          doc.setFontSize(9)
+          doc.setTextColor(100, 100, 100)
+          let breakdownText = ''
+          const parts = []
+          
+          if (breakdown.para_hoy > 0) {
+            parts.push(`Para hoy: ${breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`)
+          }
+          if (breakdown.para_4_5_dias > 0) {
+            parts.push(`Para 4-5 días: ${breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`)
+          }
+          
+          if (parts.length > 0) {
+            breakdownText = parts.join(' | ')
+            doc.text(breakdownText, margin + 10, y)
+            y += 5
+          }
+        }
+      }
+      
+      y += 2
     })
     
     // Espacio entre categorías
@@ -183,13 +220,13 @@ export async function generatePurchasesListPDF(consolidatedList) {
   doc.setTextColor(150, 150, 150)
   doc.setFont('helvetica', 'italic')
   
-  const footerText = 'Lista de compras generada por Kivi - Tu personal shopper de Lo Valledor'
+  const footerText = 'Lista de compras generada por Green Market - Tu personal shopper de Lo Valledor'
   const footerWidth = doc.getTextWidth(footerText)
   doc.text(footerText, (pageWidth - footerWidth) / 2, footerY)
   
   // Contacto
   doc.setFontSize(7)
-  const contactText = 'WhatsApp: +56969172764 | Instagram: @kivi.chile'
+  const contactText = 'WhatsApp: +56969172764 | Instagram: @greenmarket.chile'
   const contactWidth = doc.getTextWidth(contactText)
   doc.text(contactText, (pageWidth - contactWidth) / 2, footerY + 4)
   

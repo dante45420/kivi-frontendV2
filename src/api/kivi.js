@@ -1,5 +1,5 @@
 /**
- * API: Kivi el perro 🐕
+ * API: Green Market 🌱
  */
 import { get, post, put, del } from './client'
 
@@ -25,7 +25,7 @@ export async function deleteTip(id) {
   return del(`/api/kivi/tips/${id}`)
 }
 
-export async function chatWithKivi(message, context = null) {
+export async function chatWithGreenMarket(message, context = null) {
   const response = await post('/api/kivi/chat', { message, context })
   return response.response
 }

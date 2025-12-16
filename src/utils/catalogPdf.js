@@ -45,7 +45,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
   
   // Intentar cargar logo
   try {
-    const logoUrl = '/Logo_kivi.png'
+    const logoUrl = '/Logo_con_slogan.png'
     const logoData = await loadImageAsBase64(logoUrl)
     
     // Calcular dimensiones manteniendo proporción
@@ -63,7 +63,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
     doc.setFontSize(28)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(76, 175, 80) // Verde Kivi
-    doc.text('KIVI', margin, 22)
+    doc.text('GREEN MARKET', margin, 22)
   }
   
   doc.setFontSize(10)
@@ -617,7 +617,7 @@ export async function generateCatalogPDF(products, weeklyOffers = []) {
   }
   
   // Descargar el PDF
-  const filename = `catalogo-kivi-${new Date().toISOString().split('T')[0]}.pdf`
+  const filename = `catalogo-green-market-${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(filename)
 }
 

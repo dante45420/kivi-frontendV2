@@ -34,8 +34,8 @@ export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
           color: 'var(--kivi-text-dark)'
         }}>
           <img 
-            src="/Logo_kivi.png" 
-            alt="Kivi" 
+            src="/Logo_sin_slogan.png" 
+            alt="Green Market" 
             style={{ height: '44px' }} 
           />
         </Link>

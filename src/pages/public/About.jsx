@@ -20,7 +20,7 @@ export default function About() {
             color: 'var(--kivi-text-dark)',
             marginBottom: '16px'
           }}>
-            Sobre Kivi
+            Sobre Green Market
           </h1>
           <p style={{
             fontSize: '18px',
@@ -33,10 +33,10 @@ export default function About() {
         
         <div className="card" style={{ marginBottom: '24px', padding: '32px' }}>
           <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px', color: 'var(--kivi-text-dark)' }}>
-            🥬 ¿Qué es Kivi?
+            🥬 ¿Qué es Green Market?
           </h2>
           <p style={{ color: 'var(--kivi-text)', lineHeight: 1.8, marginBottom: '16px' }}>
-            Kivi nació de una necesidad simple: llevar los mejores productos de <strong>Lo Valledor</strong> directamente
+            Green Market nació de una necesidad simple: llevar los mejores productos de <strong>Lo Valledor</strong> directamente
             a tu casa, sin intermediarios y a los mejores precios.
           </p>
           <p style={{ color: 'var(--kivi-text)', lineHeight: 1.8 }}>

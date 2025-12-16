@@ -4,8 +4,8 @@
 import { Link } from 'react-router-dom'
 
 export default function Footer() {
-  const whatsappUrl = "https://wa.me/56969172764?text=Hola%20Kivi!%20Quiero%20hacer%20un%20pedido"
-  const instagramUrl = "https://instagram.com/kivi.chile"
+  const whatsappUrl = "https://wa.me/56969172764?text=Hola%20Green%20Market!%20Quiero%20hacer%20un%20pedido"
+  const instagramUrl = "https://instagram.com/greenmarket.chile"
   
   return (
     <footer style={{
@@ -37,23 +37,11 @@ export default function Footer() {
               gap: '8px',
               marginBottom: '16px'
             }}>
-              {/* Imagen del perro arriba del logo */}
+              {/* Logo con slogan */}
               <img 
-                src="/Perro_kivi.PNG" 
-                alt="Kivi" 
-                style={{ 
-                  width: '48px', 
-                  height: '48px', 
-                  borderRadius: '50%', 
-                  objectFit: 'cover',
-                  marginBottom: '4px'
-                }} 
-              />
-              {/* Logo del navbar */}
-              <img 
-                src="/Logo_kivi.png" 
-                alt="Kivi" 
-                style={{ height: '44px' }} 
+                src="/Logo_con_slogan.png" 
+                alt="Green Market" 
+                style={{ height: '60px' }} 
               />
             </div>
             <p style={{
@@ -167,8 +155,8 @@ export default function Footer() {
           fontSize: '13px',
           opacity: 0.6
         }}>
-          <p style={{ margin: 0 }}>
-            © {new Date().getFullYear()} Kivi Personal Shopper. Lo Valledor, Santiago.
+            <p style={{ margin: 0 }}>
+            © {new Date().getFullYear()} Green Market. Lo Valledor, Santiago.
           </p>
         </div>
       </div>

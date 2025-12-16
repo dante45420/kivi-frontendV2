@@ -37,7 +37,7 @@ export default function Login({ onLogin }) {
       <div className="card" style={{ maxWidth: '400px', width: '100%' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>🐕</div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px' }}>Kivi Admin</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, marginBottom: '8px' }}>Green Market Admin</h1>
           <p style={{ color: 'var(--kivi-text)', margin: 0 }}>
             Personal Shopper Lo Valledor
           </p>
