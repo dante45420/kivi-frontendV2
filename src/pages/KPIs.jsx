@@ -45,6 +45,7 @@ export default function KPIs() {
   const [utilityByWeek, setUtilityByWeek] = useState(null)
   const [loadingUtilityByWeek, setLoadingUtilityByWeek] = useState(false)
   const [showCreateCostModal, setShowCreateCostModal] = useState(false)
+  const [showUtilityChoiceModal, setShowUtilityChoiceModal] = useState(false)
   const [newCostForm, setNewCostForm] = useState({
     week_start: '',
     category: '',
@@ -315,7 +316,22 @@ export default function KPIs() {
           marginBottom: '32px'
         }}>
           {/* Promedio de tamaño de pedido */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/avg_order_value')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Promedio de Tamaño de Pedido
             </div>
@@ -325,10 +341,28 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Promedio por pedido (con conversiones)
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Nuevos Clientes */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/new_customers')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Nuevos Clientes
             </div>
@@ -338,10 +372,28 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Clientes nuevos esta semana
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Total Pedidos */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/total_orders')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Total Pedidos
             </div>
@@ -351,10 +403,28 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Pedidos con monto facturado &gt; 0
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Monto Total Facturado */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/total_revenue')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Monto Total Facturado
             </div>
@@ -364,12 +434,15 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Total facturado esta semana
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Utilidad Promedio por Pedido */}
           <div 
             className="card" 
-            onClick={loadUtilityDetails}
+            onClick={() => setShowUtilityChoiceModal(true)}
             style={{ 
               cursor: 'pointer',
               transition: 'transform 0.2s, box-shadow 0.2s'
@@ -401,7 +474,22 @@ export default function KPIs() {
           </div>
           
           {/* Pedidos Completados por Vendedores */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/completed_orders_by_seller')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Pedidos Completados por Vendedores
             </div>
@@ -410,6 +498,9 @@ export default function KPIs() {
             </div>
             <div style={{ fontSize: '13px', color: '#999' }}>
               Pedidos completados con vendedor
+            </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
             </div>
           </div>
         </div>
@@ -433,7 +524,22 @@ export default function KPIs() {
           marginBottom: '32px'
         }}>
           {/* Promedio de tamaño de pedido */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/avg_order_value')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Promedio de Tamaño de Pedido
             </div>
@@ -443,10 +549,28 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Promedio por pedido (con conversiones)
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Total Clientes */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/new_customers')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Total Clientes
             </div>
@@ -456,10 +580,28 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Clientes registrados
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Total Pedidos */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/total_orders')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Total Pedidos
             </div>
@@ -469,10 +611,28 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Pedidos con monto facturado &gt; 0
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Monto Total Facturado */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/total_revenue')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Monto Total Facturado
             </div>
@@ -482,12 +642,15 @@ export default function KPIs() {
             <div style={{ fontSize: '13px', color: '#999' }}>
               Total facturado histórico
             </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
           </div>
           
           {/* Utilidad Promedio por Pedido */}
           <div 
             className="card" 
-            onClick={loadUtilityDetails}
+            onClick={() => setShowUtilityChoiceModal(true)}
             style={{ 
               cursor: 'pointer',
               transition: 'transform 0.2s, box-shadow 0.2s'
@@ -519,7 +682,22 @@ export default function KPIs() {
           </div>
           
           {/* Pedidos Completados por Vendedores */}
-          <div className="card">
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/completed_orders_by_seller')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
             <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
               Pedidos Completados por Vendedores
             </div>
@@ -943,6 +1121,73 @@ export default function KPIs() {
         </>
       )}
       
+      {/* Modal de Elección para Utilidad */}
+      {showUtilityChoiceModal && (
+        <>
+          <div 
+            onClick={() => setShowUtilityChoiceModal(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.6)',
+              zIndex: 999
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '95%',
+            zIndex: 1000,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: '18px', fontWeight: 700 }}>
+              Ver Detalles de Utilidad
+            </h2>
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#666' }}>
+              ¿Cómo deseas ver los detalles de utilidad?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                className="button"
+                onClick={() => {
+                  setShowUtilityChoiceModal(false)
+                  loadUtilityDetails()
+                }}
+                style={{ width: '100%' }}
+              >
+                📋 Ver Resumen Detallado
+              </button>
+              <button
+                className="button"
+                onClick={() => {
+                  setShowUtilityChoiceModal(false)
+                  navigate('/kpis/avg_utility_percent')
+                }}
+                style={{ width: '100%', background: 'var(--kivi-green)' }}
+              >
+                📊 Ver Gráfico de Evolución
+              </button>
+              <button
+                className="button ghost"
+                onClick={() => setShowUtilityChoiceModal(false)}
+                style={{ width: '100%' }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Modal de Detalles de Utilidad */}
       {showUtilityDetails && (
         <>
