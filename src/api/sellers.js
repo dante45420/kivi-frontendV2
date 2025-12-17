@@ -64,3 +64,13 @@ export async function getSellerBonuses(weekStart = null) {
   const params = weekStart ? `?week_start=${weekStart}` : ''
   return get(`/api/sellers/bonus${params}`)
 }
+
+export async function getSellerWeekSummary(id, weekStart = null) {
+  const params = weekStart ? `?week_start=${weekStart}` : ''
+  return get(`/api/sellers/${id}/week-summary${params}`)
+}
+
+export async function getSellerGlobalSummary(id) {
+  return get(`/api/sellers/${id}/global-summary`)
+}
+

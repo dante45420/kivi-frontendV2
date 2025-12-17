@@ -3,12 +3,14 @@
  * Dashboard con métricas básicas del negocio
  */
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Loader from '../components/Loader'
 import { createWeeklyCost } from '../api/weeklyCosts'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
 export default function KPIs() {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [kpis, setKpis] = useState({
     last_week: {
@@ -677,9 +679,18 @@ export default function KPIs() {
           alignItems: 'center',
           marginBottom: '20px'
         }}>
-          <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>
-            📅 Utilidad por Semana
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800 }}>
+              📅 Utilidad por Semana
+            </h2>
+            <button
+              onClick={() => navigate('/kpis/semana')}
+              className="button"
+              style={{ background: '#2196F3' }}
+            >
+              📈 Ver Gráfico
+            </button>
+          </div>
           <button
             onClick={() => {
               // Por defecto, usar la última semana registrada o la semana actual

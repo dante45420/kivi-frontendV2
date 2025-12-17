@@ -17,7 +17,9 @@ import {
   getSellerPayments,
   createSellerPayment,
   assignWeeklyBonus,
-  getSellerBonuses
+  getSellerBonuses,
+  getSellerWeekSummary,
+  getSellerGlobalSummary
 } from '../api/sellers'
 import Modal from '../components/Modal'
 import Loader from '../components/Loader'
@@ -77,6 +79,9 @@ export default function Sellers() {
   const [expandedSellers, setExpandedSellers] = useState(new Set())
   const [showPaymentsForSeller, setShowPaymentsForSeller] = useState(null)
   const [sellerPayments, setSellerPayments] = useState({}) // { sellerId: [payments] }
+  const [globalSummaries, setGlobalSummaries] = useState({}) // { sellerId: summary }
+  const [loadingGlobalSummaries, setLoadingGlobalSummaries] = useState(false)
+  const [allSellerDebts, setAllSellerDebts] = useState({}) // { sellerId: debtData }
   
   // Sistema de bonos
   const [showBonusModal, setShowBonusModal] = useState(false)
@@ -127,11 +132,57 @@ export default function Sellers() {
     try {
       const data = await fetchSellersSummary()
       setSellersSummary(data.sellers || [])
+      // Cargar resúmenes globales y deudas
+      await Promise.all([
+        loadGlobalSummaries(data.sellers || []),
+        loadAllSellerDebts(data.sellers || [])
+      ])
     } catch (error) {
       console.error('Error cargando resumen:', error)
       alert('Error cargando resumen: ' + error.message)
     } finally {
       setLoadingSummary(false)
+    }
+  }
+  
+  const loadAllSellerDebts = async (sellers) => {
+    try {
+      const debts = {}
+      await Promise.all(
+        sellers.map(async (item) => {
+          try {
+            const debtData = await getSellerDebt(item.seller.id)
+            debts[item.seller.id] = debtData
+          } catch (error) {
+            console.error(`Error cargando deuda de ${item.seller.name}:`, error)
+          }
+        })
+      )
+      setAllSellerDebts(debts)
+    } catch (error) {
+      console.error('Error cargando deudas:', error)
+    }
+  }
+  
+  const loadGlobalSummaries = async (sellers) => {
+    setLoadingGlobalSummaries(true)
+    try {
+      const summaries = {}
+      await Promise.all(
+        sellers.map(async (item) => {
+          try {
+            const summary = await getSellerGlobalSummary(item.seller.id)
+            summaries[item.seller.id] = summary
+          } catch (error) {
+            console.error(`Error cargando resumen global de ${item.seller.name}:`, error)
+          }
+        })
+      )
+      setGlobalSummaries(summaries)
+    } catch (error) {
+      console.error('Error cargando resúmenes globales:', error)
+    } finally {
+      setLoadingGlobalSummaries(false)
     }
   }
   
@@ -831,6 +882,17 @@ export default function Sellers() {
                       <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--kivi-green)', fontFamily: 'monospace' }}>
                         {formatCurrency(item.total_revenue)}
                       </div>
+                      {allSellerDebts[seller.id] && (
+                        <div style={{ 
+                          fontSize: '14px', 
+                          fontWeight: 600, 
+                          marginTop: '4px',
+                          color: allSellerDebts[seller.id].pending_debt > 0 ? '#f44336' : '#4caf50',
+                          fontFamily: 'monospace'
+                        }}>
+                          Deuda: {formatCurrency(allSellerDebts[seller.id].pending_debt)}
+                        </div>
+                      )}
                     </div>
                     <div style={{ fontSize: '24px', color: '#999' }}>
                       {isExpanded ? '▼' : '▶'}
@@ -952,6 +1014,56 @@ export default function Sellers() {
                         >
                           {showPaymentsForSeller === seller.id ? '👁️ Ocultar Pagos' : '👁️ Ver Pagos'}
                         </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              const weekSummary = await getSellerWeekSummary(seller.id)
+                              // Generar PDF del resumen semanal
+                              const { jsPDF } = await import('jspdf')
+                              const doc = new jsPDF()
+                              
+                              doc.setFontSize(20)
+                              doc.text('Resumen Semanal - Vendedor', 20, 20)
+                              doc.setFontSize(14)
+                              doc.text(weekSummary.seller_name, 20, 30)
+                              
+                              const weekStart = new Date(weekSummary.week_start)
+                              const weekEnd = new Date(weekSummary.week_end)
+                              doc.setFontSize(12)
+                              doc.text(
+                                `Semana: ${weekStart.toLocaleDateString('es-CL')} - ${weekEnd.toLocaleDateString('es-CL')}`,
+                                20,
+                                40
+                              )
+                              
+                              let yPos = 55
+                              doc.setFontSize(14)
+                              doc.text('Cantidad de Pedidos:', 20, yPos)
+                              doc.text(weekSummary.orders_count.toString(), 100, yPos)
+                              
+                              yPos += 10
+                              doc.text('Porcentaje de Utilidad:', 20, yPos)
+                              doc.text(`${weekSummary.avg_utility_percent.toFixed(2)}%`, 100, yPos)
+                              
+                              yPos += 10
+                              doc.text('Utilidad Total de la Semana:', 20, yPos)
+                              doc.text(formatCurrency(weekSummary.total_utility), 100, yPos)
+                              
+                              doc.save(`resumen_semanal_${seller.name}_${weekSummary.week_start}.pdf`)
+                              alert('✅ Resumen descargado')
+                            } catch (error) {
+                              console.error('Error descargando resumen:', error)
+                              alert('Error al descargar resumen: ' + (error.message || 'Error desconocido'))
+                            }
+                          }}
+                          className="button"
+                          style={{ 
+                            flex: 1,
+                            background: '#ff9800'
+                          }}
+                        >
+                          📥 Descargar Resumen Semanal
+                        </button>
                       </div>
                       
                       {/* Pagos del vendedor */}
@@ -1005,6 +1117,59 @@ export default function Sellers() {
                 </div>
               )
             })}
+          </div>
+        )}
+        
+        {/* Estadística Global */}
+        {sellersSummary.length > 0 && (
+          <div style={{ marginTop: '32px', padding: '24px', background: '#f8f9fa', borderRadius: '12px', border: '2px solid #e1e7e1' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px', textAlign: 'center' }}>
+              📊 Estadística Global (Todo el Periodo)
+            </h3>
+            {loadingGlobalSummaries ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Loader />
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                {sellersSummary.map((item) => {
+                  const globalSummary = globalSummaries[item.seller.id]
+                  if (!globalSummary) return null
+                  
+                  return (
+                    <div key={item.seller.id} className="card" style={{ padding: '16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: 'var(--kivi-text-dark)' }}>
+                        {item.seller.name}
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                          Cantidad de Pedidos
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'monospace' }}>
+                          {globalSummary.orders_count}
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                          Porcentaje de Utilidad
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--kivi-green)' }}>
+                          {globalSummary.avg_utility_percent.toFixed(2)}%
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
+                          Utilidad Total
+                        </div>
+                        <div style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--kivi-green)' }}>
+                          {formatCurrency(globalSummary.total_utility)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1472,3 +1637,4 @@ export default function Sellers() {
     </div>
   )
 }
+

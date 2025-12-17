@@ -14,6 +14,7 @@ import Customers from './pages/Customers'
 import Sellers from './pages/Sellers'
 import Accounting from './pages/Accounting'
 import KPIs from './pages/KPIs'
+import KPIsByWeek from './pages/KPIsByWeek'
 import WeeklyOffers from './pages/WeeklyOffers'
 import Login from './pages/Login'
 
@@ -91,6 +92,7 @@ export default function App() {
       <Route path="/vendedores" element={<Sellers />} />
       <Route path="/contabilidad" element={<Accounting />} />
       <Route path="/kpis" element={<KPIs />} />
+      <Route path="/kpis/semana" element={<KPIsByWeek />} />
       <Route path="/ofertas" element={<WeeklyOffers />} />
     </>
   )
