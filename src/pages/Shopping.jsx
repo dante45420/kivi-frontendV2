@@ -8,6 +8,7 @@ import { fetchProducts } from '../api/products'
 import { fetchPurchases } from '../api/purchases'
 import Loader from '../components/Loader'
 import { generatePurchasesListPDF } from '../utils/purchasesPdf'
+import { generatePastPurchasePDF } from '../utils/pastPurchasePdf'
 
 export default function Shopping() {
   const [consolidatedList, setConsolidatedList] = useState([])
@@ -443,9 +444,11 @@ export default function Shopping() {
             border: '2px solid #e1e7e1',
             padding: '24px'
           }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '20px', fontWeight: 700 }}>
-              📜 Historial de Compras Completas
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>
+                📜 Última Compra Registrada
+              </h3>
+            </div>
             
             {loadingHistory ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -457,7 +460,8 @@ export default function Shopping() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {pastPurchases.map((purchase, idx) => (
+                {/* Mostrar solo la última compra */}
+                {pastPurchases.slice(0, 1).map((purchase, idx) => (
                   <div key={idx} style={{
                     padding: '20px',
                     background: '#f8f9fa',
@@ -487,6 +491,21 @@ export default function Shopping() {
                           }) : 'Sin fecha'}
                         </div>
                       </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await generatePastPurchasePDF(purchase)
+                            alert('✅ Resumen de compra descargado')
+                          } catch (error) {
+                            console.error('Error descargando resumen:', error)
+                            alert('Error al descargar resumen: ' + (error.message || 'Error desconocido'))
+                          }
+                        }}
+                        className="button"
+                        style={{ background: 'var(--kivi-green)', marginLeft: '16px' }}
+                      >
+                        📥 Descargar Resumen Detallado
+                      </button>
                     </div>
                     
                     {/* Clientes asociados */}
@@ -514,12 +533,31 @@ export default function Shopping() {
                               Total: {customerInfo.total_qty.toFixed(customerInfo.items[0]?.unit === 'kg' ? 1 : 0)} {customerInfo.items[0]?.unit || purchase.unit}
                             </div>
                             <div style={{ fontSize: '12px', color: '#999' }}>
-                              {customerInfo.items.map((item, iidx) => (
-                                <div key={iidx} style={{ marginBottom: '2px' }}>
-                                  Pedido #{item.order_id}: {item.qty} {item.unit}
-                                  {item.order_date && ` (${new Date(item.order_date).toLocaleDateString('es-CL')})`}
-                                </div>
-                              ))}
+                              {customerInfo.items.map((item, iidx) => {
+                                const maturityLabel = item.maturity_note === 'para_hoy' ? 'Para hoy' : 
+                                                    item.maturity_note === 'para_4_5_dias' ? 'Para 4-5 días' : 
+                                                    'Sin especificar'
+                                return (
+                                  <div key={iidx} style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>Pedido #{item.order_id}: {item.qty} {item.unit}</span>
+                                    <span style={{ 
+                                      padding: '2px 6px', 
+                                      borderRadius: '4px', 
+                                      background: item.maturity_note === 'para_hoy' ? '#fff3e0' : '#e8f5e9',
+                                      color: item.maturity_note === 'para_hoy' ? '#ff6b00' : '#4caf50',
+                                      fontSize: '11px',
+                                      fontWeight: 600
+                                    }}>
+                                      {maturityLabel}
+                                    </span>
+                                    {item.order_date && (
+                                      <span style={{ color: '#999' }}>
+                                        ({new Date(item.order_date).toLocaleDateString('es-CL')})
+                                      </span>
+                                    )}
+                                  </div>
+                                )
+                              })}
                             </div>
                           </div>
                         ))}
