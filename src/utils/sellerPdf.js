@@ -35,7 +35,7 @@ const formatCurrency = (value) => {
   }).format(value)
 }
 
-export async function generateSellerWeeklySummaryPDF(weekSummary) {
+export async function generateSellerWeeklySummaryPDF(weekSummary, globalSummary = null) {
   const doc = new jsPDF()
   
   const pageWidth = doc.internal.pageSize.width
@@ -52,7 +52,7 @@ export async function generateSellerWeeklySummaryPDF(weekSummary) {
   
   // Intentar cargar logo
   try {
-    const logoUrl = '/Logo_kivi.png'
+    const logoUrl = '/Logo_con_slogan.png'
     const logoData = await loadImageAsBase64(logoUrl)
     
     const maxWidth = 50
@@ -65,7 +65,7 @@ export async function generateSellerWeeklySummaryPDF(weekSummary) {
     console.warn('No se pudo cargar el logo, usando texto:', e)
     doc.setFontSize(28)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(76, 175, 80)
+    doc.setTextColor(0, 0, 0)
     doc.text('GREEN MARKET', margin, 22)
   }
   
@@ -95,7 +95,7 @@ export async function generateSellerWeeklySummaryPDF(weekSummary) {
   // ======== INFORMACIÓN DEL VENDEDOR ========
   doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(76, 175, 80)
+  doc.setTextColor(0, 0, 0)
   doc.text('Vendedor:', margin, y)
   
   doc.setFont('helvetica', 'normal')
@@ -128,16 +128,52 @@ export async function generateSellerWeeklySummaryPDF(weekSummary) {
   
   y += 10
   doc.setFont('helvetica', 'bold')
-  doc.text('Porcentaje de Comisión:', margin, y)
+  doc.text('Porcentaje de Comisión Alcanzado:', margin, y)
   doc.setFont('helvetica', 'normal')
-  doc.text(`${weekSummary.avg_utility_percent.toFixed(2)}%`, margin + 80, y)
+  doc.text(`${weekSummary.avg_utility_percent.toFixed(2)}%`, margin + 100, y)
   
   y += 10
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(76, 175, 80)
+  doc.setTextColor(0, 0, 0)
   doc.text('Comisión Total de la Semana:', margin, y)
   doc.setFont('helvetica', 'bold')
-  doc.text(formatCurrency(weekSummary.total_utility), margin + 80, y)
+  doc.text(formatCurrency(weekSummary.total_utility), margin + 100, y)
+  
+  // ======== ESTADÍSTICAS GLOBALES ========
+  if (globalSummary) {
+    y += 20
+    
+    // Línea divisoria
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.5)
+    doc.line(margin, y, pageWidth - margin, y)
+    y += 10
+    
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('ESTADÍSTICAS GLOBALES', margin, y)
+    
+    y += 15
+    
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Cantidad Total de Pedidos:', margin, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(globalSummary.orders_count.toString(), margin + 100, y)
+    
+    y += 10
+    doc.setFont('helvetica', 'bold')
+    doc.text('Porcentaje de Comisión Promedio:', margin, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`${globalSummary.avg_utility_percent.toFixed(2)}%`, margin + 100, y)
+    
+    y += 10
+    doc.setFont('helvetica', 'bold')
+    doc.text('Comisión Total (Todo el Periodo):', margin, y)
+    doc.setFont('helvetica', 'bold')
+    doc.text(formatCurrency(globalSummary.total_utility), margin + 100, y)
+  }
   
   // ======== PIE DE PÁGINA ========
   const footerY = pageHeight - 15
