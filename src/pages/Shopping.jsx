@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react'
 import { fetchOrders } from '../api/orders'
 import { fetchProducts } from '../api/products'
+import { createPurchase } from '../api/purchases'
 import Loader from '../components/Loader'
 import { generatePurchasesListPDF } from '../utils/purchasesPdf'
 import { generatePurchaseDetailPDF } from '../utils/purchaseDetailPdf'
@@ -98,7 +99,8 @@ export default function Shopping() {
         byProduct[key].customers.push({
           customer_name: item.customer_name || item.customer?.name || 'Cliente',
           qty: item.qty,
-          order_id: item.order_id
+          order_id: item.order_id,
+          maturity_note: maturity_note
         })
       })
       
@@ -108,12 +110,20 @@ export default function Shopping() {
         const key = `${item.product_id}_${item.unit}`
         if (!byProductUnit[key]) {
           byProductUnit[key] = {
-            ...item,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            unit: item.unit,
+            product_default_unit: item.product_default_unit,
+            category_name: item.category_name,
+            category_id: item.category_id,
+            total_qty: 0,
+            customers: [],
             maturity_breakdown: {
               para_hoy: 0,
               para_4_5_dias: 0,
               sin_especificar: 0
-            }
+            },
+            purchased: false
           }
         }
         // Sumar la cantidad según la nota de maduración
@@ -121,6 +131,10 @@ export default function Shopping() {
                            item.maturity_note === 'para_4_5_dias' ? 'para_4_5_dias' : 
                            'sin_especificar'
         byProductUnit[key].maturity_breakdown[maturityKey] += item.total_qty
+        // Sumar al total
+        byProductUnit[key].total_qty += item.total_qty
+        // Agregar todos los clientes
+        byProductUnit[key].customers.push(...item.customers)
       })
       
       // Convertir de vuelta a array
@@ -402,6 +416,29 @@ export default function Shopping() {
     
     setSaving(true)
     try {
+      // Primero guardar todas las compras en la base de datos
+      console.log('💾 Guardando compras en la base de datos...')
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const token = localStorage.getItem('kivi_token')
+      
+      for (const purchase of toSave) {
+        try {
+          await fetch(`${API_URL}/api/purchases`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': token ? `Bearer ${token}` : ''
+            },
+            body: JSON.stringify(purchase)
+          })
+        } catch (err) {
+          console.error(`Error guardando compra para ${purchase.product_name}:`, err)
+          // Continuar con las demás compras
+        }
+      }
+      
+      console.log('✅ Compras guardadas en la base de datos')
+      
       // Asegurarse de que ordersData esté actualizado
       const currentOrdersData = { ...ordersData }
       // Generar PDF detallado

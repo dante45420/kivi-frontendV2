@@ -1,6 +1,6 @@
 /**
  * Generador de PDF para Compra Actual Detallada
- * Formato compacto y elegante con detalle por cliente y maduración
+ * Formato: Por categoría, separado por unidad, dos filas por maduración con clientes
  */
 import { jsPDF } from 'jspdf'
 
@@ -25,28 +25,6 @@ function loadImageAsBase64(url) {
     img.onerror = reject
     img.src = url
   })
-}
-
-const getMaturityLabel = (maturityNote) => {
-  switch (maturityNote) {
-    case 'para_hoy':
-      return 'Hoy'
-    case 'para_4_5_dias':
-      return '4-5d'
-    default:
-      return '-'
-  }
-}
-
-const getMaturityColor = (maturityNote) => {
-  switch (maturityNote) {
-    case 'para_hoy':
-      return { r: 255, g: 107, b: 0 } // Naranja
-    case 'para_4_5_dias':
-      return { r: 76, g: 175, b: 80 } // Verde
-    default:
-      return { r: 200, g: 200, b: 200 } // Gris
-  }
 }
 
 export async function generatePurchaseDetailPDF(consolidatedList, products, ordersData) {
@@ -161,124 +139,271 @@ export async function generatePurchaseDetailPDF(consolidatedList, products, orde
     doc.line(margin, y, pageWidth - margin, y)
     y += 6
     
-    // Items de esta categoría
-    const sortedItems = [...byCategory[category]].sort((a, b) => {
-      if (a.product_name === b.product_name) {
-        if (a.unit === 'kg' && b.unit !== 'kg') return -1
-        if (a.unit !== 'kg' && b.unit === 'kg') return 1
+    // Agrupar productos por nombre y ordenar alfabéticamente
+    const byProductName = {}
+    byCategory[category].forEach(item => {
+      const productName = item.product_name
+      if (!byProductName[productName]) {
+        byProductName[productName] = []
       }
-      return 0
+      byProductName[productName].push(item)
     })
     
-    sortedItems.forEach((item, itemIdx) => {
-      // Verificar si necesitamos una nueva página
-      if (y > pageHeight - 60) {
-        doc.addPage()
-        y = 20
-      }
+    // Ordenar productos alfabéticamente
+    const sortedProductNames = Object.keys(byProductName).sort()
+    
+    sortedProductNames.forEach(productName => {
+      const productItems = byProductName[productName]
       
-      // Nombre del producto y cantidad total
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(0, 0, 0)
-      doc.text(item.product_name, margin + 5, y)
+      // Separar por unidad: kg primero, luego unit
+      const kgItems = productItems.filter(item => item.unit === 'kg')
+      const unitItems = productItems.filter(item => item.unit !== 'kg')
       
-      // Cantidad total (derecha)
-      const qtyText = `${item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
-      const qtyWidth = doc.getTextWidth(qtyText)
-      doc.setFont('helvetica', 'normal')
-      doc.text(qtyText, pageWidth - margin - qtyWidth, y)
-      
-      y += 6
-      
-      // Desglose por maduración (compacto, en una línea)
-      if (item.maturity_breakdown) {
-        const breakdown = item.maturity_breakdown
-        const parts = []
-        if (breakdown.para_hoy > 0) {
-          parts.push(`Hoy: ${breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)}`)
-        }
-        if (breakdown.para_4_5_dias > 0) {
-          parts.push(`4-5d: ${breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)}`)
-        }
-        if (breakdown.sin_especificar > 0) {
-          parts.push(`-: ${breakdown.sin_especificar.toFixed(item.unit === 'kg' ? 1 : 0)}`)
-        }
-        
-        if (parts.length > 0) {
-          doc.setFontSize(9)
-          doc.setTextColor(100, 100, 100)
-          doc.text(parts.join(' | '), margin + 10, y)
-          y += 5
-        }
-      }
-      
-      // Detalle por cliente (compacto)
-      if (item.customers && item.customers.length > 0) {
-        // Agrupar clientes por nombre
-        const customersMap = {}
-        item.customers.forEach(customer => {
-          const customerName = customer.customer_name || 'Cliente desconocido'
-          if (!customersMap[customerName]) {
-            customersMap[customerName] = []
-          }
-          customersMap[customerName].push(customer)
-        })
-        
-        // Mostrar clientes de forma compacta
-        Object.entries(customersMap).forEach(([customerName, customerItems], cIdx) => {
-          // Verificar si necesitamos nueva página
-          if (y > pageHeight - 30) {
+      // Procesar items en kg primero
+      if (kgItems.length > 0) {
+        kgItems.forEach(item => {
+          // Verificar si necesitamos una nueva página
+          if (y > pageHeight - 50) {
             doc.addPage()
             y = 20
           }
           
-          // Nombre del cliente (compacto)
-          doc.setFontSize(9)
+          // Nombre del producto y unidad
+          doc.setFontSize(11)
           doc.setFont('helvetica', 'bold')
-          doc.setTextColor(60, 60, 60)
-          doc.text(`  ${customerName}:`, margin + 10, y)
+          doc.setTextColor(0, 0, 0)
+          doc.text(`${item.product_name} (kg)`, margin + 5, y)
           
-          // Items del cliente en línea compacta
-          const itemsText = customerItems.map(customerItem => {
-            // Buscar maduración
-            let maturityNote = 'sin_especificar'
-            if (ordersData && ordersData[customerItem.order_id]) {
-              const orderItems = ordersData[customerItem.order_id]
-              const orderItem = orderItems.find(oi => 
-                oi.product_id === item.product_id && 
-                oi.customer_name === customerName
-              )
-              if (orderItem && orderItem.maturity_note) {
-                maturityNote = orderItem.maturity_note
-              }
-            }
-            
-            const maturityLabel = getMaturityLabel(maturityNote)
-            return `#${customerItem.order_id} (${customerItem.qty}${item.unit === 'kg' ? '' : 'u'} ${maturityLabel})`
-          }).join(', ')
-          
+          // Cantidad total (derecha)
+          const qtyText = `${item.total_qty.toFixed(1)} kg`
+          const qtyWidth = doc.getTextWidth(qtyText)
           doc.setFont('helvetica', 'normal')
-          doc.setTextColor(80, 80, 80)
-          const itemsWidth = doc.getTextWidth(itemsText)
-          const maxWidth = pageWidth - margin - 80
-          if (itemsWidth > maxWidth) {
-            // Si es muy largo, truncar
-            const truncated = doc.splitTextToSize(itemsText, maxWidth)
-            doc.text(truncated[0], margin + 50, y)
-            if (truncated.length > 1) {
-              y += 4
-              doc.text(truncated[1], margin + 50, y)
+          doc.text(qtyText, pageWidth - margin - qtyWidth, y)
+          
+          y += 6
+          
+          // Fila "Para hoy"
+          if (item.maturity_breakdown && item.maturity_breakdown.para_hoy > 0) {
+            // Obtener clientes que pidieron "para hoy"
+            const hoyCustomers = item.customers.filter(customer => 
+              customer.maturity_note === 'para_hoy' && customer.qty > 0
+            )
+            
+            if (hoyCustomers.length > 0) {
+              doc.setFontSize(10)
+              doc.setFont('helvetica', 'bold')
+              doc.setTextColor(60, 60, 60)
+              doc.text('Para hoy:', margin + 10, y)
+              
+              // Agrupar clientes por nombre y sumar cantidades
+              const customerMap = {}
+              hoyCustomers.forEach(customer => {
+                const name = customer.customer_name || 'Cliente desconocido'
+                if (!customerMap[name]) {
+                  customerMap[name] = 0
+                }
+                customerMap[name] += customer.qty || 0
+              })
+              
+              // Mostrar clientes a la derecha
+              const customerText = Object.entries(customerMap)
+                .map(([name, qty]) => `${name} ${qty.toFixed(1)}`)
+                .join(', ')
+              
+              doc.setFont('helvetica', 'normal')
+              doc.setFontSize(9)
+              doc.setTextColor(100, 100, 100)
+              const customerWidth = doc.getTextWidth(customerText)
+              const maxWidth = pageWidth - margin - 70
+              if (customerWidth > maxWidth) {
+                const truncated = doc.splitTextToSize(customerText, maxWidth)
+                doc.text(truncated[0], margin + 70, y)
+                if (truncated.length > 1) {
+                  y += 4
+                  doc.text(truncated[1], margin + 70, y)
+                }
+              } else {
+                doc.text(customerText, margin + 70, y)
+              }
+              
+              y += 6
             }
-          } else {
-            doc.text(itemsText, margin + 50, y)
           }
           
-          y += 5
+          // Fila "Para 4-5 días"
+          if (item.maturity_breakdown && item.maturity_breakdown.para_4_5_dias > 0) {
+            // Obtener clientes que pidieron "para 4-5 días"
+            const diasCustomers = item.customers.filter(customer => 
+              customer.maturity_note === 'para_4_5_dias' && customer.qty > 0
+            )
+            
+            if (diasCustomers.length > 0) {
+              doc.setFontSize(10)
+              doc.setFont('helvetica', 'bold')
+              doc.setTextColor(60, 60, 60)
+              doc.text('Para 4-5 días:', margin + 10, y)
+              
+              // Agrupar clientes por nombre y sumar cantidades
+              const customerMap = {}
+              diasCustomers.forEach(customer => {
+                const name = customer.customer_name || 'Cliente desconocido'
+                if (!customerMap[name]) {
+                  customerMap[name] = 0
+                }
+                customerMap[name] += customer.qty || 0
+              })
+              
+              // Mostrar clientes a la derecha
+              const customerText = Object.entries(customerMap)
+                .map(([name, qty]) => `${name} ${qty.toFixed(1)}`)
+                .join(', ')
+              
+              doc.setFont('helvetica', 'normal')
+              doc.setFontSize(9)
+              doc.setTextColor(100, 100, 100)
+              const customerWidth = doc.getTextWidth(customerText)
+              const maxWidth = pageWidth - margin - 70
+              if (customerWidth > maxWidth) {
+                const truncated = doc.splitTextToSize(customerText, maxWidth)
+                doc.text(truncated[0], margin + 70, y)
+                if (truncated.length > 1) {
+                  y += 4
+                  doc.text(truncated[1], margin + 70, y)
+                }
+              } else {
+                doc.text(customerText, margin + 70, y)
+              }
+              
+              y += 6
+            }
+          }
+          
+          y += 3
         })
       }
       
-      y += 3
+      // Procesar items en unidades
+      if (unitItems.length > 0) {
+        unitItems.forEach(item => {
+          // Verificar si necesitamos una nueva página
+          if (y > pageHeight - 50) {
+            doc.addPage()
+            y = 20
+          }
+          
+          // Nombre del producto y unidad
+          doc.setFontSize(11)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(0, 0, 0)
+          doc.text(`${item.product_name} (${item.unit})`, margin + 5, y)
+          
+          // Cantidad total (derecha)
+          const qtyText = `${item.total_qty.toFixed(0)} ${item.unit}`
+          const qtyWidth = doc.getTextWidth(qtyText)
+          doc.setFont('helvetica', 'normal')
+          doc.text(qtyText, pageWidth - margin - qtyWidth, y)
+          
+          y += 6
+          
+          // Fila "Para hoy"
+          if (item.maturity_breakdown && item.maturity_breakdown.para_hoy > 0) {
+            // Obtener clientes que pidieron "para hoy"
+            const hoyCustomers = item.customers.filter(customer => 
+              customer.maturity_note === 'para_hoy' && customer.qty > 0
+            )
+            
+            if (hoyCustomers.length > 0) {
+              doc.setFontSize(10)
+              doc.setFont('helvetica', 'bold')
+              doc.setTextColor(60, 60, 60)
+              doc.text('Para hoy:', margin + 10, y)
+              
+              // Agrupar clientes por nombre y sumar cantidades
+              const customerMap = {}
+              hoyCustomers.forEach(customer => {
+                const name = customer.customer_name || 'Cliente desconocido'
+                if (!customerMap[name]) {
+                  customerMap[name] = 0
+                }
+                customerMap[name] += customer.qty || 0
+              })
+              
+              // Mostrar clientes a la derecha
+              const customerText = Object.entries(customerMap)
+                .map(([name, qty]) => `${name} ${qty.toFixed(0)}`)
+                .join(', ')
+              
+              doc.setFont('helvetica', 'normal')
+              doc.setFontSize(9)
+              doc.setTextColor(100, 100, 100)
+              const customerWidth = doc.getTextWidth(customerText)
+              const maxWidth = pageWidth - margin - 70
+              if (customerWidth > maxWidth) {
+                const truncated = doc.splitTextToSize(customerText, maxWidth)
+                doc.text(truncated[0], margin + 70, y)
+                if (truncated.length > 1) {
+                  y += 4
+                  doc.text(truncated[1], margin + 70, y)
+                }
+              } else {
+                doc.text(customerText, margin + 70, y)
+              }
+              
+              y += 6
+            }
+          }
+          
+          // Fila "Para 4-5 días"
+          if (item.maturity_breakdown && item.maturity_breakdown.para_4_5_dias > 0) {
+            // Obtener clientes que pidieron "para 4-5 días"
+            const diasCustomers = item.customers.filter(customer => 
+              customer.maturity_note === 'para_4_5_dias' && customer.qty > 0
+            )
+            
+            if (diasCustomers.length > 0) {
+              doc.setFontSize(10)
+              doc.setFont('helvetica', 'bold')
+              doc.setTextColor(60, 60, 60)
+              doc.text('Para 4-5 días:', margin + 10, y)
+              
+              // Agrupar clientes por nombre y sumar cantidades
+              const customerMap = {}
+              diasCustomers.forEach(customer => {
+                const name = customer.customer_name || 'Cliente desconocido'
+                if (!customerMap[name]) {
+                  customerMap[name] = 0
+                }
+                customerMap[name] += customer.qty || 0
+              })
+              
+              // Mostrar clientes a la derecha
+              const customerText = Object.entries(customerMap)
+                .map(([name, qty]) => `${name} ${qty.toFixed(0)}`)
+                .join(', ')
+              
+              doc.setFont('helvetica', 'normal')
+              doc.setFontSize(9)
+              doc.setTextColor(100, 100, 100)
+              const customerWidth = doc.getTextWidth(customerText)
+              const maxWidth = pageWidth - margin - 70
+              if (customerWidth > maxWidth) {
+                const truncated = doc.splitTextToSize(customerText, maxWidth)
+                doc.text(truncated[0], margin + 70, y)
+                if (truncated.length > 1) {
+                  y += 4
+                  doc.text(truncated[1], margin + 70, y)
+                }
+              } else {
+                doc.text(customerText, margin + 70, y)
+              }
+              
+              y += 6
+            }
+          }
+          
+          y += 3
+        })
+      }
     })
     
     // Espacio entre categorías
