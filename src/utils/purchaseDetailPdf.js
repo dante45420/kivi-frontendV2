@@ -129,7 +129,7 @@ export async function generatePurchaseDetailPDF(consolidatedList, products, orde
     // Encabezado de categoría
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(76, 175, 80) // Verde Kivi
+    doc.setTextColor(30, 30, 30) // Negro oscuro
     doc.text(category.toUpperCase(), margin, y)
     y += 8
     

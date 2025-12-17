@@ -85,7 +85,7 @@ export async function generatePurchasesListPDF(consolidatedList) {
   doc.setTextColor(0, 0, 0) // Negro
   doc.text('LISTA DE COMPRAS', margin, y)
   
-  y += 12
+  y += 8
   
   // ======== AGRUPAR POR CATEGORÍA ========
   const byCategory = {}
@@ -111,15 +111,15 @@ export async function generatePurchasesListPDF(consolidatedList) {
     // Encabezado de categoría
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(76, 175, 80) // Verde Kivi
+    doc.setTextColor(30, 30, 30) // Negro oscuro
     doc.text(category.toUpperCase(), margin, y)
-    y += 8
+    y += 6
     
     // Línea divisoria
     doc.setDrawColor(200, 200, 200)
     doc.setLineWidth(0.5)
     doc.line(margin, y, pageWidth - margin, y)
-    y += 6
+    y += 4
     
     // Items de esta categoría - ordenar kg antes que unidades
     const sortedItems = [...byCategory[category]].sort((a, b) => {
@@ -150,7 +150,7 @@ export async function generatePurchasesListPDF(consolidatedList) {
       doc.setFont('helvetica', 'normal')
       doc.text(qtyText, pageWidth - margin - qtyWidth, y)
       
-      y += 6
+      y += 5
       
       // Mostrar desglose por maduración si existe
       if (item.maturity_breakdown) {
@@ -158,33 +158,33 @@ export async function generatePurchasesListPDF(consolidatedList) {
         const hasBreakdown = breakdown.para_hoy > 0 || breakdown.para_4_5_dias > 0 || breakdown.sin_especificar > 0
         
         if (hasBreakdown) {
-          y += 4 // Espacio adicional antes del desglose
-          doc.setFontSize(11)
+          y += 2 // Espacio adicional antes del desglose
+          doc.setFontSize(10)
           doc.setTextColor(60, 60, 60)
           doc.setFont('helvetica', 'bold')
           
           if (breakdown.para_hoy > 0) {
             const text = `Para hoy: ${breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
             doc.text(text, margin + 10, y)
-            y += 8 // Espacio más grande entre opciones
+            y += 5 // Espacio entre opciones
           }
           if (breakdown.para_4_5_dias > 0) {
             const text = `Para 4-5 días: ${breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
             doc.text(text, margin + 10, y)
-            y += 8 // Espacio más grande entre opciones
+            y += 5 // Espacio entre opciones
           }
           
           doc.setFont('helvetica', 'normal')
-          y += 2 // Espacio adicional después del desglose
+          y += 1 // Espacio adicional después del desglose
         }
       }
       
-      y += 2
+      y += 1
     })
     
     // Espacio entre categorías
     if (catIdx < sortedCategories.length - 1) {
-      y += 4
+      y += 2
     }
   })
   
@@ -235,3 +235,4 @@ export async function generatePurchasesListPDF(consolidatedList) {
   const filename = `lista-compras-${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(filename)
 }
+
