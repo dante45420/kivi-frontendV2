@@ -1,6 +1,6 @@
 /**
  * Generador de PDF para Compra Actual Detallada
- * Muestra detalle por cliente y maduración de forma bonita y ordenada
+ * Formato compacto y elegante con detalle por cliente y maduración
  */
 import { jsPDF } from 'jspdf'
 
@@ -27,23 +27,14 @@ function loadImageAsBase64(url) {
   })
 }
 
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('es-CL', { 
-    style: 'currency', 
-    currency: 'CLP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value)
-}
-
 const getMaturityLabel = (maturityNote) => {
   switch (maturityNote) {
     case 'para_hoy':
-      return 'Para hoy'
+      return 'Hoy'
     case 'para_4_5_dias':
-      return 'Para 4-5 días'
+      return '4-5d'
     default:
-      return 'Sin especificar'
+      return '-'
   }
 }
 
@@ -54,7 +45,7 @@ const getMaturityColor = (maturityNote) => {
     case 'para_4_5_dias':
       return { r: 76, g: 175, b: 80 } // Verde
     default:
-      return { r: 150, g: 150, b: 150 } // Gris
+      return { r: 200, g: 200, b: 200 } // Gris
   }
 }
 
@@ -108,12 +99,12 @@ export async function generatePurchaseDetailPDF(consolidatedList, products, orde
   y = 58
   
   // ======== TÍTULO ========
-  doc.setFontSize(20)
+  doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
   doc.text('LISTA DE COMPRAS DETALLADA', margin, y)
   
-  y += 10
+  y += 8
   
   // Obtener rango de pedidos
   const orderIds = new Set()
@@ -129,214 +120,198 @@ export async function generatePurchaseDetailPDF(consolidatedList, products, orde
       : `Pedidos #${sortedOrderIds[0]}-${sortedOrderIds[sortedOrderIds.length - 1]}`
     : 'Sin pedidos'
   
-  doc.setFontSize(11)
+  doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(100, 100, 100)
   doc.text(orderRange, margin, y)
   
-  y += 15
+  y += 12
   
-  // ======== AGRUPAR POR PRODUCTO ========
-  consolidatedList.forEach((item, itemIdx) => {
-    // Verificar si necesitamos nueva página
-    if (y > pageHeight - 100) {
+  // ======== AGRUPAR POR CATEGORÍA ========
+  const byCategory = {}
+  consolidatedList.forEach(item => {
+    const category = item.category_name || 'Sin categoría'
+    if (!byCategory[category]) {
+      byCategory[category] = []
+    }
+    byCategory[category].push(item)
+  })
+  
+  // Ordenar categorías alfabéticamente
+  const sortedCategories = Object.keys(byCategory).sort()
+  
+  // ======== ITEMS POR CATEGORÍA ========
+  sortedCategories.forEach((category, catIdx) => {
+    // Verificar si necesitamos una nueva página
+    if (y > pageHeight - 50) {
       doc.addPage()
       y = 20
     }
     
-    const product = products[item.product_id]
-    
-    // Nombre del producto
+    // Encabezado de categoría
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(76, 175, 80)
-    doc.text(item.product_name, margin, y)
-    
+    doc.setTextColor(76, 175, 80) // Verde Kivi
+    doc.text(category.toUpperCase(), margin, y)
     y += 8
     
-    // Cantidad total
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(0, 0, 0)
-    doc.text(
-      `Cantidad total: ${item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`,
-      margin,
-      y
-    )
+    // Línea divisoria
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.5)
+    doc.line(margin, y, pageWidth - margin, y)
+    y += 6
     
-    y += 10
+    // Items de esta categoría
+    const sortedItems = [...byCategory[category]].sort((a, b) => {
+      if (a.product_name === b.product_name) {
+        if (a.unit === 'kg' && b.unit !== 'kg') return -1
+        if (a.unit !== 'kg' && b.unit === 'kg') return 1
+      }
+      return 0
+    })
     
-    // Detalle por maduración
-    if (item.maturity_breakdown) {
-      doc.setFontSize(12)
+    sortedItems.forEach((item, itemIdx) => {
+      // Verificar si necesitamos una nueva página
+      if (y > pageHeight - 60) {
+        doc.addPage()
+        y = 20
+      }
+      
+      // Nombre del producto y cantidad total
+      doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(0, 0, 0)
-      doc.text('Desglose por Maduración:', margin, y)
-      y += 8
+      doc.text(item.product_name, margin + 5, y)
       
-      if (item.maturity_breakdown.para_hoy > 0) {
-        const maturityColor = getMaturityColor('para_hoy')
-        doc.setFillColor(maturityColor.r, maturityColor.g, maturityColor.b)
-        doc.roundedRect(margin + 5, y - 5, 80, 8, 2, 2, 'F')
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(255, 255, 255)
-        doc.text('Para hoy', margin + 10, y + 1)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(0, 0, 0)
-        doc.text(
-          `: ${item.maturity_breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`,
-          margin + 95,
-          y + 1
-        )
-        y += 10
+      // Cantidad total (derecha)
+      const qtyText = `${item.total_qty.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`
+      const qtyWidth = doc.getTextWidth(qtyText)
+      doc.setFont('helvetica', 'normal')
+      doc.text(qtyText, pageWidth - margin - qtyWidth, y)
+      
+      y += 6
+      
+      // Desglose por maduración (compacto, en una línea)
+      if (item.maturity_breakdown) {
+        const breakdown = item.maturity_breakdown
+        const parts = []
+        if (breakdown.para_hoy > 0) {
+          parts.push(`Hoy: ${breakdown.para_hoy.toFixed(item.unit === 'kg' ? 1 : 0)}`)
+        }
+        if (breakdown.para_4_5_dias > 0) {
+          parts.push(`4-5d: ${breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)}`)
+        }
+        if (breakdown.sin_especificar > 0) {
+          parts.push(`-: ${breakdown.sin_especificar.toFixed(item.unit === 'kg' ? 1 : 0)}`)
+        }
+        
+        if (parts.length > 0) {
+          doc.setFontSize(9)
+          doc.setTextColor(100, 100, 100)
+          doc.text(parts.join(' | '), margin + 10, y)
+          y += 5
+        }
       }
       
-      if (item.maturity_breakdown.para_4_5_dias > 0) {
-        const maturityColor = getMaturityColor('para_4_5_dias')
-        doc.setFillColor(maturityColor.r, maturityColor.g, maturityColor.b)
-        doc.roundedRect(margin + 5, y - 5, 80, 8, 2, 2, 'F')
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(255, 255, 255)
-        doc.text('Para 4-5 días', margin + 10, y + 1)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(0, 0, 0)
-        doc.text(
-          `: ${item.maturity_breakdown.para_4_5_dias.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`,
-          margin + 95,
-          y + 1
-        )
-        y += 10
-      }
-      
-      if (item.maturity_breakdown.sin_especificar > 0) {
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(100, 100, 100)
-        doc.text(
-          `Sin especificar: ${item.maturity_breakdown.sin_especificar.toFixed(item.unit === 'kg' ? 1 : 0)} ${item.unit}`,
-          margin + 5,
-          y
-        )
-        y += 10
-      }
-      
-      y += 5
-    }
-    
-    // Detalle por cliente
-    if (item.customers && item.customers.length > 0) {
-      // Línea divisoria
-      doc.setDrawColor(200, 200, 200)
-      doc.setLineWidth(0.5)
-      doc.line(margin, y, pageWidth - margin, y)
-      y += 10
-      
-      doc.setFontSize(12)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(76, 175, 80)
-      doc.text('Detalle por Cliente:', margin, y)
-      y += 10
-      
-      // Agrupar clientes por nombre
-      const customersMap = {}
-      item.customers.forEach(customer => {
-        const customerName = customer.customer_name || 'Cliente desconocido'
-        if (!customersMap[customerName]) {
-          customersMap[customerName] = {
-            name: customerName,
-            items: [],
-            totalQty: 0
+      // Detalle por cliente (compacto)
+      if (item.customers && item.customers.length > 0) {
+        // Agrupar clientes por nombre
+        const customersMap = {}
+        item.customers.forEach(customer => {
+          const customerName = customer.customer_name || 'Cliente desconocido'
+          if (!customersMap[customerName]) {
+            customersMap[customerName] = []
           }
-        }
-        customersMap[customerName].items.push(customer)
-        customersMap[customerName].totalQty += customer.qty || 0
-      })
-      
-      Object.values(customersMap).forEach((customerData, cIdx) => {
-        // Verificar si necesitamos nueva página
-        if (y > pageHeight - 60) {
-          doc.addPage()
-          y = 20
-        }
+          customersMap[customerName].push(customer)
+        })
         
-        // Nombre del cliente
-        doc.setFontSize(11)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(0, 0, 0)
-        doc.text(customerData.name, margin + 5, y)
-        
-        y += 6
-        
-        // Items del cliente
-        customerData.items.forEach((customerItem, itemIdx) => {
+        // Mostrar clientes de forma compacta
+        Object.entries(customersMap).forEach(([customerName, customerItems], cIdx) => {
           // Verificar si necesitamos nueva página
-          if (y > pageHeight - 40) {
+          if (y > pageHeight - 30) {
             doc.addPage()
             y = 20
           }
           
-          // Fondo para el item
-          const itemHeight = 15
-          doc.setFillColor(248, 249, 250)
-          doc.roundedRect(margin + 10, y - 4, contentWidth - 15, itemHeight, 3, 3, 'F')
-          
-          // Información del pedido
+          // Nombre del cliente (compacto)
           doc.setFontSize(9)
-          doc.setFont('helvetica', 'normal')
-          doc.setTextColor(0, 0, 0)
-          doc.text(`Pedido #${customerItem.order_id}`, margin + 15, y)
+          doc.setFont('helvetica', 'bold')
+          doc.setTextColor(60, 60, 60)
+          doc.text(`  ${customerName}:`, margin + 10, y)
           
-          // Cantidad
-          const qtyText = `${customerItem.qty} ${item.unit}`
-          const qtyWidth = doc.getTextWidth(qtyText)
-          doc.text(qtyText, pageWidth - margin - 90 - qtyWidth, y)
-          
-          // Buscar maduración del item en ordersData
-          let maturityNote = 'sin_especificar'
-          if (ordersData && ordersData[customerItem.order_id]) {
-            const orderItems = ordersData[customerItem.order_id]
-            const orderItem = orderItems.find(oi => 
-              oi.product_id === item.product_id && 
-              oi.customer_name === customerData.name
-            )
-            if (orderItem && orderItem.maturity_note) {
-              maturityNote = orderItem.maturity_note
+          // Items del cliente en línea compacta
+          const itemsText = customerItems.map(customerItem => {
+            // Buscar maduración
+            let maturityNote = 'sin_especificar'
+            if (ordersData && ordersData[customerItem.order_id]) {
+              const orderItems = ordersData[customerItem.order_id]
+              const orderItem = orderItems.find(oi => 
+                oi.product_id === item.product_id && 
+                oi.customer_name === customerName
+              )
+              if (orderItem && orderItem.maturity_note) {
+                maturityNote = orderItem.maturity_note
+              }
             }
+            
+            const maturityLabel = getMaturityLabel(maturityNote)
+            return `#${customerItem.order_id} (${customerItem.qty}${item.unit === 'kg' ? '' : 'u'} ${maturityLabel})`
+          }).join(', ')
+          
+          doc.setFont('helvetica', 'normal')
+          doc.setTextColor(80, 80, 80)
+          const itemsWidth = doc.getTextWidth(itemsText)
+          const maxWidth = pageWidth - margin - 80
+          if (itemsWidth > maxWidth) {
+            // Si es muy largo, truncar
+            const truncated = doc.splitTextToSize(itemsText, maxWidth)
+            doc.text(truncated[0], margin + 50, y)
+            if (truncated.length > 1) {
+              y += 4
+              doc.text(truncated[1], margin + 50, y)
+            }
+          } else {
+            doc.text(itemsText, margin + 50, y)
           }
           
-          // Badge de maduración
-          const maturityLabel = getMaturityLabel(maturityNote)
-          const maturityColor = getMaturityColor(maturityNote)
-          doc.setFillColor(maturityColor.r, maturityColor.g, maturityColor.b)
-          doc.roundedRect(pageWidth - margin - 85, y - 4, 80, 8, 2, 2, 'F')
-          
-          doc.setFontSize(8)
-          doc.setFont('helvetica', 'bold')
-          doc.setTextColor(255, 255, 255)
-          const labelWidth = doc.getTextWidth(maturityLabel)
-          doc.text(maturityLabel, pageWidth - margin - 85 + (80 - labelWidth) / 2, y + 1)
-          
-          y += 12
-        })
-        
-        // Espacio entre clientes
-        if (cIdx < Object.values(customersMap).length - 1) {
           y += 5
-        }
-      })
-    }
+        })
+      }
+      
+      y += 3
+    })
     
-    // Espacio entre productos
-    if (itemIdx < consolidatedList.length - 1) {
-      y += 10
-      doc.setDrawColor(240, 240, 240)
-      doc.setLineWidth(0.3)
-      doc.line(margin, y, pageWidth - margin, y)
-      y += 10
+    // Espacio entre categorías
+    if (catIdx < sortedCategories.length - 1) {
+      y += 4
     }
   })
+  
+  // ======== RESUMEN ========
+  if (y > pageHeight - 50) {
+    doc.addPage()
+    y = 20
+  }
+  
+  y += 10
+  
+  // Línea divisoria
+  doc.setDrawColor(200, 200, 200)
+  doc.setLineWidth(0.5)
+  doc.line(margin, y, pageWidth - margin, y)
+  y += 8
+  
+  // Total de productos
+  const totalProducts = consolidatedList.length
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text(`Total de productos: ${totalProducts}`, margin, y)
+  
+  y += 6
+  
+  // Total de categorías
+  doc.text(`Total de categorías: ${sortedCategories.length}`, margin, y)
   
   // ======== PIE DE PÁGINA ========
   const footerY = pageHeight - 15
@@ -357,4 +332,3 @@ export async function generatePurchaseDetailPDF(consolidatedList, products, orde
   
   return doc
 }
-

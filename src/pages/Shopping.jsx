@@ -148,6 +148,15 @@ export default function Shopping() {
     }
   }
 
+  async function downloadList() {
+    try {
+      await generatePurchasesListPDF(consolidatedList)
+    } catch (error) {
+      console.error('Error generando PDF:', error)
+      alert('Error al generar el PDF. Por favor intenta nuevamente.')
+    }
+  }
+
   async function downloadDetailList() {
     try {
       // Asegurarse de que ordersData esté actualizado
@@ -171,6 +180,31 @@ export default function Shopping() {
     } catch (error) {
       console.error('Error generando PDF:', error)
       alert('Error al generar el PDF. Por favor intenta nuevamente.')
+    }
+  }
+
+  async function loadSavedPdfs() {
+    setLoadingHistory(true)
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const token = localStorage.getItem('kivi_token')
+      const response = await fetch(`${API_URL}/api/purchase-pdfs`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Error cargando PDFs guardados')
+      }
+      
+      const pdfs = await response.json()
+      setSavedPdfs(pdfs)
+    } catch (err) {
+      console.error('Error cargando PDFs guardados:', err)
+      alert('Error cargando compras pasadas: ' + (err.message || 'Error desconocido'))
+    } finally {
+      setLoadingHistory(false)
     }
   }
 
@@ -463,6 +497,9 @@ export default function Shopping() {
               }}
             >
               📜 Ver Compras Pasadas
+            </button>
+            <button className="button ghost" onClick={downloadList} disabled={consolidatedList.length === 0}>
+              📥 Descargar
             </button>
             <button className="button ghost" onClick={downloadDetailList} disabled={consolidatedList.length === 0}>
               📥 Descargar Detalle Completo
