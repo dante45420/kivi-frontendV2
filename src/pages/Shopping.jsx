@@ -5,10 +5,9 @@
 import { useState, useEffect } from 'react'
 import { fetchOrders } from '../api/orders'
 import { fetchProducts } from '../api/products'
-import { fetchPurchases } from '../api/purchases'
 import Loader from '../components/Loader'
 import { generatePurchasesListPDF } from '../utils/purchasesPdf'
-import { generatePastPurchasePDF } from '../utils/pastPurchasePdf'
+import { generatePurchaseDetailPDF } from '../utils/purchaseDetailPdf'
 
 export default function Shopping() {
   const [consolidatedList, setConsolidatedList] = useState([])
@@ -20,8 +19,9 @@ export default function Shopping() {
   const [maturityData, setMaturityData] = useState({}) // { product_id_unit: 'para_hoy' | 'para_4_5_dias' | 'sin_especificar' }
   const [expandedProducts, setExpandedProducts] = useState(new Set())
   const [showHistory, setShowHistory] = useState(false)
-  const [pastPurchases, setPastPurchases] = useState([])
+  const [savedPdfs, setSavedPdfs] = useState([])
   const [loadingHistory, setLoadingHistory] = useState(false)
+  const [ordersData, setOrdersData] = useState({}) // { order_id: items[] }
 
   useEffect(() => {
     loadAllData()
@@ -48,13 +48,19 @@ export default function Shopping() {
       
       // Cargar detalles de cada pedido EN PARALELO (mucho más rápido)
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const ordersData = await Promise.all(
+      const ordersDataArray = await Promise.all(
         emittedOrders.map(async (order) => {
           try {
             const response = await fetch(`${API_URL}/api/orders/${order.id}`)
             const data = await response.json()
             if (Array.isArray(data.items)) {
-              return data.items.map(item => ({ ...item, order_id: order.id }))
+              // Guardar datos del pedido para usar en el PDF
+              const orderItems = data.items.map(item => ({ ...item, order_id: order.id }))
+              setOrdersData(prev => ({
+                ...prev,
+                [order.id]: data.items
+              }))
+              return orderItems
             }
             return []
           } catch (err) {
@@ -64,7 +70,7 @@ export default function Shopping() {
         })
       )
       // Aplanar el array de arrays
-      const allItems = ordersData.flat()
+      const allItems = ordersDataArray.flat()
       
       // Consolidar por producto + unidad + maturity_note
       const byProduct = {}
@@ -142,9 +148,26 @@ export default function Shopping() {
     }
   }
 
-  async function downloadList() {
+  async function downloadDetailList() {
     try {
-      await generatePurchasesListPDF(consolidatedList)
+      // Asegurarse de que ordersData esté actualizado
+      const currentOrdersData = { ...ordersData }
+      const doc = await generatePurchaseDetailPDF(consolidatedList, products, currentOrdersData)
+      const orderIds = new Set()
+      consolidatedList.forEach(item => {
+        item.customers?.forEach(customer => {
+          customer.order_id && orderIds.add(customer.order_id)
+        })
+      })
+      const sortedOrderIds = Array.from(orderIds).sort((a, b) => a - b)
+      const orderRange = sortedOrderIds.length > 0 
+        ? sortedOrderIds.length === 1 
+          ? `Pedido #${sortedOrderIds[0]}`
+          : `Pedidos #${sortedOrderIds[0]}-${sortedOrderIds[sortedOrderIds.length - 1]}`
+        : 'Sin pedidos'
+      
+      const filename = `compra-detalle-${new Date().toISOString().split('T')[0]}.pdf`
+      doc.save(filename)
     } catch (error) {
       console.error('Error generando PDF:', error)
       alert('Error al generar el PDF. Por favor intenta nuevamente.')
@@ -345,40 +368,68 @@ export default function Shopping() {
     
     setSaving(true)
     try {
-      // Guardar todas las compras EN PARALELO (mucho más rápido)
+      // Asegurarse de que ordersData esté actualizado
+      const currentOrdersData = { ...ordersData }
+      // Generar PDF detallado
+      const doc = await generatePurchaseDetailPDF(consolidatedList, products, currentOrdersData)
+      
+      // Obtener rango de pedidos
+      const orderIds = new Set()
+      consolidatedList.forEach(item => {
+        item.customers?.forEach(customer => {
+          customer.order_id && orderIds.add(customer.order_id)
+        })
+      })
+      const sortedOrderIds = Array.from(orderIds).sort((a, b) => a - b)
+      const orderRange = sortedOrderIds.length > 0 
+        ? sortedOrderIds.length === 1 
+          ? `Pedido #${sortedOrderIds[0]}`
+          : `Pedidos #${sortedOrderIds[0]}-${sortedOrderIds[sortedOrderIds.length - 1]}`
+        : 'Sin pedidos'
+      
+      // Convertir PDF a blob
+      const pdfBlob = doc.output('blob')
+      
+      // Guardar PDF en el servidor
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const responses = await Promise.all(
-        toSave.map(async (purchase) => {
-          const response = await fetch(`${API_URL}/api/purchases`, {
+      const formData = new FormData()
+      formData.append('file', pdfBlob, 'compra-detalle.pdf')
+      formData.append('metadata', JSON.stringify({
+        order_range: orderRange,
+        date: new Date().toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      }))
+      
+      const token = localStorage.getItem('kivi_token')
+      const response = await fetch(`${API_URL}/api/purchase-pdfs`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(purchase)
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: formData
           })
           
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }))
-            throw new Error(`Error registrando compra de ${purchase.product_name}: ${errorData.error || response.statusText}`)
-          }
-          
-          return response.json()
-        })
-      )
+        throw new Error(errorData.error || 'Error guardando PDF')
+      }
       
-      console.log('✅ Compras registradas:', responses)
-      alert(`✅ ${toSave.length} compras registradas exitosamente`)
+      const savedPdf = await response.json()
+      console.log('✅ PDF guardado:', savedPdf)
+      alert(`✅ Compra registrada y PDF guardado exitosamente`)
       setShowModal(false)
       setPurchaseData({})
       
-      // Marcar como comprados
-      setConsolidatedList(prev => prev.map(item => {
-        const key = `${item.product_id}_${item.unit}`
-        return purchaseData[key]?.price_total ? { ...item, purchased: true } : item
-      }))
+      // Recargar lista de PDFs guardados
+      await loadSavedPdfs()
       
       // Recargar datos para ver los cambios (pedidos completados, etc.)
       await loadAllData()
     } catch (err) {
-      console.error('Error guardando compras:', err)
+      console.error('Error guardando compra:', err)
       alert('Error: ' + err.message)
     } finally {
       setSaving(false)
@@ -406,24 +457,15 @@ export default function Shopping() {
               className="button ghost" 
               onClick={async () => {
                 setShowHistory(!showHistory)
-                if (!showHistory && pastPurchases.length === 0) {
-                  setLoadingHistory(true)
-                  try {
-                    const purchases = await fetchPurchases(true)
-                    setPastPurchases(purchases)
-                  } catch (err) {
-                    console.error('Error cargando compras pasadas:', err)
-                    alert('Error cargando compras pasadas: ' + (err.message || 'Error desconocido'))
-                  } finally {
-                    setLoadingHistory(false)
-                  }
+                if (!showHistory) {
+                  await loadSavedPdfs()
                 }
               }}
             >
               📜 Ver Compras Pasadas
             </button>
-            <button className="button ghost" onClick={downloadList} disabled={consolidatedList.length === 0}>
-              📥 Descargar
+            <button className="button ghost" onClick={downloadDetailList} disabled={consolidatedList.length === 0}>
+              📥 Descargar Detalle Completo
             </button>
             <button 
               className="button" 
@@ -446,136 +488,81 @@ export default function Shopping() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>
-                📜 Última Compra Registrada
-              </h3>
+                📜 Compras Pasadas
+            </h3>
             </div>
             
             {loadingHistory ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Loader />
               </div>
-            ) : pastPurchases.length === 0 ? (
+            ) : savedPdfs.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
                 No hay compras registradas
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Mostrar solo la última compra */}
-                {pastPurchases.slice(0, 1).map((purchase, idx) => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {savedPdfs.map((pdf, idx) => (
                   <div key={idx} style={{
-                    padding: '20px',
+                    padding: '16px',
                     background: '#f8f9fa',
                     borderRadius: '8px',
-                    border: '1px solid #e0e0e0'
+                    border: '1px solid #e0e0e0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>
-                          {purchase.product?.name || 'Producto desconocido'}
+                      <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>
+                        {pdf.order_range || 'Sin rango de pedidos'}
                         </div>
-                        <div style={{ fontSize: '14px', color: '#666', marginBottom: '4px' }}>
-                          {purchase.qty} {purchase.unit} × ${purchase.price_per_unit.toLocaleString('es-CL')} = ${purchase.price_total.toLocaleString('es-CL')}
-                        </div>
-                        {purchase.conversion_qty && (
-                          <div style={{ fontSize: '13px', color: '#999', marginBottom: '4px' }}>
-                            Conversión: {purchase.conversion_qty} {purchase.conversion_unit}
-                          </div>
-                        )}
-                        <div style={{ fontSize: '12px', color: '#999' }}>
-                          {purchase.created_at ? new Date(purchase.created_at).toLocaleDateString('es-CL', { 
+                      <div style={{ fontSize: '13px', color: '#666' }}>
+                        {pdf.date || (pdf.created_at ? new Date(pdf.created_at).toLocaleDateString('es-CL', {
                             year: 'numeric', 
                             month: 'long', 
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          }) : 'Sin fecha'}
+                          day: 'numeric'
+                        }) : 'Sin fecha')}
                         </div>
                       </div>
-                      <button
-                        onClick={async () => {
-                          try {
-                            await generatePastPurchasePDF(purchase)
-                            alert('✅ Resumen de compra descargado')
-                          } catch (error) {
-                            console.error('Error descargando resumen:', error)
-                            alert('Error al descargar resumen: ' + (error.message || 'Error desconocido'))
+                    <button
+                      onClick={async () => {
+                        try {
+                          const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+                          const token = localStorage.getItem('kivi_token')
+                          // El file_path puede ser relativo o absoluto
+                          const downloadUrl = pdf.file_path.startsWith('http') 
+                            ? pdf.file_path 
+                            : `${API_URL}${pdf.file_path.startsWith('/') ? '' : '/'}${pdf.file_path}`
+                          
+                          const response = await fetch(downloadUrl, {
+                            headers: {
+                              'Authorization': token ? `Bearer ${token}` : ''
+                            }
+                          })
+                          
+                          if (!response.ok) {
+                            throw new Error('Error descargando PDF')
                           }
-                        }}
-                        className="button"
-                        style={{ background: 'var(--kivi-green)', marginLeft: '16px' }}
-                      >
-                        📥 Descargar Resumen Detallado
-                      </button>
-                    </div>
-                    
-                    {/* Clientes asociados */}
-                    {purchase.customers && purchase.customers.length > 0 && (
-                      <div style={{ 
-                        marginTop: '16px', 
-                        paddingTop: '16px', 
-                        borderTop: '1px solid #e0e0e0' 
-                      }}>
-                        <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: '#666' }}>
-                          Clientes asociados:
-                        </div>
-                        {purchase.customers.map((customerInfo, cidx) => (
-                          <div key={cidx} style={{
-                            padding: '12px',
-                            background: '#fff',
-                            borderRadius: '6px',
-                            marginBottom: '8px',
-                            border: '1px solid #e8e8e8'
-                          }}>
-                            <div style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
-                              {customerInfo.customer.name}
-                            </div>
-                            <div style={{ fontSize: '13px', color: '#666', marginBottom: '4px' }}>
-                              Total: {customerInfo.total_qty.toFixed(customerInfo.items[0]?.unit === 'kg' ? 1 : 0)} {customerInfo.items[0]?.unit || purchase.unit}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#999' }}>
-                              {customerInfo.items.map((item, iidx) => {
-                                const maturityLabel = item.maturity_note === 'para_hoy' ? 'Para hoy' : 
-                                                    item.maturity_note === 'para_4_5_dias' ? 'Para 4-5 días' : 
-                                                    'Sin especificar'
-                                return (
-                                  <div key={iidx} style={{ marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span>Pedido #{item.order_id}: {item.qty} {item.unit}</span>
-                                    <span style={{ 
-                                      padding: '2px 6px', 
-                                      borderRadius: '4px', 
-                                      background: item.maturity_note === 'para_hoy' ? '#fff3e0' : '#e8f5e9',
-                                      color: item.maturity_note === 'para_hoy' ? '#ff6b00' : '#4caf50',
-                                      fontSize: '11px',
-                                      fontWeight: 600
-                                    }}>
-                                      {maturityLabel}
-                                    </span>
-                                    {item.order_date && (
-                                      <span style={{ color: '#999' }}>
-                                        ({new Date(item.order_date).toLocaleDateString('es-CL')})
-                                      </span>
-                                    )}
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {(!purchase.customers || purchase.customers.length === 0) && (
-                      <div style={{ 
-                        marginTop: '12px', 
-                        padding: '12px', 
-                        background: '#fff3e0', 
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        color: '#ff6b00'
-                      }}>
-                        ⚠️ No se encontraron clientes asociados a esta compra
-                      </div>
-                    )}
+                          
+                          const blob = await response.blob()
+                          const url = window.URL.createObjectURL(blob)
+                          const a = document.createElement('a')
+                          a.href = url
+                          a.download = pdf.filename || 'compra.pdf'
+                          document.body.appendChild(a)
+                          a.click()
+                          window.URL.revokeObjectURL(url)
+                          document.body.removeChild(a)
+                        } catch (error) {
+                          console.error('Error descargando PDF:', error)
+                          alert('Error al descargar PDF: ' + (error.message || 'Error desconocido'))
+                        }
+                      }}
+                      className="button"
+                      style={{ background: 'var(--kivi-green)', marginLeft: '16px' }}
+                    >
+                      📥 Descargar
+                    </button>
                   </div>
                 ))}
               </div>
@@ -632,7 +619,7 @@ export default function Shopping() {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                       <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--kivi-text-dark)' }}>
-                        {item.product_name}
+                      {item.product_name}
                       </span>
                       <select
                         value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
@@ -810,8 +797,8 @@ export default function Shopping() {
                       marginBottom: '12px'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                        <span style={{ fontSize: '15px', fontWeight: 700 }}>
-                          {item.product_name}
+                      <span style={{ fontSize: '15px', fontWeight: 700 }}>
+                        {item.product_name}
                         </span>
                         <select
                           value={maturityData[key] || getPredominantMaturity(item.maturity_breakdown)}
