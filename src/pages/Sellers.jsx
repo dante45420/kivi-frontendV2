@@ -1018,38 +1018,8 @@ export default function Sellers() {
                           onClick={async () => {
                             try {
                               const weekSummary = await getSellerWeekSummary(seller.id)
-                              // Generar PDF del resumen semanal
-                              const { jsPDF } = await import('jspdf')
-                              const doc = new jsPDF()
-                              
-                              doc.setFontSize(20)
-                              doc.text('Resumen Semanal - Vendedor', 20, 20)
-                              doc.setFontSize(14)
-                              doc.text(weekSummary.seller_name, 20, 30)
-                              
-                              const weekStart = new Date(weekSummary.week_start)
-                              const weekEnd = new Date(weekSummary.week_end)
-                              doc.setFontSize(12)
-                              doc.text(
-                                `Semana: ${weekStart.toLocaleDateString('es-CL')} - ${weekEnd.toLocaleDateString('es-CL')}`,
-                                20,
-                                40
-                              )
-                              
-                              let yPos = 55
-                              doc.setFontSize(14)
-                              doc.text('Cantidad de Pedidos:', 20, yPos)
-                              doc.text(weekSummary.orders_count.toString(), 100, yPos)
-                              
-                              yPos += 10
-                              doc.text('Porcentaje de Utilidad:', 20, yPos)
-                              doc.text(`${weekSummary.avg_utility_percent.toFixed(2)}%`, 100, yPos)
-                              
-                              yPos += 10
-                              doc.text('Utilidad Total de la Semana:', 20, yPos)
-                              doc.text(formatCurrency(weekSummary.total_utility), 100, yPos)
-                              
-                              doc.save(`resumen_semanal_${seller.name}_${weekSummary.week_start}.pdf`)
+                              const { generateSellerWeeklySummaryPDF } = await import('../utils/sellerPdf')
+                              await generateSellerWeeklySummaryPDF(weekSummary)
                               alert('✅ Resumen descargado')
                             } catch (error) {
                               console.error('Error descargando resumen:', error)
@@ -1151,7 +1121,7 @@ export default function Sellers() {
                       </div>
                       <div style={{ marginBottom: '12px' }}>
                         <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                          Porcentaje de Utilidad
+                          Porcentaje de Comisión
                         </div>
                         <div style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--kivi-green)' }}>
                           {globalSummary.avg_utility_percent.toFixed(2)}%
@@ -1159,12 +1129,32 @@ export default function Sellers() {
                       </div>
                       <div>
                         <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                          Utilidad Total
+                          Comisión Total
                         </div>
                         <div style={{ fontSize: '20px', fontWeight: 700, fontFamily: 'monospace', color: 'var(--kivi-green)' }}>
                           {formatCurrency(globalSummary.total_utility)}
                         </div>
                       </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const { generateSellerGlobalSummaryPDF } = await import('../utils/sellerPdf')
+                            await generateSellerGlobalSummaryPDF(globalSummary)
+                            alert('✅ Resumen global descargado')
+                          } catch (error) {
+                            console.error('Error descargando resumen global:', error)
+                            alert('Error al descargar resumen global: ' + (error.message || 'Error desconocido'))
+                          }
+                        }}
+                        className="button"
+                        style={{ 
+                          marginTop: '12px',
+                          width: '100%',
+                          background: 'var(--kivi-green)'
+                        }}
+                      >
+                        📥 Descargar Resumen Global
+                      </button>
                     </div>
                   )
                 })}
