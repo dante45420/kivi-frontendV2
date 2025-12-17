@@ -462,7 +462,6 @@ export default function Shopping() {
       const pdfBlob = doc.output('blob')
       
       // Guardar PDF en el servidor
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       const formData = new FormData()
       formData.append('file', pdfBlob, 'compra-detalle.pdf')
       formData.append('metadata', JSON.stringify({
@@ -474,7 +473,6 @@ export default function Shopping() {
         })
       }))
       
-      const token = localStorage.getItem('kivi_token')
       const response = await fetch(`${API_URL}/api/purchase-pdfs`, {
             method: 'POST',
         headers: {
