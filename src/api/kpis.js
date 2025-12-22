@@ -32,3 +32,16 @@ export async function fetchKPIByWeek(metric) {
   return response.json()
 }
 
+export async function fetchRevenueBySeller(filter = 'historical', filterMode = 'all', filterCount = 10) {
+  const params = new URLSearchParams({
+    filter,
+    filter_mode: filterMode,
+    filter_count: filterCount.toString()
+  })
+  const response = await fetch(`${API_URL}/api/kpis/revenue-by-seller?${params}`)
+  if (!response.ok) {
+    throw new Error('Error obteniendo revenue por vendedor')
+  }
+  return response.json()
+}
+

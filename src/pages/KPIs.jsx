@@ -503,6 +503,99 @@ export default function KPIs() {
               👆 Click para ver detalles
             </div>
           </div>
+          
+          {/* Clientes que Retornaron */}
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/customer_return_rate')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Clientes que Retornaron
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: '#2196f3' }}>
+              {formatPercent(kpis.last_week?.customer_return_rate || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              % de clientes que volvieron a pedir
+            </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
+          </div>
+          
+          {/* Vendedores que Retornaron */}
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/seller_return_rate')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Vendedores que Retornaron
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: '#9c27b0' }}>
+              {formatPercent(kpis.last_week?.seller_return_rate || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              % de vendedores que volvieron a tener pedidos
+            </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
+          </div>
+          
+          {/* Monto Facturado por Vendedores */}
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/revenue_by_seller')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Monto Facturado por Vendedores
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
+              {formatCurrency(kpis.last_week?.revenue_by_seller || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Total facturado con vendedor
+            </div>
+            <div style={{ fontSize: '11px', color: '#4caf50', marginTop: '8px', fontWeight: 600 }}>
+              👆 Click para ver detalles
+            </div>
+          </div>
         </div>
       </div>
       
@@ -706,6 +799,90 @@ export default function KPIs() {
             </div>
             <div style={{ fontSize: '13px', color: '#999' }}>
               Pedidos completados con vendedor
+            </div>
+          </div>
+          
+          {/* Clientes que Retornaron */}
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/customer_return_rate')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Clientes que Retornaron
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: '#2196f3' }}>
+              {formatPercent(kpis.historical?.customer_return_rate || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              % promedio de clientes que retornaron
+            </div>
+          </div>
+          
+          {/* Vendedores que Retornaron */}
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/seller_return_rate')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Vendedores que Retornaron
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: '#9c27b0' }}>
+              {formatPercent(kpis.historical?.seller_return_rate || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              % promedio de vendedores que retornaron
+            </div>
+          </div>
+          
+          {/* Monto Facturado por Vendedores */}
+          <div 
+            className="card" 
+            onClick={() => navigate('/kpis/revenue_by_seller')}
+            style={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = ''
+            }}
+          >
+            <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
+              Monto Facturado por Vendedores
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: 800, marginBottom: '4px', color: 'var(--kivi-green)' }}>
+              {formatCurrency(kpis.historical?.revenue_by_seller || 0)}
+            </div>
+            <div style={{ fontSize: '13px', color: '#999' }}>
+              Total facturado con vendedor
             </div>
           </div>
         </div>

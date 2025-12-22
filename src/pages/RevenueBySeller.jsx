@@ -1,11 +1,11 @@
 /**
- * Página: Detalle de KPI
- * Muestra gráfico y resumen detallado de un KPI específico
+ * Página: Monto Facturado por Vendedores
+ * Muestra gráfico y permite filtrar por mejores/peores vendedores
  */
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Loader from '../components/Loader'
-import { fetchKPIByWeek } from '../api/kpis'
+import { fetchKPIByWeek, fetchRevenueBySeller } from '../api/kpis'
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('es-CL', { 
@@ -14,10 +14,6 @@ const formatCurrency = (value) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(value)
-}
-
-const formatPercent = (value) => {
-  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 }
 
 const formatWeekRange = (weekStart) => {
@@ -31,91 +27,50 @@ const formatWeekRange = (weekStart) => {
   return `${startStr} - ${endStr}`
 }
 
-const KPI_CONFIG = {
-  avg_order_value: {
-    title: 'Promedio de Tamaño de Pedido',
-    format: formatCurrency,
-    color: '#4caf50'
-  },
-  new_customers: {
-    title: 'Nuevos Clientes',
-    format: (v) => Math.round(v),
-    color: '#2196f3'
-  },
-  total_orders: {
-    title: 'Total de Pedidos',
-    format: (v) => Math.round(v),
-    color: '#ff9800'
-  },
-  total_revenue: {
-    title: 'Monto Total Facturado',
-    format: formatCurrency,
-    color: '#4caf50'
-  },
-  avg_utility_percent: {
-    title: 'Porcentaje de Utilidad Promedio',
-    format: formatPercent,
-    color: '#4caf50'
-  },
-  avg_utility_amount: {
-    title: 'Utilidad Promedio por Pedido',
-    format: formatCurrency,
-    color: '#4caf50'
-  },
-  completed_orders_by_seller: {
-    title: 'Pedidos Completados por Vendedores',
-    format: (v) => Math.round(v),
-    color: '#9c27b0'
-  },
-  customer_return_rate: {
-    title: 'Clientes que Retornaron',
-    format: formatPercent,
-    color: '#2196f3'
-  },
-  seller_return_rate: {
-    title: 'Vendedores que Retornaron',
-    format: formatPercent,
-    color: '#9c27b0'
-  },
-  revenue_by_seller: {
-    title: 'Monto Facturado por Vendedores',
-    format: formatCurrency,
-    color: '#4caf50'
-  }
-}
-
-export default function KPIDetail() {
-  const { metric } = useParams()
+export default function RevenueBySeller() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+  const [loadingSellers, setLoadingSellers] = useState(false)
   const [data, setData] = useState(null)
-  const [viewMode, setViewMode] = useState('graph') // 'graph' o 'summary'
-
-  const config = KPI_CONFIG[metric] || {
-    title: 'KPI',
-    format: (v) => v,
-    color: '#4caf50'
-  }
+  const [sellersData, setSellersData] = useState(null)
+  const [viewMode, setViewMode] = useState('graph') // 'graph' o 'sellers'
+  const [filter, setFilter] = useState('historical') // 'last_week' o 'historical'
+  const [filterMode, setFilterMode] = useState('all') // 'all', 'top', 'bottom'
+  const [filterCount, setFilterCount] = useState(10)
 
   useEffect(() => {
-    // Si es revenue_by_seller, redirigir a la página especial
-    if (metric === 'revenue_by_seller') {
-      navigate('/kpis/revenue_by_seller', { replace: true })
-      return
-    }
     loadData()
-  }, [metric, navigate])
+  }, [])
+
+  useEffect(() => {
+    if (viewMode === 'sellers') {
+      loadSellersData()
+    }
+  }, [viewMode, filter, filterMode, filterCount])
 
   const loadData = async () => {
     setLoading(true)
     try {
-      const result = await fetchKPIByWeek(metric)
+      const result = await fetchKPIByWeek('revenue_by_seller')
       setData(result)
     } catch (error) {
       console.error('Error cargando datos:', error)
       alert('Error cargando datos: ' + error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadSellersData = async () => {
+    setLoadingSellers(true)
+    try {
+      const result = await fetchRevenueBySeller(filter, filterMode, filterCount)
+      setSellersData(result)
+    } catch (error) {
+      console.error('Error cargando datos de vendedores:', error)
+      alert('Error cargando datos de vendedores: ' + error.message)
+    } finally {
+      setLoadingSellers(false)
     }
   }
 
@@ -184,11 +139,11 @@ export default function KPIDetail() {
           ← Volver a KPIs
         </button>
         <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0 }}>
-          📈 {config.title}
+          💰 Monto Facturado por Vendedores
         </h1>
       </div>
 
-      {/* Toggle entre gráfico y resumen */}
+      {/* Toggle entre gráfico y vendedores */}
       <div style={{ marginBottom: '24px', display: 'flex', gap: '12px' }}>
         <button
           className={viewMode === 'graph' ? 'button' : 'button ghost'}
@@ -197,10 +152,10 @@ export default function KPIDetail() {
           📊 Gráfico
         </button>
         <button
-          className={viewMode === 'summary' ? 'button' : 'button ghost'}
-          onClick={() => setViewMode('summary')}
+          className={viewMode === 'sellers' ? 'button' : 'button ghost'}
+          onClick={() => setViewMode('sellers')}
         >
-          📋 Resumen
+          👥 Vendedores
         </button>
       </div>
 
@@ -215,8 +170,8 @@ export default function KPIDetail() {
           <div style={{ fontSize: '14px', color: '#999', marginBottom: '8px' }}>
             Último Valor
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: config.color }}>
-            {config.format(latest)}
+          <div style={{ fontSize: '24px', fontWeight: 800, color: '#4caf50' }}>
+            {formatCurrency(latest)}
           </div>
         </div>
         <div className="card">
@@ -224,7 +179,7 @@ export default function KPIDetail() {
             Promedio
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800 }}>
-            {config.format(average)}
+            {formatCurrency(average)}
           </div>
         </div>
         <div className="card">
@@ -293,9 +248,7 @@ export default function KPIDetail() {
                     fontSize="12"
                     fill="#666"
                   >
-                    {typeof value === 'number' && value % 1 !== 0 
-                      ? config.format(value)
-                      : Math.round(value)}
+                    {formatCurrency(value)}
                   </text>
                 </g>
               )
@@ -305,7 +258,7 @@ export default function KPIDetail() {
             <path
               d={linePath}
               fill="none"
-              stroke={config.color}
+              stroke="#4caf50"
               strokeWidth="3"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -318,13 +271,13 @@ export default function KPIDetail() {
                   cx={point.x}
                   cy={point.y}
                   r="6"
-                  fill={config.color}
+                  fill="#4caf50"
                   stroke="#fff"
                   strokeWidth="2"
                   style={{ cursor: 'pointer' }}
                 />
                 <title>
-                  {formatWeekRange(point.week.week_start)}: {config.format(point.value)}
+                  {formatWeekRange(point.week.week_start)}: {formatCurrency(point.value)}
                 </title>
               </g>
             ))}
@@ -353,47 +306,112 @@ export default function KPIDetail() {
           {/* Leyenda */}
           <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '14px', color: '#666' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '20px', height: '3px', background: config.color }}></div>
-              <span>{config.title}</span>
+              <div style={{ width: '20px', height: '3px', background: '#4caf50' }}></div>
+              <span>Monto Facturado por Vendedores</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Vista de resumen */}
-      {viewMode === 'summary' && (
-        <div className="card" style={{ marginTop: '24px', overflowX: 'auto' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
-            Resumen Detallado por Semana
-          </h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e1e7e1' }}>
-                <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: 700 }}>Semana</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 700 }}>Valor</th>
-                <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 700 }}>Cambio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeks.map((week, idx) => {
-                const prevValue = idx > 0 ? weeks[idx - 1].value : week.value
-                const change = prevValue !== 0 ? ((week.value - prevValue) / prevValue) * 100 : 0
-                return (
-                  <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                    <td style={{ padding: '12px', fontSize: '14px' }}>
-                      {formatWeekRange(week.week_start)}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontSize: '14px', fontFamily: 'monospace', fontWeight: 600, color: config.color }}>
-                      {config.format(week.value)}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontSize: '14px', fontFamily: 'monospace', color: change >= 0 ? 'var(--kivi-green)' : '#f44336' }}>
-                      {idx === 0 ? '-' : `${change >= 0 ? '+' : ''}${change.toFixed(1)}%`}
-                    </td>
+      {/* Vista de vendedores */}
+      {viewMode === 'sellers' && (
+        <div>
+          {/* Filtros */}
+          <div className="card" style={{ marginBottom: '24px', padding: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px' }}>
+              Filtros
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Período
+                </label>
+                <select
+                  className="input"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="last_week">Última Semana</option>
+                  <option value="historical">Histórico</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Tipo de Filtro
+                </label>
+                <select
+                  className="input"
+                  value={filterMode}
+                  onChange={(e) => setFilterMode(e.target.value)}
+                  style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                >
+                  <option value="all">Todos</option>
+                  <option value="top">Mejores X</option>
+                  <option value="bottom">Peores X</option>
+                </select>
+              </div>
+              {(filterMode === 'top' || filterMode === 'bottom') && (
+                <div>
+                  <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                    Cantidad
+                  </label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={filterCount}
+                    onChange={(e) => setFilterCount(parseInt(e.target.value) || 10)}
+                    min="1"
+                    style={{ width: '100%', padding: '10px', fontSize: '14px' }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tabla de vendedores */}
+          {loadingSellers ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <Loader />
+            </div>
+          ) : sellersData && sellersData.sellers && sellersData.sellers.length > 0 ? (
+            <div className="card" style={{ overflowX: 'auto' }}>
+              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
+                  Vendedores
+                </h3>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: '#4caf50' }}>
+                  Total: {formatCurrency(sellersData.total_revenue)}
+                </div>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #e1e7e1' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', fontSize: '13px', fontWeight: 700 }}>Vendedor</th>
+                    <th style={{ padding: '12px', textAlign: 'right', fontSize: '13px', fontWeight: 700 }}>Monto Facturado</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {sellersData.sellers.map((seller, idx) => (
+                    <tr key={seller.seller_id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '12px', fontSize: '14px', fontWeight: 600 }}>
+                        {seller.seller_name}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right', fontSize: '14px', fontFamily: 'monospace', fontWeight: 600, color: '#4caf50' }}>
+                        {formatCurrency(seller.revenue)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <p style={{ color: 'var(--kivi-text)', margin: 0 }}>
+                No hay vendedores para mostrar
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
