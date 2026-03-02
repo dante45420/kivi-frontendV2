@@ -21,10 +21,10 @@ export default function Footer() {
         </div>
         <div className="kivi-footer-social">
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="WhatsApp">
-            <img src="/logo_whatsapp-Photoroom.png" alt="WhatsApp" className="kivi-footer-social-icon" />
+            <img src="/logo_whatsapp-Photoroom.png" alt="WhatsApp" className="kivi-footer-social-icon" loading="lazy" />
           </a>
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="Instagram">
-            <img src="/logo-instagram.png" alt="Instagram" className="kivi-footer-social-icon" />
+            <img src="/logo-instagram.png" alt="Instagram" className="kivi-footer-social-icon" loading="lazy" />
           </a>
         </div>
         <p className="kivi-footer-copy">

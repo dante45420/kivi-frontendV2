@@ -119,6 +119,8 @@ export default function Home() {
             src="/kivi-logo.png"
             alt="Kivi - Frutas y verduras frescas"
             className="kivi-hero-logo"
+            loading="eager"
+            fetchPriority="high"
           />
           <h1 className="kivi-hero-title">
             Vende fruta fresca.<br />
@@ -247,22 +249,7 @@ export default function Home() {
         .kivi-hero-bg {
           position: absolute;
           inset: 0;
-          background-color: var(--kivi-cream);
-          background-image: url(/kivi-bg-mobile.svg);
-          background-size: cover;
-          background-position: center;
-        }
-        @media (min-width: 769px) {
-          .kivi-hero-bg {
-            background-image: url(/kivi-bg-desktop.svg);
-          }
-        }
-        .kivi-hero-bg::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0v60M0 30h60' stroke='rgba(255,255,255,0.04)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
-          opacity: 0.5;
+          background: linear-gradient(160deg, var(--kivi-cream) 0%, var(--kivi-green) 45%, var(--kivi-orange) 100%);
         }
         .kivi-hero-content {
           position: relative;
@@ -276,12 +263,7 @@ export default function Home() {
           height: clamp(64px, 10vw, 92px);
           width: auto;
           margin-bottom: 20px;
-          filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
-          animation: kivi-float 4s ease-in-out infinite;
-        }
-        @keyframes kivi-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
+          filter: drop-shadow(0 2px 8px rgba(0,0,0,0.12));
         }
         .kivi-hero-title {
           font-size: clamp(24px, 4.5vw, 48px);
@@ -290,7 +272,6 @@ export default function Home() {
           line-height: 1.25;
           margin-bottom: 28px;
           letter-spacing: -0.02em;
-          text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 20px rgba(255,255,255,0.5);
         }
         .kivi-hero-highlight {
           color: #2d6a4f;
@@ -314,7 +295,6 @@ export default function Home() {
           color: var(--kivi-text-dark);
           line-height: 1.6;
           margin-bottom: 40px;
-          text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 16px rgba(255,255,255,0.5);
           padding: 0 8px;
         }
         .kivi-cta {
@@ -354,14 +334,9 @@ export default function Home() {
         }
         .kivi-hero-scroll-line {
           width: 1px;
-          height: 40px;
+          height: 32px;
           background: linear-gradient(to bottom, var(--kivi-text-dark), transparent);
           border-radius: 1px;
-          animation: kivi-scroll-line 2s ease-in-out infinite;
-        }
-        @keyframes kivi-scroll-line {
-          0%, 100% { opacity: 0.3; transform: scaleY(0.6); transform-origin: top; }
-          50% { opacity: 1; transform: scaleY(1); transform-origin: top; }
         }
 
         /* Section */
@@ -369,9 +344,10 @@ export default function Home() {
           padding: 80px 24px;
           max-width: 1100px;
           margin: 0 auto;
+          content-visibility: auto;
           opacity: 0;
           transform: translateY(28px);
-          transition: opacity 0.7s ease, transform 0.7s ease;
+          transition: opacity 0.5s ease, transform 0.5s ease;
         }
         .kivi-section.is-visible {
           opacity: 1;
@@ -404,7 +380,7 @@ export default function Home() {
           transform: translateY(20px);
         }
         .kivi-section.is-visible .kivi-benefit-card {
-          animation: kivi-card-in 0.6s ease forwards;
+          animation: kivi-card-in 0.4s ease forwards;
         }
         .kivi-benefit-card:hover {
           border-color: var(--kivi-green);
@@ -450,7 +426,7 @@ export default function Home() {
           transform: translateX(-16px);
         }
         .kivi-section.is-visible .kivi-step {
-          animation: kivi-step-in 0.6s ease forwards;
+          animation: kivi-step-in 0.4s ease forwards;
         }
         @keyframes kivi-step-in {
           to { opacity: 1; transform: translateX(0); }
