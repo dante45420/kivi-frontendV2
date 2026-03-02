@@ -256,11 +256,12 @@ export default function Home() {
           background-color: var(--kivi-cream);
           background-image: url(/fondo-celular.png);
           background-size: cover;
-          background-position: center;
+          background-position: center top;
         }
         @media (min-width: 769px) {
           .kivi-hero-bg {
             background-image: url(/fondo-computador.png);
+            background-position: center;
           }
         }
         .kivi-hero-content {
