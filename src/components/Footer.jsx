@@ -1,166 +1,105 @@
 /**
- * Componente: Footer público mejorado
+ * Footer público Kivi — Marca para vendedores
  */
 import { Link } from 'react-router-dom'
 
+const WHATSAPP_URL = 'https://wa.me/56969172764?text=Hola%20Kivi!%20Quiero%20ser%20vendedor%20y%20recibir%20más%20información.'
+const INSTAGRAM_URL = 'https://instagram.com/greenmarket.chile'
+
 export default function Footer() {
-  const whatsappUrl = "https://wa.me/56969172764?text=Hola%20Green%20Market!%20Quiero%20hacer%20un%20pedido"
-  const instagramUrl = "https://instagram.com/greenmarket.chile"
-  
   return (
-    <footer style={{
-      background: 'var(--kivi-text-dark)',
-      color: '#fff',
-      padding: '48px 20px 24px',
-      marginTop: '60px'
-    }}>
-      <div style={{ 
-        maxWidth: '1200px',
-        margin: '0 auto'
-      }}>
-        {/* Main Content Centrado */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          gap: '32px',
-          marginBottom: '40px'
-        }}>
-          {/* Brand */}
-          <div>
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              marginBottom: '16px'
-            }}>
-              {/* Logo con slogan */}
-              <img 
-                src="/Logo_con_slogan.png" 
-                alt="Green Market" 
-                style={{ height: '60px' }} 
-              />
-            </div>
-            <p style={{
-              fontSize: '14px',
-              lineHeight: 1.6,
-              opacity: 0.8,
-              margin: '0 0 16px 0'
-            }}>
-              Tu personal shopper de Lo Valledor.<br />
-              Productos frescos directo a tu casa.
-            </p>
-          </div>
-          
-          {/* Enlaces de navegación */}
-          <div>
-            <div style={{
-              display: 'flex',
-              gap: '24px',
-              justifyContent: 'center'
-            }}>
-              <Link
-                to="/"
-                style={{
-                  color: '#fff',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  opacity: 0.8,
-                  transition: 'opacity 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseOut={(e) => e.currentTarget.style.opacity = '0.8'}
-              >
-                Inicio
-              </Link>
-              <Link
-                to="/catalogo"
-                style={{
-                  color: '#fff',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  opacity: 0.8,
-                  transition: 'opacity 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseOut={(e) => e.currentTarget.style.opacity = '0.8'}
-              >
-                Catálogo
-              </Link>
-            </div>
-          </div>
-          
-          {/* Social Icons */}
-          <div style={{
-            display: 'flex',
-            gap: '16px',
-            justifyContent: 'center'
-          }}>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Contáctanos por WhatsApp"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: '#25D366',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textDecoration: 'none',
-                transition: 'transform 0.2s',
-                padding: '10px'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <img src="/logo_whatsapp-Photoroom.png" alt="WhatsApp" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </a>
-            
-            <a
-              href={instagramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Síguenos en Instagram"
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: 'linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textDecoration: 'none',
-                transition: 'transform 0.2s',
-                padding: '10px'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              <img src="/logo_instagram (2).png" alt="Instagram" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </a>
-          </div>
-        </div>
-        
-        {/* Bottom Bar */}
-        <div style={{
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          paddingTop: '24px',
-          textAlign: 'center',
-          fontSize: '13px',
-          opacity: 0.6
-        }}>
-            <p style={{ margin: 0 }}>
-            © {new Date().getFullYear()} Green Market. Lo Valledor, Santiago.
+    <footer className="kivi-footer">
+      <div className="kivi-footer-inner">
+        <div className="kivi-footer-brand">
+          <img src="/kivi-logo.png" alt="Kivi" className="kivi-footer-logo" />
+          <p className="kivi-footer-tagline">
+            Frutas y verduras frescas. Vendé desde tu casa, nosotros nos encargamos del resto.
           </p>
         </div>
+        <div className="kivi-footer-links">
+          <Link to="/" className="kivi-footer-link">Inicio</Link>
+          <Link to="/catalogo" className="kivi-footer-link">Catálogo</Link>
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-link">Contactar</a>
+        </div>
+        <div className="kivi-footer-social">
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="WhatsApp">
+            <span aria-hidden="true">💬</span>
+          </a>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="Instagram">
+            <span aria-hidden="true">📷</span>
+          </a>
+        </div>
+        <p className="kivi-footer-copy">
+          © {new Date().getFullYear()} Kivi. Frutas y verduras frescas.
+        </p>
       </div>
+      <style>{`
+        .kivi-footer {
+          background: var(--kivi-text-dark);
+          color: #fff;
+          padding: 48px 20px 28px;
+          margin-top: 0;
+        }
+        .kivi-footer-inner {
+          max-width: 800px;
+          margin: 0 auto;
+          text-align: center;
+        }
+        .kivi-footer-logo {
+          height: 52px;
+          width: auto;
+          margin-bottom: 16px;
+          opacity: 0.95;
+        }
+        .kivi-footer-tagline {
+          font-size: 15px;
+          line-height: 1.6;
+          opacity: 0.85;
+          margin-bottom: 28px;
+        }
+        .kivi-footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 24px;
+          margin-bottom: 24px;
+        }
+        .kivi-footer-link {
+          color: #fff;
+          text-decoration: none;
+          font-weight: 700;
+          font-size: 14px;
+          opacity: 0.9;
+          transition: opacity 0.2s;
+        }
+        .kivi-footer-link:hover { opacity: 1; }
+        .kivi-footer-social {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 28px;
+        }
+        .kivi-footer-social-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.12);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
+          font-size: 20px;
+          transition: background 0.2s, transform 0.2s;
+        }
+        .kivi-footer-social-btn:hover {
+          background: rgba(255,255,255,0.2);
+          transform: scale(1.08);
+        }
+        .kivi-footer-copy {
+          font-size: 13px;
+          opacity: 0.6;
+          margin: 0;
+        }
+      `}</style>
     </footer>
   )
 }
-

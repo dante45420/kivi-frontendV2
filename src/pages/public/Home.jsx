@@ -1,788 +1,445 @@
 /**
-* pagina * Página Pública: Home / Landing
+ * Landing pública Kivi — Para atraer vendedores
+ * Simple, con interacciones y transiciones llamativas.
  */
-import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PublicNavbar from '../../components/PublicNavbar'
 import Footer from '../../components/Footer'
-import { fetchProducts } from '../../api/products'
-import { fetchOrders } from '../../api/orders'
-import { getImageUrl } from '../../utils/imageUrl'
+
+const WHATSAPP_URL = 'https://wa.me/56969172764?text=Hola%20Kivi!%20Quiero%20ser%20vendedor%20y%20recibir%20más%20información.'
+
+const benefits = [
+  {
+    title: 'Vende desde tu casa',
+    desc: 'Sin local, sin horario fijo. Atiende a tus clientes cuando tú quieras, desde donde estés.',
+    icon: '🏠',
+    delay: 0,
+  },
+  {
+    title: 'Solo coordinas la venta',
+    desc: 'Nosotros tenemos el producto, los precios y la logística. Tú cierras el pedido y ganas comisión.',
+    icon: '🤝',
+    delay: 1,
+  },
+  {
+    title: 'Comisiones hasta 15%',
+    desc: 'Gana por cada venta que cierres. A más clientes, más ingresos. Sin tope.',
+    icon: '📈',
+    delay: 2,
+  },
+  {
+    title: 'App lista para vender',
+    desc: 'Catálogo, precios y pedidos en un solo lugar. Te capacitamos y te damos todo el soporte.',
+    icon: '📱',
+    delay: 3,
+  },
+  {
+    title: 'Sin stock ni riesgo',
+    desc: 'No compras mercadería. Nosotros despachamos. Tú solo conectas clientes con fruta fresca.',
+    icon: '✨',
+    delay: 4,
+  },
+]
+
+const steps = [
+  { step: '1', text: 'Te sumas al equipo y accedes al catálogo y precios' },
+  { step: '2', text: 'Compartes con tus clientes y tomas pedidos' },
+  { step: '3', text: 'Nosotros preparamos y entregamos; tú cobras tu comisión' },
+]
 
 export default function Home() {
-  const navigate = useNavigate()
-  const testimonials = [
-    {
-      name: 'María González',
-      text: 'Increíble la calidad de las frutas. Llegan frescas y deliciosas, mucho mejor que en el supermercado. El servicio es excelente y muy puntual.',
-      rating: 5
-    },
-    {
-      name: 'Carlos Ramírez',
-      text: 'Llevo 3 meses comprando y siempre superan mis expectativas. Los precios son justos y la atención personalizada hace toda la diferencia.',
-      rating: 5
-    },
-    {
-      name: 'Ana Martínez',
-      text: 'Me encanta poder pedir exactamente lo que necesito. La fruta siempre está en perfecto estado y el delivery es muy rápido. Totalmente recomendado.',
-      rating: 5
-    },
-    {
-      name: 'Roberto Silva',
-      text: 'Excelente relación precio-calidad. Las frutas son de primera y el trato es muy profesional. Ya me convertí en cliente frecuente.',
-      rating: 5
-    }
-  ]
-  
-  const [testimonialIndex, setTestimonialIndex] = useState(0)
-  const [expandedFAQ, setExpandedFAQ] = useState(null)
-  const [starProducts, setStarProducts] = useState([])
-  const [loadingStars, setLoadingStars] = useState(true)
-  const [starProductIndex, setStarProductIndex] = useState(0)
-  const [itemsPerView, setItemsPerView] = useState(5)
-  
+  const heroRef = useRef(null)
+  const benefitsRef = useRef(null)
+  const stepsRef = useRef(null)
+  const ctaRef = useRef(null)
+  const [visible, setVisible] = useState({ hero: true, benefits: false, steps: false, cta: false })
+
   useEffect(() => {
-    const updateItemsPerView = () => {
-      if (window.innerWidth <= 768) {
-        setItemsPerView(3)
-      } else if (window.innerWidth <= 1024) {
-        setItemsPerView(4)
-      } else {
-        setItemsPerView(5)
-      }
-    }
-    updateItemsPerView()
-    window.addEventListener('resize', updateItemsPerView)
-    return () => window.removeEventListener('resize', updateItemsPerView)
-  }, [])
-  
-  // Cargar productos estrella (más pedidos)
-  useEffect(() => {
-    loadStarProducts()
-  }, [])
-  
-  // Carrusel de testimonios
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTestimonialIndex((prev) => (prev + 1) % testimonials.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [testimonials.length])
-  
-  // Carrusel auto-deslizante de productos estrella
-  useEffect(() => {
-    if (starProducts.length === 0) return
-    const interval = setInterval(() => {
-      setStarProductIndex((prev) => {
-        const maxIndex = Math.max(0, Math.ceil(starProducts.length / itemsPerView) - 1)
-        return prev >= maxIndex ? 0 : prev + 1
-      })
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [starProducts.length, itemsPerView])
-  
-  const loadStarProducts = async () => {
-    try {
-      const [productsData, ordersData] = await Promise.all([
-        fetchProducts(),
-        fetchOrders()
-      ])
-      
-      // Contar pedidos por producto
-      const productCounts = {}
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      
-      // Obtener detalles de pedidos completados/emitidos
-      const completedOrders = ordersData.filter(o => 
-        o.status === 'completed' || o.status === 'emitted'
-      )
-      
-      // Calcular monto facturado por producto
-      for (const order of completedOrders.slice(0, 50)) { // Limitar para performance
-        try {
-          const response = await fetch(`${API_URL}/api/orders/${order.id}`)
-          const orderData = await response.json()
-          if (orderData.items) {
-            orderData.items.forEach(item => {
-              if (item.product_id && item.unit_price) {
-                const qty = item.charged_qty || item.qty || 0
-                const amount = qty * item.unit_price
-                productCounts[item.product_id] = (productCounts[item.product_id] || 0) + amount
-              }
-            })
+    const sections = [
+      { ref: benefitsRef, key: 'benefits' },
+      { ref: stepsRef, key: 'steps' },
+      { ref: ctaRef, key: 'cta' },
+    ]
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const key = entry.target.getAttribute('data-section')
+            if (key) setVisible((v) => ({ ...v, [key]: true }))
           }
-        } catch (err) {
-          console.error(`Error cargando orden ${order.id}:`, err)
-        }
-      }
-      
-      // Ordenar productos por monto facturado
-      const sortedProducts = productsData
-        .filter(p => p.active && productCounts[p.id] > 0)
-        .map(p => ({
-          ...p,
-          totalAmount: productCounts[p.id] || 0
-        }))
-        .sort((a, b) => b.totalAmount - a.totalAmount)
-        .slice(0, 12) // Top 12 productos
-      
-      setStarProducts(sortedProducts)
-    } catch (error) {
-      console.error('Error cargando productos estrella:', error)
-    } finally {
-      setLoadingStars(false)
-    }
-  }
-  
+        })
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -60px 0px' }
+    )
+    sections.forEach(({ ref }) => {
+      if (ref.current) observer.observe(ref.current)
+    })
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--kivi-cream)' }}>
+    <div className="kivi-landing">
       <PublicNavbar />
-      
-      {/* Hero con foto grande */}
-      <div style={{
-        position: 'relative',
-        height: '70vh',
-        minHeight: '500px',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: 'url(https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1920&q=80)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          zIndex: 1
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.3)',
-          zIndex: 2
-        }} />
-        <div className="container" style={{ 
-          position: 'relative', 
-          zIndex: 3,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          textAlign: 'center',
-          padding: '40px 20px'
-        }}>
-          <h1 style={{
-            fontSize: 'clamp(32px, 5vw, 56px)',
-            fontWeight: 800,
-            color: '#fff',
-            marginBottom: '24px',
-            lineHeight: 1.2,
-            textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
-          }}>
-            Fruta Fresca<br />
-            La mejor relación precio-calidad<br />
-            A domicilio
+
+      {/* Hero */}
+      <section ref={heroRef} className="kivi-hero" data-section="hero">
+        <div className="kivi-hero-bg" />
+        <div className="kivi-hero-content">
+          <img
+            src="/kivi-logo.png"
+            alt="Kivi - Frutas y verduras frescas"
+            className="kivi-hero-logo"
+          />
+          <h1 className="kivi-hero-title">
+            Vende fruta fresca.<br />
+            <span className="kivi-hero-highlight">Desde tu casa.</span>
           </h1>
-          <p style={{
-            fontSize: 'clamp(18px, 2.5vw, 24px)',
-            color: '#fff',
-            marginBottom: '32px',
-            maxWidth: '700px',
-            textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
-            lineHeight: 1.5
-          }}>
-            Pide exactamente lo que quieras, como quieras.<br />
-            Directo del campo a tu mesa.
+          <p className="kivi-hero-sub">
+            Nosotros tenemos el producto y la logística. Tú coordinas la venta y ganas hasta 15% de comisión.
           </p>
-          <Link to="/catalogo" className="button button-lg" style={{ background: '#fff', color: '#000', fontSize: '18px', padding: '16px 32px', fontWeight: 800, border: 'none' }}>
-            <span>🛒</span>
-            <span>Ver catálogo</span>
-          </Link>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="kivi-cta kivi-cta-primary"
+          >
+            Quiero ser vendedor Kivi
+          </a>
         </div>
-      </div>
-      
-      {/* Features - Valores agregados */}
-      <div className="container" style={{ padding: '60px 20px' }}>
-        <h2 style={{
-          fontSize: 'clamp(28px, 5vw, 42px)',
-          fontWeight: 800,
-          textAlign: 'center',
-          marginBottom: '60px',
-          color: 'var(--kivi-text-dark)'
-        }}>
-          Por qué elegirnos
-        </h2>
-        
-        <div className="values-grid" style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '24px',
-          marginBottom: '40px'
-        }}>
-          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <div style={{ 
-              width: '100%',
-              height: '180px',
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: '#f5f5f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/cliente_cercano.jpg" 
-                alt="Atención personalizada"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-                onError={(e) => {
-                  const parent = e.target.parentElement
-                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">🤝</div>'
-                }}
-              />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
-              Atención personalizada
-            </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
-              Atención personalizada y cercana. Estamos aquí para ti, siempre.
-            </p>
-          </div>
-          
-          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <div style={{ 
-              width: '100%',
-              height: '180px',
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: '#f5f5f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/maduracion.png" 
-                alt="Maduración a elección"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-                onError={(e) => {
-                  const parent = e.target.parentElement
-                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">🍎</div>'
-                }}
-              />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
-              Maduración a elección
-            </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
-              Elige el grado de maduración perfecto: para hoy o para 4-5 días. Tú decides.
-            </p>
-          </div>
-          
-          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <div style={{ 
-              width: '100%',
-              height: '180px',
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: '#f5f5f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/envio.avif" 
-                alt="Envíos a domicilio"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-                onError={(e) => {
-                  const parent = e.target.parentElement
-                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">🏠</div>'
-                }}
-              />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
-              Envíos a domicilio
-            </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
-              Delivery directo a tu puerta. Sin salir de casa, productos frescos en tu mesa.
-            </p>
-          </div>
-          
-          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <div style={{ 
-              width: '100%',
-              height: '180px',
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: '#f5f5f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/Reutilizar.jpg" 
-                alt="Reutilizamos todo"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-                onError={(e) => {
-                  const parent = e.target.parentElement
-                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">♻️</div>'
-                }}
-              />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
-              Reutilizamos TODO
-            </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
-              Comprometidos con el planeta. Reutilizamos y reciclamos todo lo posible.
-            </p>
-          </div>
-          
-          <div className="card" style={{ textAlign: 'center', padding: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <div style={{ 
-              width: '100%',
-              height: '180px',
-              marginBottom: '16px',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              background: '#f5f5f5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <img 
-                src="/Fruta de calidad.jpg" 
-                alt="Calidad primero"
-                style={{ 
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
-                onError={(e) => {
-                  const parent = e.target.parentElement
-                  parent.innerHTML = '<div style="font-size: 64px; color: #4caf50; display: flex; align-items: center; justify-content: center; height: 100%;">⭐</div>'
-                }}
-              />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '10px', color: 'var(--kivi-text-dark)' }}>
-              Calidad primero
-            </h3>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '14px', lineHeight: 1.6 }}>
-              Seleccionamos solo lo mejor. Calidad premium directo del campo.
-            </p>
-          </div>
+        <div className="kivi-hero-scroll" aria-hidden="true">
+          <span>Scroll</span>
+          <div className="kivi-hero-scroll-line" />
         </div>
-      </div>
-      
-      {/* Testimonios - Carrusel */}
-      <div style={{
-        padding: '30px 20px',
-        background: 'linear-gradient(135deg, var(--kivi-cream) 0%, #fff 100%)'
-      }}>
-        <div className="container">
-          <h2 style={{
-            fontSize: 'clamp(24px, 4vw, 36px)',
-            fontWeight: 800,
-            textAlign: 'center',
-            marginBottom: '48px',
-            color: 'var(--kivi-text-dark)'
-          }}>
-            Lo que dicen nuestros clientes
-          </h2>
-          
-          <div style={{
-            position: 'relative',
-            maxWidth: '800px',
-            margin: '0 auto'
-          }}>
-            <div className="card" style={{ 
-              padding: '40px', 
-              minHeight: '250px', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              justifyContent: 'center',
-              textAlign: 'center'
-            }}>
-              <div style={{
-                display: 'flex',
-                gap: '4px',
-                marginBottom: '20px',
-                justifyContent: 'center'
-              }}>
-                {[...Array(testimonials[testimonialIndex].rating)].map((_, i) => (
-                  <span key={i} style={{ fontSize: '24px' }}>⭐</span>
-                ))}
-              </div>
-          <p style={{
-                color: 'var(--kivi-text)',
-            fontSize: '18px',
-                lineHeight: 1.8,
-                marginBottom: '20px',
-                fontStyle: 'italic',
-            maxWidth: '600px',
-                margin: '0 auto 20px'
-              }}>
-                "{testimonials[testimonialIndex].text}"
-              </p>
-              <p style={{
-                fontWeight: 700,
-                color: 'var(--kivi-text-dark)',
-                fontSize: '16px'
-              }}>
-                — {testimonials[testimonialIndex].name}
-              </p>
+      </section>
+
+      {/* Benefits */}
+      <section
+        ref={benefitsRef}
+        data-section="benefits"
+        className={`kivi-section kivi-benefits ${visible.benefits ? 'is-visible' : ''}`}
+      >
+        <h2 className="kivi-section-title">¿Por qué vender con Kivi?</h2>
+        <div className="kivi-benefits-grid">
+          {benefits.map((b, i) => (
+            <div
+              key={b.title}
+              className="kivi-benefit-card"
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              <span className="kivi-benefit-icon">{b.icon}</span>
+              <h3 className="kivi-benefit-title">{b.title}</h3>
+              <p className="kivi-benefit-desc">{b.desc}</p>
             </div>
-            
-            {/* Controles del carrusel */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '12px',
-              marginTop: '20px'
-            }}>
-              {testimonials.map((_, idx) => (
-            <button
-                  key={idx}
-                  onClick={() => setTestimonialIndex(idx)}
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    border: 'none',
-                    background: idx === testimonialIndex ? 'var(--kivi-green)' : '#ddd',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s'
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Foto separadora */}
-      <div style={{
-        width: '100%',
-        height: '500px',
-        overflow: 'hidden',
-        position: 'relative',
-        background: '#000',
-        backgroundImage: 'url(https://images.unsplash.com/photo-1573246123716-6b1782bfc499?w=1920&q=80)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <h2 style={{
-            color: '#fff',
-            fontSize: 'clamp(28px, 5vw, 48px)',
-            fontWeight: 800,
-            textShadow: '3px 3px 6px rgba(0,0,0,0.7)',
-            textAlign: 'center',
-            padding: '20px',
-            lineHeight: 1.3
-          }}>
-            Frutas frescas del campo<br />
-            Directo a tu mesa
-          </h2>
-        </div>
-      </div>
-      
-      {/* Preguntas Frecuentes - Desplegables */}
-      <div className="container" style={{ padding: '40px 20px' }}>
-        <h2 style={{
-          fontSize: 'clamp(24px, 4vw, 36px)',
-          fontWeight: 800,
-          textAlign: 'center',
-          marginBottom: '48px',
-          color: 'var(--kivi-text-dark)'
-        }}>
-          Preguntas Frecuentes
-        </h2>
-        
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {[
-            {
-              question: '¿Cómo hago un pedido?',
-              answer: 'Explora nuestro catálogo, agrega productos a tu carrito y completa tu pedido. Te contactaremos por WhatsApp para coordinar la entrega.'
-            },
-            {
-              question: '¿Cuánto tarda la entrega?',
-              answer: 'Pide hoy y recibe mañana. Coordinamos la entrega contigo por WhatsApp para que llegue en el momento perfecto.'
-            },
-            {
-              question: '¿Puedo pedir por kg o por unidades?',
-              answer: '¡Por supuesto! Puedes pedir exactamente lo que quieras, como quieras. Por kilogramo o por unidades, tú decides.'
-            },
-            {
-              question: '¿De dónde vienen los productos?',
-              answer: 'Todos nuestros productos vienen directamente de Lo Valledor, seleccionados frescos cada día por nuestro equipo.'
-            },
-            {
-              question: '¿Qué métodos de pago aceptan?',
-              answer: 'Aceptamos transferencia bancaria, efectivo al recibir y otros métodos que coordinamos por WhatsApp.'
-            }
-          ].map((faq, idx) => (
-            <div key={idx} className="card" style={{ marginBottom: '12px', padding: 0, overflow: 'hidden' }}>
-              <button
-                onClick={() => setExpandedFAQ(expandedFAQ === idx ? null : idx)}
-                style={{
-                  width: '100%',
-                  padding: '20px',
-                  background: 'transparent',
-                  border: 'none',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--kivi-text-dark)', margin: 0 }}>
-                  {faq.question}
-            </h3>
-                <span style={{ fontSize: '24px', color: 'var(--kivi-green)', transition: 'transform 0.3s', transform: expandedFAQ === idx ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                  ▼
-                </span>
-              </button>
-              {expandedFAQ === idx && (
-                <div style={{ padding: '0 20px 20px 20px' }}>
-            <p style={{ color: 'var(--kivi-text)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-                    {faq.answer}
-            </p>
-          </div>
-              )}
-          </div>
           ))}
         </div>
-      </div>
-      
-      {/* Productos Estrella */}
-      <div style={{
-        background: 'var(--kivi-cream)',
-        padding: '40px 20px'
-      }}>
-        <div className="container">
-          <h2 style={{
-            fontSize: 'clamp(24px, 4vw, 36px)',
-            fontWeight: 800,
-            textAlign: 'center',
-            marginBottom: '48px',
-            color: 'var(--kivi-text-dark)'
-          }}>
-            Nuestros productos estrella
-          </h2>
-          
-          {loadingStars ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <div className="loading loading-lg"></div>
+      </section>
+
+      {/* How it works */}
+      <section
+        ref={stepsRef}
+        data-section="steps"
+        className={`kivi-section kivi-steps ${visible.steps ? 'is-visible' : ''}`}
+      >
+        <h2 className="kivi-section-title">Así de simple</h2>
+        <div className="kivi-steps-list">
+          {steps.map((s, i) => (
+            <div key={s.step} className="kivi-step" style={{ animationDelay: `${i * 0.15}s` }}>
+              <span className="kivi-step-num">{s.step}</span>
+              <p className="kivi-step-text">{s.text}</p>
             </div>
-          ) : starProducts.length > 0 ? (
-            <div style={{
-              position: 'relative',
-              overflow: 'hidden',
-              width: '100%',
-              maxWidth: '1400px',
-              margin: '0 auto'
-            }}>
-              <div 
-                className="star-products-carousel"
-                style={{
-                  display: 'flex',
-                  gap: '12px',
-                  transition: 'transform 0.5s ease',
-                  transform: `translateX(-${starProductIndex * (100 / itemsPerView)}%)`
-                }}
-              >
-                {starProducts.map((product, idx) => (
-                  <Link
-                    key={product.id}
-                    to="/catalogo"
-                    className="star-product-item"
-                    style={{
-                      flex: `0 0 calc(${100 / itemsPerView}% - ${12 * (itemsPerView - 1) / itemsPerView}px)`,
-                      textDecoration: 'none',
-                      minWidth: 0
-                    }}
-                  >
-                    <div className="catalog-product-card" style={{ padding: '12px', height: '100%' }}>
-                      {product.photo_url && (
-                        <div className="catalog-image-container">
-                          <img
-                            src={getImageUrl(product.photo_url)}
-                            alt={product.name}
-                          />
-                        </div>
-                      )}
-                      <div className="catalog-product-info">
-                        <div className="catalog-product-name">{product.name}</div>
-                        {product.sale_price && (
-                          <div className="catalog-price">
-                            <div style={{ 
-                              fontSize: '16px', 
-                              fontWeight: 800, 
-                              color: 'var(--kivi-green)',
-                              textAlign: 'center'
-                            }}>
-                              ${product.sale_price.toLocaleString('es-CL')}
-                              <span className="catalog-price-unit-small">
-                                / {product.unit === 'kg' ? 'kg' : 'unidad'}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--kivi-text)' }}>
-              Pronto mostraremos nuestros productos más populares
-            </div>
-          )}
-          
-          <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <Link to="/catalogo" className="button button-lg" style={{ background: '#000', color: '#fff', fontWeight: 800 }}>
-            <span>🛒</span>
-              <span>Ver todos los productos</span>
-          </Link>
-          </div>
+          ))}
         </div>
-      </div>
-      
-      {/* Footer */}
+      </section>
+
+      {/* CTA final */}
+      <section
+        ref={ctaRef}
+        data-section="cta"
+        className={`kivi-section kivi-cta-block ${visible.cta ? 'is-visible' : ''}`}
+      >
+        <h2 className="kivi-cta-title">¿Listo para empezar?</h2>
+        <p className="kivi-cta-sub">Escribinos por WhatsApp y te contamos todo.</p>
+        <a
+          href={WHATSAPP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="kivi-cta kivi-cta-primary kivi-cta-large"
+        >
+          Contactar por WhatsApp
+        </a>
+      </section>
+
       <Footer />
-      
+
       <style>{`
-        .catalog-product-card {
-          background: #fff;
-          border: 1px solid #eee;
-          border-radius: var(--radius-sm);
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          min-width: 0;
-        }
-        
-        .catalog-image-container {
-          width: 100%;
-          padding-top: 70%;
+        .kivi-landing { min-height: 100vh; background: var(--kivi-cream); }
+
+        /* Hero */
+        .kivi-hero {
           position: relative;
-          border-radius: var(--radius-sm);
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 100px 24px 80px;
           overflow: hidden;
-          background: #ffffff;
         }
-        
-        .catalog-image-container img {
+        .kivi-hero-bg {
           position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          max-width: 100%;
-          max-height: 100%;
-          object-fit: contain;
+          inset: 0;
+          background: linear-gradient(160deg, var(--kivi-cream) 0%, var(--kivi-green) 40%, var(--kivi-orange) 100%);
+          opacity: 0.95;
         }
-        
-        .catalog-product-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
+        .kivi-hero-bg::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0v60M0 30h60' stroke='rgba(255,255,255,0.06)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+          opacity: 0.6;
         }
-        
-        .catalog-product-name {
-          font-size: 14px;
-          font-weight: 700;
+        .kivi-hero-content {
+          position: relative;
+          z-index: 1;
           text-align: center;
-          line-height: 1.2;
-          min-height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          max-width: 560px;
         }
-        
-        .catalog-price {
-          font-size: 16px;
+        .kivi-hero-logo {
+          height: clamp(72px, 12vw, 100px);
+          width: auto;
+          margin-bottom: 24px;
+          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
+          animation: kivi-float 4s ease-in-out infinite;
+        }
+        @keyframes kivi-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .kivi-hero-title {
+          font-size: clamp(28px, 5vw, 48px);
           font-weight: 800;
-          color: var(--kivi-green);
-          text-align: center;
-          height: auto;
-          min-height: 36px;
+          color: var(--kivi-text-dark);
+          line-height: 1.2;
+          margin-bottom: 16px;
+          letter-spacing: -0.02em;
+        }
+        .kivi-hero-highlight {
+          color: #2d6a4f;
+          display: inline-block;
+          position: relative;
+        }
+        .kivi-hero-highlight::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 4px;
+          height: 6px;
+          background: var(--kivi-orange);
+          border-radius: 3px;
+          opacity: 0.7;
+          z-index: -1;
+        }
+        .kivi-hero-sub {
+          font-size: clamp(16px, 2.2vw, 20px);
+          color: var(--kivi-text);
+          line-height: 1.6;
+          margin-bottom: 32px;
+        }
+        .kivi-cta {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px 32px;
+          border-radius: 999px;
+          font-weight: 800;
+          font-size: 18px;
+          text-decoration: none;
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+          border: none;
+          cursor: pointer;
+        }
+        .kivi-cta:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
+        .kivi-cta:active { transform: translateY(-1px); }
+        .kivi-cta-primary {
+          background: #2d6a4f;
+          color: #fff;
+        }
+        .kivi-cta-large { padding: 20px 40px; font-size: 20px; }
+        .kivi-hero-scroll {
+          position: absolute;
+          bottom: 32px;
+          left: 50%;
+          transform: translateX(-50%);
           display: flex;
           flex-direction: column;
           align-items: center;
-          justify-content: center;
-          width: 100%;
-          max-width: 100%;
-          box-sizing: border-box;
-          overflow: hidden;
+          gap: 8px;
+          color: var(--kivi-text);
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
         }
-        
-        .catalog-price-unit-small {
-          font-size: 11px;
-          font-weight: 400;
-          color: #666;
-          margin-left: 4px;
+        .kivi-hero-scroll-line {
+          width: 1px;
+          height: 40px;
+          background: linear-gradient(to bottom, var(--kivi-text-dark), transparent);
+          border-radius: 1px;
+          animation: kivi-scroll-line 2s ease-in-out infinite;
         }
-        
-        .values-grid {
+        @keyframes kivi-scroll-line {
+          0%, 100% { opacity: 0.3; transform: scaleY(0.6); transform-origin: top; }
+          50% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+        }
+
+        /* Section */
+        .kivi-section {
+          padding: 80px 24px;
+          max-width: 1100px;
+          margin: 0 auto;
+          opacity: 0;
+          transform: translateY(28px);
+          transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .kivi-section.is-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .kivi-section-title {
+          font-size: clamp(26px, 4vw, 40px);
+          font-weight: 800;
+          color: var(--kivi-text-dark);
+          text-align: center;
+          margin-bottom: 48px;
+          letter-spacing: -0.02em;
+        }
+
+        /* Benefits */
+        .kivi-benefits { background: #fff; }
+        .kivi-benefits-grid {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
           gap: 24px;
         }
-        
+        .kivi-benefit-card {
+          background: var(--kivi-cream);
+          border: 2px solid transparent;
+          border-radius: 20px;
+          padding: 28px 24px;
+          text-align: center;
+          transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        .kivi-section.is-visible .kivi-benefit-card {
+          animation: kivi-card-in 0.6s ease forwards;
+        }
+        .kivi-benefit-card:hover {
+          border-color: var(--kivi-green);
+          transform: translateY(-4px);
+          box-shadow: 0 12px 32px rgba(45, 106, 79, 0.12);
+        }
+        @keyframes kivi-card-in {
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .kivi-benefit-icon {
+          font-size: 48px;
+          display: block;
+          margin-bottom: 16px;
+          line-height: 1;
+        }
+        .kivi-benefit-title {
+          font-size: 20px;
+          font-weight: 800;
+          color: var(--kivi-text-dark);
+          margin-bottom: 10px;
+        }
+        .kivi-benefit-desc {
+          font-size: 15px;
+          color: var(--kivi-text);
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        /* Steps */
+        .kivi-steps { background: var(--kivi-cream); }
+        .kivi-steps-list {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 32px;
+        }
+        .kivi-step {
+          display: flex;
+          align-items: flex-start;
+          gap: 20px;
+          max-width: 320px;
+          opacity: 0;
+          transform: translateX(-16px);
+        }
+        .kivi-section.is-visible .kivi-step {
+          animation: kivi-step-in 0.6s ease forwards;
+        }
+        @keyframes kivi-step-in {
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .kivi-step-num {
+          flex-shrink: 0;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: #2d6a4f;
+          color: #fff;
+          font-size: 20px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .kivi-step-text {
+          font-size: 17px;
+          color: var(--kivi-text-dark);
+          font-weight: 600;
+          line-height: 1.5;
+          margin: 0;
+          padding-top: 10px;
+        }
+
+        /* CTA block */
+        .kivi-cta-block {
+          background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+          border-radius: 24px;
+          padding: 64px 24px;
+          text-align: center;
+          margin: 0 24px 80px;
+        }
+        .kivi-cta-title {
+          font-size: clamp(28px, 4vw, 40px);
+          font-weight: 800;
+          color: #fff;
+          margin-bottom: 12px;
+        }
+        .kivi-cta-sub {
+          font-size: 18px;
+          color: rgba(255,255,255,0.9);
+          margin-bottom: 28px;
+        }
+        .kivi-cta-block .kivi-cta-primary {
+          background: #fff;
+          color: #2d6a4f;
+        }
+        .kivi-cta-block .kivi-cta-primary:hover {
+          background: var(--kivi-cream);
+          color: #1b4332;
+        }
+
         @media (max-width: 768px) {
-          .values-grid {
-            grid-template-columns: 1fr;
-          }
-          .catalog-image-container {
-            padding-top: 50% !important;
-          }
-          .catalog-product-name {
-            font-size: 12px !important;
-            min-height: 32px !important;
-          }
-          .catalog-price {
-            font-size: 14px !important;
-            height: 28px !important;
-          }
+          .kivi-hero { padding: 90px 20px 60px; }
+          .kivi-benefits-grid { grid-template-columns: 1fr; }
+          .kivi-steps-list { flex-direction: column; align-items: center; }
         }
       `}</style>
     </div>
   )
 }
-
