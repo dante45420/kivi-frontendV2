@@ -28,36 +28,56 @@ const benefits = [
     delay: 2,
   },
   {
-    title: 'App lista para vender',
-    desc: 'Catálogo, precios y pedidos en un solo lugar. Te capacitamos y te damos todo el soporte.',
-    icon: '📱',
-    delay: 3,
-  },
-  {
     title: 'Sin stock ni riesgo',
     desc: 'No compras mercadería. Nosotros despachamos. Tú solo conectas clientes con fruta fresca.',
     icon: '✨',
-    delay: 4,
+    delay: 3,
   },
 ]
 
 const steps = [
-  { step: '1', text: 'Te sumas al equipo y accedes al catálogo y precios' },
-  { step: '2', text: 'Compartes con tus clientes y tomas pedidos' },
-  { step: '3', text: 'Nosotros preparamos y entregamos; tú cobras tu comisión' },
+  { step: '1', text: 'Te sumas al equipo y accedés a precios y productos' },
+  { step: '2', text: 'Compartís con tus clientes y tomás pedidos' },
+  { step: '3', text: 'Nosotros preparamos y entregamos; vos cobrás tu comisión' },
+]
+
+const faqs = [
+  {
+    question: '¿Cómo funciona el envío?',
+    answer: 'Vos nos pasás la dirección de entrega y el pedido armado. Nosotros nos encargamos del envío directo a tu cliente. El envío es sin costo para pedidos sobre $30.000; bajo ese monto se aplica un cargo de envío que te indicamos al sumarte.',
+  },
+  {
+    question: '¿Cuánto es la comisión?',
+    answer: 'Podés ganar hasta 15% de comisión por cada venta que cierres. El porcentaje exacto te lo explicamos cuando te sumes al equipo, según el tipo de productos y el volumen.',
+  },
+  {
+    question: '¿Necesito tener stock o comprar mercadería?',
+    answer: 'No. Vos no comprás ni guardás producto. Solo tomás el pedido de tu cliente y nos lo pasás. Nosotros tenemos el stock y despachamos. Cero riesgo para vos.',
+  },
+  {
+    question: '¿Cómo y cuándo me pagan la comisión?',
+    answer: 'Te liquidamos la comisión de tus ventas en los plazos que acordemos al sumarte. Te explicamos el proceso completo por WhatsApp cuando te contactes.',
+  },
+  {
+    question: '¿Hay algún costo para empezar a vender?',
+    answer: 'No hay costo de entrada. Solo te sumás, recibís la información de precios y productos, y empezás a vender. Nosotros nos encargamos del resto.',
+  },
 ]
 
 export default function Home() {
   const heroRef = useRef(null)
   const benefitsRef = useRef(null)
   const stepsRef = useRef(null)
+  const faqRef = useRef(null)
   const ctaRef = useRef(null)
-  const [visible, setVisible] = useState({ hero: true, benefits: false, steps: false, cta: false })
+  const [visible, setVisible] = useState({ hero: true, benefits: false, steps: false, faq: false, cta: false })
+  const [openFaq, setOpenFaq] = useState(null)
 
   useEffect(() => {
     const sections = [
       { ref: benefitsRef, key: 'benefits' },
       { ref: stepsRef, key: 'steps' },
+      { ref: faqRef, key: 'faq' },
       { ref: ctaRef, key: 'cta' },
     ]
     const observer = new IntersectionObserver(
@@ -146,6 +166,35 @@ export default function Home() {
             <div key={s.step} className="kivi-step" style={{ animationDelay: `${i * 0.15}s` }}>
               <span className="kivi-step-num">{s.step}</span>
               <p className="kivi-step-text">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section
+        ref={faqRef}
+        data-section="faq"
+        className={`kivi-section kivi-faq ${visible.faq ? 'is-visible' : ''}`}
+      >
+        <h2 className="kivi-section-title">Preguntas frecuentes</h2>
+        <div className="kivi-faq-list">
+          {faqs.map((item, idx) => (
+            <div
+              key={idx}
+              className={`kivi-faq-item ${openFaq === idx ? 'is-open' : ''}`}
+            >
+              <button
+                type="button"
+                className="kivi-faq-question"
+                onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                aria-expanded={openFaq === idx}
+              >
+                {item.question}
+              </button>
+              <div className="kivi-faq-answer" role="region" aria-hidden={openFaq !== idx}>
+                <p>{item.answer}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -405,6 +454,46 @@ export default function Home() {
           margin: 0;
           padding-top: 10px;
         }
+
+        /* FAQ */
+        .kivi-faq { background: #fff; }
+        .kivi-faq-list {
+          max-width: 640px;
+          margin: 0 auto;
+        }
+        .kivi-faq-item {
+          border-bottom: 1px solid #eee;
+          transition: background 0.2s ease;
+        }
+        .kivi-faq-item:first-child { border-top: 1px solid #eee; }
+        .kivi-faq-question {
+          width: 100%;
+          padding: 20px 0;
+          background: none;
+          border: none;
+          text-align: left;
+          font-size: 17px;
+          font-weight: 700;
+          color: var(--kivi-text-dark);
+          cursor: pointer;
+          font-family: inherit;
+          line-height: 1.4;
+          transition: color 0.2s ease;
+        }
+        .kivi-faq-question:hover { color: #2d6a4f; }
+        .kivi-faq-answer {
+          overflow: hidden;
+          max-height: 0;
+          transition: max-height 0.35s ease;
+        }
+        .kivi-faq-answer p {
+          margin: 0 0 20px 0;
+          padding: 0 0 20px 0;
+          font-size: 15px;
+          color: var(--kivi-text);
+          line-height: 1.7;
+        }
+        .kivi-faq-item.is-open .kivi-faq-answer { max-height: 500px; }
 
         /* CTA block */
         .kivi-cta-block {

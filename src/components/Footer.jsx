@@ -4,7 +4,7 @@
 import { Link } from 'react-router-dom'
 
 const WHATSAPP_URL = 'https://wa.me/56969172764?text=Hola%20Kivi!%20Quiero%20ser%20vendedor%20y%20recibir%20más%20información.'
-const INSTAGRAM_URL = 'https://instagram.com/greenmarket.chile'
+const INSTAGRAM_URL = 'https://www.instagram.com/kivi.chile/'
 
 export default function Footer() {
   return (
@@ -18,15 +18,14 @@ export default function Footer() {
         </div>
         <div className="kivi-footer-links">
           <Link to="/" className="kivi-footer-link">Inicio</Link>
-          <Link to="/catalogo" className="kivi-footer-link">Catálogo</Link>
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-link">Contactar</a>
         </div>
         <div className="kivi-footer-social">
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="WhatsApp">
-            <span aria-hidden="true">💬</span>
+            <img src="/logo_whatsapp-Photoroom.png" alt="WhatsApp" className="kivi-footer-social-icon" />
           </a>
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="Instagram">
-            <span aria-hidden="true">📷</span>
+            <img src="/logo_instagram%20(2).png" alt="Instagram" className="kivi-footer-social-icon" />
           </a>
         </div>
         <p className="kivi-footer-copy">
@@ -93,6 +92,11 @@ export default function Footer() {
         .kivi-footer-social-btn:hover {
           background: rgba(255,255,255,0.2);
           transform: scale(1.08);
+        }
+        .kivi-footer-social-icon {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
         }
         .kivi-footer-copy {
           font-size: 13px;

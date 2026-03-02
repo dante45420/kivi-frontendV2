@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 
 const WHATSAPP_URL = 'https://wa.me/56969172764?text=Hola%20Kivi!%20Quiero%20ser%20vendedor%20y%20recibir%20más%20información.'
 
-export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
+export default function PublicNavbar() {
   return (
     <nav className="kivi-public-nav">
       <div className="kivi-public-nav-inner">
@@ -13,20 +13,6 @@ export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
           <img src="/kivi-logo.png" alt="Kivi" />
         </Link>
         <div className="kivi-public-nav-actions">
-          <Link to="/catalogo" className="kivi-public-nav-link hide-mobile">
-            Catálogo
-          </Link>
-          {onCartClick ? (
-            <button
-              type="button"
-              onClick={onCartClick}
-              className="kivi-public-nav-cart"
-              aria-label="Ver carrito"
-            >
-              🛒 Carrito
-              {cartCount > 0 && <span className="kivi-public-nav-cart-badge">{cartCount}</span>}
-            </button>
-          ) : null}
           <a
             href={WHATSAPP_URL}
             target="_blank"
@@ -100,37 +86,6 @@ export default function PublicNavbar({ cartCount = 0, onCartClick = null }) {
           background: #1b4332;
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(45, 106, 79, 0.35);
-        }
-        .kivi-public-nav-cart {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 14px;
-          border-radius: 999px;
-          border: 2px solid var(--kivi-text-dark);
-          background: transparent;
-          color: var(--kivi-text-dark);
-          font-weight: 700;
-          font-size: 14px;
-          cursor: pointer;
-          transition: background 0.2s, color 0.2s, transform 0.2s;
-        }
-        .kivi-public-nav-cart:hover {
-          background: var(--kivi-text-dark);
-          color: #fff;
-          transform: translateY(-1px);
-        }
-        .kivi-public-nav-cart-badge {
-          background: #2d6a4f;
-          color: #fff;
-          font-size: 11px;
-          min-width: 20px;
-          height: 20px;
-          border-radius: 10px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 6px;
         }
         @media (max-width: 768px) {
           .kivi-public-nav-logo img { height: 40px; }
