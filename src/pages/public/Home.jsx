@@ -256,7 +256,7 @@ export default function Home() {
           background-color: var(--kivi-cream);
           background-image: url(/fondo-celular.png);
           background-size: cover;
-          background-position: center top;
+          background-position: center;
         }
         @media (min-width: 769px) {
           .kivi-hero-bg {
@@ -553,6 +553,7 @@ export default function Home() {
 
         @media (max-width: 768px) {
           .kivi-hero { padding: 90px 16px 60px; }
+          .kivi-hero-bg { background-position: center 35%; }
           .kivi-hero-content { padding: 0 16px; transform: translateY(-50px); }
           .kivi-hero-logo { margin-bottom: 12px; }
           .kivi-hero-title { margin-bottom: 0; }
