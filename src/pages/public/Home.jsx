@@ -37,7 +37,7 @@ const benefits = [
 
 const steps = [
   { step: '1', text: 'Te sumas al equipo y accedes a precios y productos' },
-  { step: '2', text: 'Compartes con tus clientes y tomas pedidos' },
+  { step: '2', text: 'Compartes con tus conocidos y tomas pedidos' },
   { step: '3', text: 'Nosotros preparamos y entregamos; tú cobras tu comisión' },
 ]
 
@@ -61,6 +61,10 @@ const faqs = [
   {
     question: '¿Hay algún costo para empezar a vender?',
     answer: 'No hay costo de entrada. Solo te sumas, recibes la información de precios y productos, y empiezas a vender. Nosotros nos encargamos del resto.',
+  },
+  {
+    question: '¿Hay mínimo de ventas semanales?',
+    answer: 'Sí. No puedes vender solo a tu mamá o abuela; necesitamos un volumen mínimo para que sea viable. Te explicamos los detalles cuando te contactes.',
   },
 ]
 
@@ -259,12 +263,14 @@ export default function Home() {
           z-index: 1;
           text-align: center;
           max-width: 560px;
+          padding: 0 20px;
+          transform: translateY(-20px);
         }
         .kivi-hero-logo {
-          height: clamp(72px, 12vw, 100px);
+          height: clamp(64px, 10vw, 92px);
           width: auto;
-          margin-bottom: 24px;
-          filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
+          margin-bottom: 20px;
+          filter: drop-shadow(0 2px 8px rgba(0,0,0,0.15));
           animation: kivi-float 4s ease-in-out infinite;
         }
         @keyframes kivi-float {
@@ -272,12 +278,13 @@ export default function Home() {
           50% { transform: translateY(-8px); }
         }
         .kivi-hero-title {
-          font-size: clamp(28px, 5vw, 48px);
+          font-size: clamp(24px, 4.5vw, 48px);
           font-weight: 800;
           color: var(--kivi-text-dark);
-          line-height: 1.2;
-          margin-bottom: 16px;
+          line-height: 1.25;
+          margin-bottom: 28px;
           letter-spacing: -0.02em;
+          text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 20px rgba(255,255,255,0.5);
         }
         .kivi-hero-highlight {
           color: #2d6a4f;
@@ -297,10 +304,12 @@ export default function Home() {
           z-index: -1;
         }
         .kivi-hero-sub {
-          font-size: clamp(16px, 2.2vw, 20px);
-          color: var(--kivi-text);
+          font-size: clamp(15px, 2vw, 20px);
+          color: var(--kivi-text-dark);
           line-height: 1.6;
-          margin-bottom: 32px;
+          margin-bottom: 40px;
+          text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 16px rgba(255,255,255,0.5);
+          padding: 0 8px;
         }
         .kivi-cta {
           display: inline-flex;
@@ -530,7 +539,10 @@ export default function Home() {
         }
 
         @media (max-width: 768px) {
-          .kivi-hero { padding: 90px 20px 60px; }
+          .kivi-hero { padding: 90px 16px 60px; }
+          .kivi-hero-content { padding: 0 16px; transform: translateY(-16px); }
+          .kivi-hero-title { margin-bottom: 24px; }
+          .kivi-hero-sub { margin-bottom: 32px; padding: 0 4px; }
           .kivi-benefits-grid { grid-template-columns: 1fr; }
           .kivi-steps-list { flex-direction: column; align-items: center; }
         }

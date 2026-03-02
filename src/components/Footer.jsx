@@ -11,7 +11,6 @@ export default function Footer() {
     <footer className="kivi-footer">
       <div className="kivi-footer-inner">
         <div className="kivi-footer-brand">
-          <img src="/kivi-logo.png" alt="Kivi" className="kivi-footer-logo" />
           <p className="kivi-footer-tagline">
             Frutas y verduras frescas. Vende desde tu casa, nosotros nos encargamos del resto.
           </p>
@@ -43,12 +42,6 @@ export default function Footer() {
           max-width: 800px;
           margin: 0 auto;
           text-align: center;
-        }
-        .kivi-footer-logo {
-          height: 52px;
-          width: auto;
-          margin-bottom: 16px;
-          opacity: 0.95;
         }
         .kivi-footer-tagline {
           font-size: 15px;
