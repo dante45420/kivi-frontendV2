@@ -126,17 +126,19 @@ export default function Home() {
             Vende fruta fresca.<br />
             <span className="kivi-hero-highlight">Desde tu casa.</span>
           </h1>
-          <p className="kivi-hero-sub">
-            Nosotros tenemos el producto y la logística. Tú coordinas la venta y ganas hasta 15% de comisión.
-          </p>
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="kivi-cta kivi-cta-primary"
-          >
-            Quiero vender
-          </a>
+          <div className="kivi-hero-text-block">
+            <p className="kivi-hero-sub">
+              Nosotros tenemos el producto y la logística. Tú coordinas la venta y ganas hasta 15% de comisión.
+            </p>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="kivi-cta kivi-cta-primary"
+            >
+              Quiero vender
+            </a>
+          </div>
         </div>
         <div className="kivi-hero-scroll" aria-hidden="true">
           <span>Scroll</span>
@@ -267,7 +269,6 @@ export default function Home() {
           text-align: center;
           max-width: 560px;
           padding: 0 20px;
-          transform: translateY(-20px);
         }
         .kivi-hero-logo {
           height: clamp(64px, 10vw, 92px);
@@ -283,6 +284,13 @@ export default function Home() {
           margin-bottom: 28px;
           letter-spacing: -0.02em;
           text-shadow: 0 1px 3px rgba(255,255,255,0.8);
+        }
+        .kivi-hero-text-block {
+          margin-top: 48px;
+          padding: 24px 20px 28px;
+          background: rgba(255, 255, 255, 0.55);
+          backdrop-filter: blur(8px);
+          border-radius: 16px;
         }
         .kivi-hero-highlight {
           color: #2d6a4f;
@@ -305,9 +313,18 @@ export default function Home() {
           font-size: clamp(15px, 2vw, 20px);
           color: var(--kivi-text-dark);
           line-height: 1.6;
-          margin-bottom: 40px;
-          padding: 0 8px;
-          text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+          margin: 0 0 24px 0;
+          padding: 0 4px;
+        }
+        @media (min-width: 769px) {
+          .kivi-hero-text-block {
+            margin-top: 0;
+            padding: 0;
+            background: transparent;
+            backdrop-filter: none;
+            border-radius: 0;
+          }
+          .kivi-hero-sub { margin: 0 0 40px 0; padding: 0 8px; }
         }
         .kivi-cta {
           display: inline-flex;
@@ -535,9 +552,11 @@ export default function Home() {
 
         @media (max-width: 768px) {
           .kivi-hero { padding: 90px 16px 60px; }
-          .kivi-hero-content { padding: 0 16px; transform: translateY(-16px); }
-          .kivi-hero-title { margin-bottom: 24px; }
-          .kivi-hero-sub { margin-bottom: 32px; padding: 0 4px; }
+          .kivi-hero-content { padding: 0 16px; transform: translateY(-50px); }
+          .kivi-hero-logo { margin-bottom: 12px; }
+          .kivi-hero-title { margin-bottom: 0; }
+          .kivi-hero-text-block { margin-top: 36px; padding: 20px 16px 24px; }
+          .kivi-hero-sub { margin-bottom: 20px; }
           .kivi-benefits-grid { grid-template-columns: 1fr; }
           .kivi-steps-list { flex-direction: column; align-items: center; }
         }
