@@ -1,0 +1,340 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+  <defs>
+    <!-- Main gradient: warm home atmosphere -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4ede0;stop-opacity:1" />
+      <stop offset="35%" style="stop-color:#c8e8d4;stop-opacity:1" />
+      <stop offset="65%" style="stop-color:#f5e8c8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f2d9a8;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Warm window light overlay -->
+    <radialGradient id="windowLight" cx="75%" cy="20%" r="55%">
+      <stop offset="0%" style="stop-color:#fff8e8;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#f5e8c8;stop-opacity:0" />
+    </radialGradient>
+
+    <!-- Soft ambient light from left -->
+    <radialGradient id="leftGlow" cx="10%" cy="50%" r="40%">
+      <stop offset="0%" style="stop-color:#b8ddc8;stop-opacity:0.5" />
+      <stop offset="100%" style="stop-color:#c8e8d4;stop-opacity:0" />
+    </radialGradient>
+
+    <!-- Floor gradient -->
+    <linearGradient id="floorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8c890;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#d4a860;stop-opacity:0.5" />
+    </linearGradient>
+
+    <!-- Wall texture -->
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="overlay" result="blend"/>
+      <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <!-- Soft shadow -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#2d5a3d" flood-opacity="0.12"/>
+    </filter>
+
+    <!-- Plant shadow -->
+    <filter id="plantShadow">
+      <feDropShadow dx="4" dy="8" stdDeviation="8" flood-color="#1a3d28" flood-opacity="0.2"/>
+    </filter>
+
+    <!-- Clip for window -->
+    <clipPath id="windowClip">
+      <rect x="900" y="60" width="360" height="380" rx="12"/>
+    </clipPath>
+  </defs>
+
+  <!-- BASE BACKGROUND -->
+  <rect width="1440" height="900" fill="url(#skyGrad)"/>
+
+  <!-- Texture overlay -->
+  <rect width="1440" height="900" fill="url(#skyGrad)" opacity="0.3" filter="url(#noise)"/>
+
+  <!-- Window light glow -->
+  <rect width="1440" height="900" fill="url(#windowLight)"/>
+  <rect width="1440" height="900" fill="url(#leftGlow)"/>
+
+  <!-- ===== ROOM ELEMENTS ===== -->
+
+  <!-- Wall divider - subtle horizontal line suggesting a room -->
+  <line x1="0" y1="620" x2="1440" y2="620" stroke="#c8a870" stroke-width="1" opacity="0.3"/>
+
+  <!-- FLOOR -->
+  <rect x="0" y="620" width="1440" height="280" fill="url(#floorGrad)" opacity="0.4"/>
+
+  <!-- Floor wood planks - subtle -->
+  <g opacity="0.12" stroke="#8b6030" stroke-width="1">
+    <line x1="0" y1="650" x2="1440" y2="650"/>
+    <line x1="0" y1="680" x2="1440" y2="680"/>
+    <line x1="0" y1="710" x2="1440" y2="710"/>
+    <line x1="0" y1="740" x2="1440" y2="740"/>
+    <line x1="0" y1="770" x2="1440" y2="770"/>
+    <line x1="0" y1="800" x2="1440" y2="800"/>
+    <!-- Vertical plank separators -->
+    <line x1="200" y1="620" x2="180" y2="900"/>
+    <line x1="440" y1="620" x2="420" y2="900"/>
+    <line x1="680" y1="620" x2="660" y2="900"/>
+    <line x1="920" y1="620" x2="900" y2="900"/>
+    <line x1="1160" y1="620" x2="1140" y2="900"/>
+    <line x1="1380" y1="620" x2="1370" y2="900"/>
+  </g>
+
+  <!-- ===== WINDOW (RIGHT SIDE) ===== -->
+  <!-- Window frame outer -->
+  <rect x="960" y="80" width="340" height="340" rx="8" fill="#f5f0e8" opacity="0.9" filter="url(#softShadow)"/>
+
+  <!-- Window light interior -->
+  <rect x="968" y="88" width="324" height="324" rx="6">
+    <defs>
+      <linearGradient id="outsideView" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:#a8d8e8;stop-opacity:0.8"/>
+        <stop offset="40%" style="stop-color:#c8ecd8;stop-opacity:0.7"/>
+        <stop offset="100%" style="stop-color:#d4e8b0;stop-opacity:0.8"/>
+      </linearGradient>
+    </defs>
+    <animate attributeName="opacity" values="0.85;0.95;0.85" dur="6s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="968" y="88" width="324" height="324" rx="6" fill="#b8e0c8" opacity="0.6"/>
+
+  <!-- Sky outside window -->
+  <rect x="968" y="88" width="324" height="160" rx="6" fill="#a8d8e8" opacity="0.5" clip-path="url(#windowClip)"/>
+
+  <!-- Clouds outside -->
+  <ellipse cx="1050" cy="140" rx="45" ry="20" fill="white" opacity="0.7"/>
+  <ellipse cx="1080" cy="130" rx="35" ry="25" fill="white" opacity="0.7"/>
+  <ellipse cx="1120" cy="145" rx="30" ry="15" fill="white" opacity="0.6"/>
+
+  <ellipse cx="1200" cy="125" rx="35" ry="16" fill="white" opacity="0.55"/>
+  <ellipse cx="1225" cy="118" rx="25" ry="18" fill="white" opacity="0.55"/>
+
+  <!-- Outside greenery -->
+  <ellipse cx="990" cy="320" rx="40" ry="60" fill="#5a9a4a" opacity="0.5" clip-path="url(#windowClip)"/>
+  <ellipse cx="1040" cy="340" rx="50" ry="50" fill="#4a8a3a" opacity="0.45" clip-path="url(#windowClip)"/>
+  <ellipse cx="1240" cy="330" rx="45" ry="55" fill="#5a9a4a" opacity="0.45" clip-path="url(#windowClip)"/>
+  <ellipse cx="1290" cy="350" rx="40" ry="45" fill="#4a8a3a" opacity="0.4" clip-path="url(#windowClip)"/>
+
+  <!-- Ground outside -->
+  <rect x="968" y="370" width="324" height="42" rx="0" fill="#7ab86a" opacity="0.5" clip-path="url(#windowClip)"/>
+
+  <!-- Window frame bars -->
+  <rect x="968" y="88" width="324" height="324" rx="6" fill="none" stroke="#d4c8a0" stroke-width="10" opacity="0.8"/>
+  <!-- Cross bars -->
+  <line x1="1130" y1="88" x2="1130" y2="412" stroke="#d4c8a0" stroke-width="6" opacity="0.8"/>
+  <line x1="968" y1="250" x2="1292" y2="250" stroke="#d4c8a0" stroke-width="6" opacity="0.8"/>
+
+  <!-- Window sill -->
+  <rect x="950" y="408" width="360" height="22" rx="4" fill="#e8d8a8" opacity="0.9"/>
+  <rect x="955" y="426" width="350" height="8" rx="2" fill="#d4c090" opacity="0.6"/>
+
+  <!-- ===== DESK / TABLE (RIGHT) ===== -->
+  <rect x="880" y="560" width="500" height="70" rx="6" fill="#c8a870" opacity="0.75" filter="url(#softShadow)"/>
+  <rect x="880" y="558" width="500" height="16" rx="4" fill="#d8b880" opacity="0.9"/>
+
+  <!-- Table legs -->
+  <rect x="910" y="626" width="18" height="100" rx="4" fill="#b09060" opacity="0.7"/>
+  <rect x="1342" y="626" width="18" height="100" rx="4" fill="#b09060" opacity="0.7"/>
+
+  <!-- ===== LAPTOP ON DESK ===== -->
+  <g filter="url(#softShadow)">
+    <!-- Laptop body/screen -->
+    <rect x="1020" y="480" width="220" height="140" rx="10" fill="#2d2d2d" opacity="0.9"/>
+    <rect x="1028" y="488" width="204" height="124" rx="6" fill="#1a3d28" opacity="0.95"/>
+    <!-- Screen glow - a shop/sales interface suggestion -->
+    <rect x="1028" y="488" width="204" height="124" rx="6" fill="#3a7a50" opacity="0.3"/>
+    <!-- Screen content - simple lines suggesting a shop dashboard -->
+    <rect x="1040" y="500" width="80" height="8" rx="3" fill="#7ac890" opacity="0.7"/>
+    <rect x="1040" y="515" width="130" height="5" rx="2" fill="#5ab070" opacity="0.5"/>
+    <rect x="1040" y="526" width="100" height="5" rx="2" fill="#5ab070" opacity="0.4"/>
+    <!-- Cart icon suggestion -->
+    <circle cx="1195" cy="520" r="18" fill="#e8841a" opacity="0.8"/>
+    <text x="1195" y="526" text-anchor="middle" font-size="16" fill="white" opacity="0.9">$</text>
+    <!-- Green checkmarks / orders -->
+    <rect x="1040" y="545" width="180" height="1" rx="1" fill="#7ac890" opacity="0.3"/>
+    <rect x="1040" y="555" width="60" height="6" rx="3" fill="#e8a030" opacity="0.6"/>
+    <rect x="1110" y="555" width="50" height="6" rx="3" fill="#5ab070" opacity="0.6"/>
+
+    <!-- Laptop base -->
+    <rect x="1005" y="618" width="250" height="12" rx="6" fill="#3d3d3d" opacity="0.9"/>
+    <!-- Laptop hinge shadow -->
+    <rect x="1020" y="616" width="220" height="6" rx="2" fill="#1a1a1a" opacity="0.4"/>
+  </g>
+
+  <!-- ===== PHONE ON DESK ===== -->
+  <g filter="url(#softShadow)">
+    <rect x="1295" y="522" width="52" height="88" rx="8" fill="#2d2d2d" opacity="0.9"/>
+    <rect x="1300" y="528" width="42" height="72" rx="5" fill="#3a7a50" opacity="0.9"/>
+    <!-- Phone screen content -->
+    <rect x="1305" y="534" width="32" height="5" rx="2" fill="#7ac890" opacity="0.6"/>
+    <rect x="1305" y="543" width="24" height="4" rx="2" fill="#e8a030" opacity="0.7"/>
+    <circle cx="1321" cy="562" r="12" fill="#e8841a" opacity="0.7"/>
+    <text x="1321" y="567" text-anchor="middle" font-size="11" fill="white" opacity="0.9">✓</text>
+    <!-- Camera dot -->
+    <circle cx="1321" cy="530" r="2" fill="#555" opacity="0.7"/>
+  </g>
+
+  <!-- ===== SMALL FRUIT BASKET ON DESK ===== -->
+  <g transform="translate(930, 510)">
+    <!-- Basket -->
+    <ellipse cx="50" cy="90" rx="48" ry="16" fill="#c89050" opacity="0.7"/>
+    <rect x="4" y="50" width="92" height="42" rx="10" fill="#c89050" opacity="0.65"/>
+    <rect x="8" y="52" width="84" height="36" rx="8" fill="#d4a060" opacity="0.5"/>
+    <!-- Weave pattern -->
+    <g stroke="#a87040" stroke-width="1" opacity="0.5">
+      <line x1="20" y1="52" x2="14" y2="92"/>
+      <line x1="35" y1="52" x2="29" y2="92"/>
+      <line x1="50" y1="52" x2="50" y2="92"/>
+      <line x1="65" y1="52" x2="71" y2="92"/>
+      <line x1="80" y1="52" x2="86" y2="92"/>
+      <line x1="8" y1="65" x2="92" y2="65"/>
+      <line x1="8" y1="75" x2="92" y2="75"/>
+    </g>
+    <!-- Fruits peeking out -->
+    <circle cx="30" cy="44" r="16" fill="#e8601a" opacity="0.85"/>
+    <circle cx="30" cy="44" r="14" fill="#f07030" opacity="0.9"/>
+    <line x1="30" y1="30" x2="32" y2="24" stroke="#3d7a2a" stroke-width="2"/>
+    <circle cx="55" cy="40" r="14" fill="#e8b020" opacity="0.85"/>
+    <circle cx="55" cy="40" r="12" fill="#f0c030" opacity="0.9"/>
+    <line x1="55" y1="28" x2="57" y2="22" stroke="#3d7a2a" stroke-width="2"/>
+    <circle cx="75" cy="46" r="13" fill="#c83020" opacity="0.8"/>
+    <circle cx="75" cy="46" r="11" fill="#e04030" opacity="0.85"/>
+    <!-- leaf -->
+    <ellipse cx="78" cy="35" rx="5" ry="3" fill="#4a8a2a" opacity="0.8" transform="rotate(-20, 78, 35)"/>
+  </g>
+
+  <!-- ===== PLANT (LEFT SIDE) ===== -->
+  <g transform="translate(80, 380)" filter="url(#plantShadow)">
+    <!-- Pot -->
+    <ellipse cx="70" cy="235" rx="55" ry="15" fill="#c87840" opacity="0.7"/>
+    <rect x="22" y="195" width="96" height="50" rx="8" fill="#c87840" opacity="0.75"/>
+    <rect x="18" y="190" width="104" height="14" rx="5" fill="#d88848" opacity="0.8"/>
+    <!-- Soil -->
+    <ellipse cx="70" cy="195" rx="46" ry="10" fill="#6b4a2a" opacity="0.5"/>
+
+    <!-- Stems -->
+    <path d="M70,190 C68,160 50,130 30,80" stroke="#3d7a2a" stroke-width="4" fill="none" opacity="0.8"/>
+    <path d="M70,190 C72,150 90,110 110,60" stroke="#3d7a2a" stroke-width="4" fill="none" opacity="0.8"/>
+    <path d="M70,190 C65,165 55,145 60,110" stroke="#3d7a2a" stroke-width="3" fill="none" opacity="0.7"/>
+    <path d="M70,190 C75,170 85,155 80,120" stroke="#3d7a2a" stroke-width="3" fill="none" opacity="0.7"/>
+
+    <!-- Leaves -->
+    <ellipse cx="30" cy="75" rx="28" ry="12" fill="#4a9a3a" opacity="0.85" transform="rotate(-30, 30, 75)"/>
+    <ellipse cx="30" cy="75" rx="26" ry="10" fill="#5aaa4a" opacity="0.7" transform="rotate(-30, 30, 75)"/>
+    <ellipse cx="112" cy="55" rx="30" ry="13" fill="#4a9a3a" opacity="0.85" transform="rotate(25, 112, 55)"/>
+    <ellipse cx="112" cy="55" rx="28" ry="11" fill="#5aaa4a" opacity="0.7" transform="rotate(25, 112, 55)"/>
+    <ellipse cx="58" cy="105" rx="22" ry="10" fill="#5aaa4a" opacity="0.8" transform="rotate(-15, 58, 105)"/>
+    <ellipse cx="82" cy="115" rx="22" ry="10" fill="#4a9a3a" opacity="0.8" transform="rotate(20, 82, 115)"/>
+
+    <!-- Big central leaves -->
+    <ellipse cx="50" cy="50" rx="35" ry="15" fill="#3d8a2e" opacity="0.75" transform="rotate(-40, 50, 50)"/>
+    <ellipse cx="95" cy="45" rx="35" ry="14" fill="#3d8a2e" opacity="0.75" transform="rotate(40, 95, 45)"/>
+  </g>
+
+  <!-- ===== SECOND SMALLER PLANT ===== -->
+  <g transform="translate(1380, 480)" filter="url(#plantShadow)">
+    <ellipse cx="30" cy="150" rx="28" ry="8" fill="#c87840" opacity="0.6"/>
+    <rect x="10" y="125" width="40" height="30" rx="5" fill="#c87840" opacity="0.65"/>
+    <rect x="8" y="122" width="44" height="8" rx="3" fill="#d88848" opacity="0.75"/>
+    <path d="M30,122 C28,100 15,75 5,40" stroke="#3d7a2a" stroke-width="3" fill="none" opacity="0.75"/>
+    <path d="M30,122 C32,95 45,70 55,30" stroke="#3d7a2a" stroke-width="3" fill="none" opacity="0.75"/>
+    <ellipse cx="5" cy="35" rx="22" ry="10" fill="#4a9a3a" opacity="0.8" transform="rotate(-25, 5, 35)"/>
+    <ellipse cx="55" cy="25" rx="22" ry="10" fill="#4a9a3a" opacity="0.8" transform="rotate(30, 55, 25)"/>
+    <ellipse cx="18" cy="70" rx="18" ry="8" fill="#5aaa4a" opacity="0.75" transform="rotate(-15, 18, 70)"/>
+    <ellipse cx="44" cy="65" rx="18" ry="8" fill="#5aaa4a" opacity="0.75" transform="rotate(20, 44, 65)"/>
+  </g>
+
+  <!-- ===== HANGING SHELF (LEFT WALL) ===== -->
+  <rect x="100" y="320" width="220" height="16" rx="4" fill="#c8a870" opacity="0.6" filter="url(#softShadow)"/>
+  <!-- Shelf bracket left -->
+  <rect x="115" y="320" width="8" height="40" rx="2" fill="#b09060" opacity="0.5"/>
+  <rect x="295" y="320" width="8" height="40" rx="2" fill="#b09060" opacity="0.5"/>
+  <!-- Small pots on shelf -->
+  <g transform="translate(130, 275)">
+    <ellipse cx="20" cy="46" rx="18" ry="5" fill="#c87840" opacity="0.65"/>
+    <rect x="4" y="30" width="32" height="18" rx="5" fill="#c87840" opacity="0.7"/>
+    <rect x="2" y="28" width="36" height="6" rx="3" fill="#d88848" opacity="0.75"/>
+    <ellipse cx="20" cy="22" rx="12" ry="14" fill="#5aaa4a" opacity="0.8"/>
+    <ellipse cx="20" cy="16" rx="8" ry="10" fill="#4a9a3a" opacity="0.75"/>
+  </g>
+  <g transform="translate(200, 280)">
+    <ellipse cx="18" cy="40" rx="15" ry="4" fill="#c87840" opacity="0.6"/>
+    <rect x="4" y="26" width="28" height="16" rx="4" fill="#c87840" opacity="0.65"/>
+    <rect x="2" y="24" width="32" height="5" rx="2" fill="#d88848" opacity="0.7"/>
+    <circle cx="18" cy="16" r="12" fill="#e8601a" opacity="0.7"/>
+    <ellipse cx="18" cy="8" rx="6" ry="3" fill="#4a9a3a" opacity="0.8" transform="rotate(10, 18, 8)"/>
+  </g>
+
+  <!-- ===== FLOATING ORGANIC SHAPES (depth/ambiance) ===== -->
+  <!-- Soft circles suggesting freshness -->
+  <circle cx="350" cy="200" r="180" fill="#a8d8b8" opacity="0.08"/>
+  <circle cx="700" cy="150" r="120" fill="#f0d070" opacity="0.06"/>
+  <circle cx="1350" cy="400" r="150" fill="#e8b050" opacity="0.07"/>
+  <circle cx="200" cy="700" r="200" fill="#b8d8a0" opacity="0.08"/>
+
+  <!-- Subtle decorative dots pattern - top right -->
+  <g opacity="0.12" fill="#3d7a2a">
+    <circle cx="1380" cy="60" r="3"/>
+    <circle cx="1400" cy="80" r="2"/>
+    <circle cx="1360" cy="85" r="2.5"/>
+    <circle cx="1415" cy="55" r="2"/>
+    <circle cx="1390" cy="100" r="2"/>
+    <circle cx="1370" cy="110" r="1.5"/>
+    <circle cx="1420" cy="100" r="1.5"/>
+    <circle cx="1430" cy="70" r="2"/>
+  </g>
+
+  <!-- Decorative dots - bottom left -->
+  <g opacity="0.1" fill="#e8841a">
+    <circle cx="30" cy="820" r="4"/>
+    <circle cx="55" cy="840" r="3"/>
+    <circle cx="20" cy="855" r="2.5"/>
+    <circle cx="70" cy="858" r="2"/>
+    <circle cx="45" cy="870" r="3"/>
+    <circle cx="80" cy="835" r="2"/>
+  </g>
+
+  <!-- ===== NOTEBOOK/NOTEPAD ON DESK ===== -->
+  <g transform="translate(900, 555)" opacity="0.85">
+    <rect x="0" y="0" width="80" height="65" rx="4" fill="#f8f0e0"/>
+    <rect x="0" y="0" width="80" height="10" rx="4" fill="#e8d8c0"/>
+    <!-- Lines on notepad -->
+    <g stroke="#d0c0a0" stroke-width="1" opacity="0.6">
+      <line x1="10" y1="20" x2="70" y2="20"/>
+      <line x1="10" y1="28" x2="70" y2="28"/>
+      <line x1="10" y1="36" x2="60" y2="36"/>
+      <line x1="10" y1="44" x2="65" y2="44"/>
+      <line x1="10" y1="52" x2="55" y2="52"/>
+    </g>
+    <!-- Pen -->
+    <rect x="82" y="-5" width="6" height="75" rx="3" fill="#3d5a8a" opacity="0.8" transform="rotate(10, 85, 35)"/>
+    <polygon points="82,-5 88,-5 85,5" fill="#c83020" opacity="0.9" transform="rotate(10, 85, 35)"/>
+  </g>
+
+  <!-- ===== COFFEE MUG ===== -->
+  <g transform="translate(1370, 535)" filter="url(#softShadow)">
+    <ellipse cx="30" cy="70" rx="27" ry="8" fill="#8a5a30" opacity="0.4"/>
+    <rect x="5" y="20" width="50" height="52" rx="8" fill="#f5f0e8" opacity="0.9"/>
+    <rect x="5" y="20" width="50" height="15" rx="5" fill="#e8e0d0" opacity="0.8"/>
+    <!-- Handle -->
+    <path d="M55,30 Q75,30 75,50 Q75,70 55,68" stroke="#e8e0d0" stroke-width="6" fill="none" opacity="0.9"/>
+    <!-- Steam -->
+    <path d="M18,18 Q20,8 18,0" stroke="#d0c0a0" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/>
+    <path d="M30,15 Q32,5 30,-5" stroke="#d0c0a0" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/>
+    <path d="M42,18 Q44,8 42,0" stroke="#d0c0a0" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round"/>
+    <!-- Kivi brand color accent on mug -->
+    <rect x="12" y="35" width="36" height="4" rx="2" fill="#3d7a2a" opacity="0.4"/>
+  </g>
+
+  <!-- ===== SUBTLE VIGNETTE ===== -->
+  <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
+    <stop offset="60%" style="stop-color:transparent;stop-opacity:0"/>
+    <stop offset="100%" style="stop-color:#1a3820;stop-opacity:0.18"/>
+  </radialGradient>
+  <rect width="1440" height="900" fill="url(#vignette)"/>
+
+</svg>

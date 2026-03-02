@@ -13,7 +13,7 @@ export default function Footer() {
         <div className="kivi-footer-brand">
           <img src="/kivi-logo.png" alt="Kivi" className="kivi-footer-logo" />
           <p className="kivi-footer-tagline">
-            Frutas y verduras frescas. Vendé desde tu casa, nosotros nos encargamos del resto.
+            Frutas y verduras frescas. Vende desde tu casa, nosotros nos encargamos del resto.
           </p>
         </div>
         <div className="kivi-footer-links">
@@ -25,7 +25,7 @@ export default function Footer() {
             <img src="/logo_whatsapp-Photoroom.png" alt="WhatsApp" className="kivi-footer-social-icon" />
           </a>
           <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="kivi-footer-social-btn" title="Instagram">
-            <img src="/logo_instagram%20(2).png" alt="Instagram" className="kivi-footer-social-icon" />
+            <img src="/logo-instagram.png" alt="Instagram" className="kivi-footer-social-icon" />
           </a>
         </div>
         <p className="kivi-footer-copy">

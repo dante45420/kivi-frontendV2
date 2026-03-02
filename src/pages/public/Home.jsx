@@ -36,31 +36,31 @@ const benefits = [
 ]
 
 const steps = [
-  { step: '1', text: 'Te sumas al equipo y accedés a precios y productos' },
-  { step: '2', text: 'Compartís con tus clientes y tomás pedidos' },
-  { step: '3', text: 'Nosotros preparamos y entregamos; vos cobrás tu comisión' },
+  { step: '1', text: 'Te sumas al equipo y accedes a precios y productos' },
+  { step: '2', text: 'Compartes con tus clientes y tomas pedidos' },
+  { step: '3', text: 'Nosotros preparamos y entregamos; tú cobras tu comisión' },
 ]
 
 const faqs = [
   {
     question: '¿Cómo funciona el envío?',
-    answer: 'Vos nos pasás la dirección de entrega y el pedido armado. Nosotros nos encargamos del envío directo a tu cliente. El envío es sin costo para pedidos sobre $30.000; bajo ese monto se aplica un cargo de envío que te indicamos al sumarte.',
+    answer: 'Tú nos pasas la dirección de entrega y el pedido armado. Nosotros nos encargamos del envío directo a tu cliente. El envío es sin costo para pedidos sobre $30.000; bajo ese monto se aplica un cargo de envío que te indicamos al sumarte.',
   },
   {
     question: '¿Cuánto es la comisión?',
-    answer: 'Podés ganar hasta 15% de comisión por cada venta que cierres. El porcentaje exacto te lo explicamos cuando te sumes al equipo, según el tipo de productos y el volumen.',
+    answer: 'Puedes ganar hasta 15% de comisión por cada venta que cierres. El porcentaje exacto te lo explicamos cuando te sumes al equipo, según el tipo de productos y el volumen.',
   },
   {
     question: '¿Necesito tener stock o comprar mercadería?',
-    answer: 'No. Vos no comprás ni guardás producto. Solo tomás el pedido de tu cliente y nos lo pasás. Nosotros tenemos el stock y despachamos. Cero riesgo para vos.',
+    answer: 'No. Tú no compras ni guardas producto. Solo tomas el pedido de tu cliente y nos lo pasas. Nosotros tenemos el stock y despachamos. Cero riesgo para ti.',
   },
   {
     question: '¿Cómo y cuándo me pagan la comisión?',
-    answer: 'Te liquidamos la comisión de tus ventas en los plazos que acordemos al sumarte. Te explicamos el proceso completo por WhatsApp cuando te contactes.',
+    answer: 'Te pagamos la comisión de tus ventas al finalizar la semana. Te explicamos el proceso completo por WhatsApp cuando te contactes.',
   },
   {
     question: '¿Hay algún costo para empezar a vender?',
-    answer: 'No hay costo de entrada. Solo te sumás, recibís la información de precios y productos, y empezás a vender. Nosotros nos encargamos del resto.',
+    answer: 'No hay costo de entrada. Solo te sumas, recibes la información de precios y productos, y empiezas a vender. Nosotros nos encargamos del resto.',
   },
 ]
 
@@ -123,7 +123,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="kivi-cta kivi-cta-primary"
           >
-            Quiero ser vendedor Kivi
+            Quiero vender
           </a>
         </div>
         <div className="kivi-hero-scroll" aria-hidden="true">
@@ -207,7 +207,7 @@ export default function Home() {
         className={`kivi-section kivi-cta-block ${visible.cta ? 'is-visible' : ''}`}
       >
         <h2 className="kivi-cta-title">¿Listo para empezar?</h2>
-        <p className="kivi-cta-sub">Escribinos por WhatsApp y te contamos todo.</p>
+        <p className="kivi-cta-sub">Escríbenos por WhatsApp y te contamos todo.</p>
         <a
           href={WHATSAPP_URL}
           target="_blank"
@@ -237,15 +237,22 @@ export default function Home() {
         .kivi-hero-bg {
           position: absolute;
           inset: 0;
-          background: linear-gradient(160deg, var(--kivi-cream) 0%, var(--kivi-green) 40%, var(--kivi-orange) 100%);
-          opacity: 0.95;
+          background-color: var(--kivi-cream);
+          background-image: url(/kivi-bg-mobile.svg);
+          background-size: cover;
+          background-position: center;
+        }
+        @media (min-width: 769px) {
+          .kivi-hero-bg {
+            background-image: url(/kivi-bg-desktop.svg);
+          }
         }
         .kivi-hero-bg::after {
           content: '';
           position: absolute;
           inset: 0;
-          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0v60M0 30h60' stroke='rgba(255,255,255,0.06)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
-          opacity: 0.6;
+          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0v60M0 30h60' stroke='rgba(255,255,255,0.04)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+          opacity: 0.5;
         }
         .kivi-hero-content {
           position: relative;
@@ -421,7 +428,7 @@ export default function Home() {
         }
         .kivi-step {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           gap: 20px;
           max-width: 320px;
           opacity: 0;
@@ -452,7 +459,6 @@ export default function Home() {
           font-weight: 600;
           line-height: 1.5;
           margin: 0;
-          padding-top: 10px;
         }
 
         /* FAQ */
