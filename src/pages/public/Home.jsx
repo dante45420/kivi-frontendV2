@@ -33,6 +33,12 @@ const benefits = [
     icon: '✨',
     delay: 3,
   },
+  {
+    title: 'Sin mínimo de ventas',
+    desc: 'No hay mínimo semanal. Empiezas cuando quieras y vendes a tu ritmo.',
+    icon: '📋',
+    delay: 4,
+  },
 ]
 
 const steps = [
@@ -64,7 +70,7 @@ const faqs = [
   },
   {
     question: '¿Hay mínimo de ventas semanales?',
-    answer: 'Sí. No puedes vender solo a tu mamá o abuela; necesitamos un volumen mínimo para que sea viable. Te explicamos los detalles cuando te contactes.',
+    answer: 'No. Puedes empezar cuando quieras y vender a tu ritmo. No hay mínimo semanal.',
   },
 ]
 
