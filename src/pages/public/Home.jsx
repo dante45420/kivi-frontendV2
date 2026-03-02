@@ -245,6 +245,8 @@ export default function Home() {
           justify-content: center;
           padding: 100px 24px 80px;
           overflow: hidden;
+          max-width: 1100px;
+          margin: 0 auto;
         }
         .kivi-hero-bg {
           position: absolute;
@@ -494,30 +496,31 @@ export default function Home() {
 
         /* CTA block */
         .kivi-cta-block {
-          background: linear-gradient(135deg, #2d6a4f 0%, #1b4332 100%);
+          background: var(--kivi-cream);
           border-radius: 24px;
           padding: 64px 24px;
           text-align: center;
-          margin: 0 24px 80px;
+          margin: 0 auto 80px;
+          max-width: 1100px;
         }
         .kivi-cta-title {
           font-size: clamp(28px, 4vw, 40px);
           font-weight: 800;
-          color: #fff;
+          color: var(--kivi-text-dark);
           margin-bottom: 12px;
         }
         .kivi-cta-sub {
           font-size: 18px;
-          color: rgba(255,255,255,0.9);
+          color: var(--kivi-text);
           margin-bottom: 28px;
         }
         .kivi-cta-block .kivi-cta-primary {
-          background: #fff;
-          color: #2d6a4f;
+          background: #2d6a4f;
+          color: #fff;
         }
         .kivi-cta-block .kivi-cta-primary:hover {
-          background: var(--kivi-cream);
-          color: #1b4332;
+          background: #1b4332;
+          color: #fff;
         }
 
         @media (max-width: 768px) {
