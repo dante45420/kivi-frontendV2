@@ -251,7 +251,15 @@ export default function Home() {
         .kivi-hero-bg {
           position: absolute;
           inset: 0;
-          background: linear-gradient(160deg, var(--kivi-cream) 0%, var(--kivi-green) 45%, var(--kivi-orange) 100%);
+          background-color: var(--kivi-cream);
+          background-image: url(/fondo-celular.png);
+          background-size: cover;
+          background-position: center;
+        }
+        @media (min-width: 769px) {
+          .kivi-hero-bg {
+            background-image: url(/fondo-computador.png);
+          }
         }
         .kivi-hero-content {
           position: relative;
@@ -274,6 +282,7 @@ export default function Home() {
           line-height: 1.25;
           margin-bottom: 28px;
           letter-spacing: -0.02em;
+          text-shadow: 0 1px 3px rgba(255,255,255,0.8);
         }
         .kivi-hero-highlight {
           color: #2d6a4f;
@@ -298,6 +307,7 @@ export default function Home() {
           line-height: 1.6;
           margin-bottom: 40px;
           padding: 0 8px;
+          text-shadow: 0 1px 2px rgba(255,255,255,0.8);
         }
         .kivi-cta {
           display: inline-flex;
