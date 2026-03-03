@@ -312,10 +312,12 @@ export default function Home() {
         }
         .kivi-hero-sub {
           font-size: clamp(15px, 2vw, 20px);
+          font-weight: 600;
           color: var(--kivi-text-dark);
           line-height: 1.6;
           margin: 0 0 24px 0;
           padding: 0 4px;
+          letter-spacing: 0.01em;
         }
         @media (min-width: 769px) {
           .kivi-hero-text-block {
