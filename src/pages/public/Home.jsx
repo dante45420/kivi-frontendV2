@@ -352,7 +352,7 @@ export default function Home() {
         .kivi-cta-large { padding: 20px 40px; font-size: 20px; }
         .kivi-hero-tagline {
           position: absolute;
-          bottom: 170px;
+          bottom: 210px;
           left: 50%;
           transform: translateX(-50%);
           margin: 0;
