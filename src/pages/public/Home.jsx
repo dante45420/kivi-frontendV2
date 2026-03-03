@@ -1,6 +1,6 @@
 /**
  * Landing pública Kivi — Para atraer vendedores
- * Simple, con interacciones y transiciones llamativas.
+ * Simple, con interacciones y transiciones llamativas. Mejorado para SEO
  */
 import { useEffect, useRef, useState } from 'react'
 import PublicNavbar from '../../components/PublicNavbar'
@@ -352,7 +352,7 @@ export default function Home() {
         .kivi-cta-large { padding: 20px 40px; font-size: 20px; }
         .kivi-hero-tagline {
           position: absolute;
-          bottom: 170px;
+          bottom: 165px;
           left: 50%;
           transform: translateX(-50%);
           margin: 0;
