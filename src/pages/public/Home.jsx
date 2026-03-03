@@ -140,6 +140,7 @@ export default function Home() {
             </a>
           </div>
         </div>
+        <p className="kivi-hero-tagline">¡Sin mínimo de ventas!</p>
         <div className="kivi-hero-scroll" aria-hidden="true">
           <span>Scroll</span>
           <div className="kivi-hero-scroll-line" />
@@ -349,6 +350,18 @@ export default function Home() {
           color: #fff;
         }
         .kivi-cta-large { padding: 20px 40px; font-size: 20px; }
+        .kivi-hero-tagline {
+          position: absolute;
+          bottom: 72px;
+          left: 50%;
+          transform: translateX(-50%);
+          margin: 0;
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--kivi-text-dark);
+          letter-spacing: 0.02em;
+          opacity: 0.9;
+        }
         .kivi-hero-scroll {
           position: absolute;
           bottom: 32px;
