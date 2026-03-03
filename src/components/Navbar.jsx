@@ -75,9 +75,9 @@ export default function Navbar() {
           color: 'var(--kivi-text-dark)'
         }}>
           <img 
-            src="/Logo_sin_slogan.png" 
-            alt="Green Market" 
-            style={{ height: '70px' }} 
+            src="/kivi-logo.png" 
+            alt="Kivi" 
+            style={{ height: '48px' }} 
           />
         </Link>
         
