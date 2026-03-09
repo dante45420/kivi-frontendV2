@@ -171,6 +171,58 @@ export default function Shopping() {
     }
   }
 
+  function downloadSimpleList() {
+    if (consolidatedList.length === 0) return
+    // Agrupar por categoría (sin maduración; ya diferenciado por kg vs unit)
+    const byCategory = {}
+    consolidatedList.forEach(item => {
+      const cat = item.category_name || 'Sin categoría'
+      if (!byCategory[cat]) byCategory[cat] = []
+      byCategory[cat].push(item)
+    })
+    // Ordenar items dentro de cada categoría: nombre, luego kg antes que unit
+    Object.keys(byCategory).forEach(cat => {
+      byCategory[cat].sort((a, b) => {
+        const nameCmp = (a.product_name || '').localeCompare(b.product_name || '')
+        if (nameCmp !== 0) return nameCmp
+        return a.unit === 'kg' && b.unit !== 'kg' ? -1 : a.unit !== 'kg' && b.unit === 'kg' ? 1 : 0
+      })
+    })
+    // Construir texto
+    const lines = []
+    const getCategoryOrder = (name) => {
+      const n = (name || '').toUpperCase()
+      if (n.startsWith('FRUT')) return 0
+      if (n.startsWith('PROT')) return 1
+      if (n.startsWith('VERD')) return 2
+      return 99
+    }
+    const sortedCats = Object.keys(byCategory).sort((a, b) => {
+      const diff = getCategoryOrder(a) - getCategoryOrder(b)
+      if (diff !== 0) return diff
+      return (a || '').localeCompare(b || '')
+    })
+    sortedCats.forEach(cat => {
+      lines.push(`=== ${cat} ===`)
+      byCategory[cat].forEach(item => {
+        const qty = item.total_qty
+        const unitLabel = item.unit === 'kg' ? 'kg' : 'unit'
+        const qtyStr = item.unit === 'kg'
+          ? (Number.isInteger(qty) ? qty.toFixed(1) : qty.toFixed(1))
+          : Math.round(qty).toString()
+        lines.push(`${item.product_name || 'Producto'}: ${qtyStr} ${unitLabel}`)
+      })
+      lines.push('')
+    })
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `compra-lista-simple-${new Date().toISOString().split('T')[0]}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   async function downloadDetailList() {
     try {
       // Asegurarse de que ordersData esté actualizado
@@ -538,6 +590,9 @@ export default function Shopping() {
             </button>
             <button className="button ghost" onClick={downloadDetailList} disabled={consolidatedList.length === 0}>
               📥 Descargar Detalle Completo
+            </button>
+            <button className="button ghost" onClick={downloadSimpleList} disabled={consolidatedList.length === 0} title="Lista simple por categoría (kg y unit separados)">
+              📄 Descargar Lista Simple
             </button>
             <button 
               className="button" 
